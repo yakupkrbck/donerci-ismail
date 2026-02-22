@@ -10,7 +10,7 @@
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
             --grey:#f4f4f4; --white:#FFFFFF; --header-height:75px; --cart-bar-height:72px; --status-bar-height:38px; --bottom-nav-height:56px;
         }
-        body { font-family:'Poppins',sans-serif; margin:0; background:var(--grey); padding-bottom:72px; overflow-x:hidden; }
+        body { font-family:'Poppins',sans-serif; margin:0; background:var(--grey); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
 
         .header { position:fixed; top:0; left:0; right:0; height:var(--header-height); background:var(--dark); padding:0 15px; display:flex; justify-content:space-between; align-items:center; z-index:9000; box-shadow:0 2px 10px rgba(0,0,0,0.3); transition:background 0.5s; }
         .header.kapali       { background:#555 !important; border-bottom:3px solid #333; }
@@ -198,7 +198,7 @@
 
         /* WhatsApp sabit buton */
         .wa-fab {
-            position:fixed !important; bottom:66px !important; right:16px; z-index:8400;
+            position:fixed; bottom:calc(var(--bottom-nav-height) + 10px); right:16px; z-index:8400;
             width:52px; height:52px; border-radius:50%;
             background:#25D366; border:none; cursor:pointer;
             box-shadow:0 4px 18px rgba(37,211,102,0.5);
@@ -397,21 +397,15 @@
 
         /* ── ALT NAVİGASYON FOOTER ── */
         #bottom-nav {
-            position:fixed !important;
-            bottom:0 !important;
-            top:auto !important;
-            left:0 !important; right:0 !important;
-            z-index:8500 !important;
-            height:56px !important;
-            background:#1a1a1a !important;
-            border-top:2px solid rgba(255,102,0,0.3) !important;
-            display:flex !important;
-            justify-content:space-around !important;
-            align-items:stretch !important;
-            box-shadow:0 -4px 24px rgba(0,0,0,0.6) !important;
-            transform:none !important;
-            margin:0 !important;
-            padding:0 !important;
+            position:fixed;
+            bottom:0; left:0; right:0;
+            z-index:8500;
+            height:calc(56px + env(safe-area-inset-bottom));
+            padding-bottom:env(safe-area-inset-bottom);
+            background:#1a1a1a;
+            border-top:2px solid rgba(255,102,0,0.25);
+            display:flex; justify-content:space-around; align-items:stretch;
+            box-shadow:0 -4px 24px rgba(0,0,0,0.5);
         }
         .bn-item {
             flex:1; display:flex; flex-direction:column; align-items:center;
@@ -916,14 +910,14 @@ function calcPointsDiscount(){
 async function loadLoyalty(phone) {
     try {
         const s=await getDoc(doc(db,"phone_customers",phone));
-        if(s.exists()){ const sd=s.data(); loyaltyPoints=sd.loyaltyPoints||sd.points||0; pointsHistory=sd.pointsHistory||[]; }
+        if(s.exists()){ loyaltyPoints=s.data().loyaltyPoints||0; pointsHistory=s.data().pointsHistory||[]; }
     } catch(e){}
 }
 async function addPts(phone,earned,total) {
     loyaltyPoints+=earned;
     const entry={earned,total:loyaltyPoints,date:new Date().toLocaleDateString('tr-TR'),orderTotal:total};
     pointsHistory.unshift(entry); if(pointsHistory.length>20) pointsHistory.pop();
-    try{ await setDoc(doc(db,"phone_customers",phone),{loyaltyPoints,points:loyaltyPoints,pointsHistory},{merge:true}); }catch(e){ console.error('addPts hatası:',e); }
+    try{ await setDoc(doc(db,"phone_customers",phone),{loyaltyPoints,pointsHistory},{merge:true}); }catch(e){}
 }
 
 // ── MIN UYARI ──
@@ -1394,8 +1388,7 @@ window.finalizeOrder=async()=>{
                 
                 // Firestore'da puanları düş
                 await updateDoc(doc(db,"phone_customers",ph), {
-                  points: increment(-spentPts),
-                  loyaltyPoints: increment(-spentPts)
+                  points: increment(-spentPts)
                 });
                 
                 console.log(`✅ ${spentPts} puan kullanıldı`);
@@ -1513,37 +1506,24 @@ let _loyaltyUnsubscribe = null; // puan dinleyici referansı
 
 async function processLoginSuccess(id,isAuto=false){
     activePhone=id; localStorage.setItem("savedUserPhone",activePhone);
-
-    // ── Gerçek zamanlı puan dinleyicisi — hem ilk yükleme hem sonraki değişiklikler ──
-    if(_loyaltyUnsubscribe){ _loyaltyUnsubscribe(); _loyaltyUnsubscribe=null; }
-    _loyaltyUnsubscribe = onSnapshot(doc(db,"phone_customers",activePhone), snap2 => {
-        if(!snap2.exists()) return;
-        const ld = snap2.data();
-        userData = { name: ld.name||userData.name, phone: ld.phone||id };
-        userAddresses = ld.addresses || userAddresses;
-        loyaltyPoints = ld.loyaltyPoints || ld.points || 0;
-        pointsHistory = ld.pointsHistory || [];
+    const snap=await getDoc(doc(db,"phone_customers",activePhone));
+    if(snap.exists()){
+        const d=snap.data(); userData={name:d.name,phone:d.phone||id};
+        userAddresses=d.addresses||[]; loyaltyPoints=d.loyaltyPoints||0; pointsHistory=d.pointsHistory||[];
+        window.selectedAddressIndex=0;
         updateUserDisplay();
-        document.getElementById('sb-stats').style.display='flex';
-        document.getElementById('logout-menu-item').style.display='flex';
-        // Puan sayfası açıksa güncelle
-        const ptsSection = document.getElementById('sec-points');
-        if(ptsSection && ptsSection.classList.contains('active')) renderPoints();
-    }, err => { console.error('Puan dinleyici hatası:', err); });
-
-    // İlk yükleme için getDoc (onSnapshot ilk tetiklenene kadar anlık veri)
-    try {
-        const snap=await getDoc(doc(db,"phone_customers",activePhone));
-        if(snap.exists()){
-            const d=snap.data(); userData={name:d.name,phone:d.phone||id};
-            userAddresses=d.addresses||[]; loyaltyPoints=d.loyaltyPoints||d.points||0; pointsHistory=d.pointsHistory||[];
-            window.selectedAddressIndex=0;
+        // ── Gerçek zamanlı puan dinleyicisi ──
+        if(_loyaltyUnsubscribe){ _loyaltyUnsubscribe(); _loyaltyUnsubscribe=null; }
+        _loyaltyUnsubscribe = onSnapshot(doc(db,"phone_customers",activePhone), snap2 => {
+            if(!snap2.exists()) return;
+            const ld = snap2.data();
+            loyaltyPoints = ld.loyaltyPoints || 0;
+            pointsHistory = ld.pointsHistory || [];
             updateUserDisplay();
-        }
-    } catch(e){ console.error('getDoc hatası:', e); }
-
-    if(true){  // her zaman devam et
-        const d = { name: userData.name, phone: userData.phone||id };
+            // Puan sayfası açıksa güncelle
+            const ptsSection = document.getElementById('sec-points');
+            if(ptsSection && ptsSection.classList.contains('active')) renderPoints();
+        });
         document.getElementById('logout-menu-item').style.display='flex';
         document.getElementById('sb-stats').style.display='flex';
         refreshMinFromAddr();
@@ -1613,19 +1593,33 @@ function startStatusListener(phone){
     });
 }
 
-// Uygulama açıkken tarayıcı bildirimi + toast
+// Uygulama açıkken veya kapalıyken tarayıcı bildirimi + toast
 function showForegroundNotif(title, body){
     // Toast olarak göster
     showToast(`<b>${title}</b><br><span style="font-size:12px;">${body}</span>`);
     // Tarayıcı bildirimi (izin varsa)
     if(Notification.permission === "granted"){
-        new Notification(title, {
-            body,
-            icon: "/icons/icon-192.png",
-            badge: "/icons/badge-72.png",
-            tag: "doner-status",
-            renotify: true
-        });
+        // Service Worker üzerinden gönder (uygulama kapalıyken de çalışır)
+        if(navigator.serviceWorker && navigator.serviceWorker.controller){
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, {
+                    body,
+                    icon: "/icons/icon-192.png",
+                    badge: "/icons/badge-72.png",
+                    tag: "doner-status",
+                    renotify: true
+                });
+            });
+        } else {
+            // Service Worker yoksa normal bildirim
+            new Notification(title, {
+                body,
+                icon: "/icons/icon-192.png",
+                badge: "/icons/badge-72.png",
+                tag: "doner-status",
+                renotify: true
+            });
+        }
     }
 }
 
