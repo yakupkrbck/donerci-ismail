@@ -507,7 +507,7 @@
    </div>
    <div class="nav-icons">
     <!-- Modern kullanıcı butonu -->
-    <div class="user-panel" id="user-panel-btn" onclick="handleUserPanelClick()">
+    <div class="user-panel" id="user-panel-btn" onclick="if(typeof handleUserPanelClick==='function')handleUserPanelClick();else if(!localStorage.getItem('savedUserPhone'))document.getElementById('modal').style.display='flex'">
      <div class="user-avatar" id="user-avatar">👤</div>
      <div class="user-text">
       <span class="user-name" id="user-panel-name">Giriş Yap</span> <span class="user-sub" id="user-panel-sub">Hesabına gir →</span>
@@ -564,7 +564,7 @@
    <div class="sb-header">
     <button class="sb-close" onclick="closeSidebar()">×</button>
     <div class="sb-img">👤</div>
-    <div id="sb-name" style="font-weight:700;font-size:16px;">Giriş Yap</div>
+    <div id="sb-name" style="font-weight:700;font-size:16px;cursor:pointer;" onclick="if(!activePhone){closeSidebar();setTimeout(()=>openModal('login'),300);}">Giriş Yap</div>
     <div id="sb-phone" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px;"></div>
     <div class="sb-stats" id="sb-stats" style="display:none;">
      <div class="sb-stat" onclick="closeSidebar();openModal('points')">
@@ -576,11 +576,11 @@
     </div>
    </div>
    <ul class="sb-menu">
-    <li onclick="closeSidebar();openModal('profile')">👤 Kişisel Bilgiler</li>
-    <li onclick="closeSidebar();openModal('addresses')">📍 Adreslerim</li>
-    <li onclick="closeSidebar();openModal('history')">🕒 Siparişlerim</li>
-    <li onclick="closeSidebar();openModal('points')">⭐ Sadakat Puanım</li>
-    <li onclick="closeSidebar();openModal('mycoupons')">🎟 Kuponlarım</li>
+    <li onclick="closeSidebar();setTimeout(()=>requireLogin('profile'),300)">👤 Kişisel Bilgiler</li>
+    <li onclick="closeSidebar();setTimeout(()=>requireLogin('addresses'),300)">📍 Adreslerim</li>
+    <li onclick="closeSidebar();setTimeout(()=>requireLogin('history'),300)">🕒 Siparişlerim</li>
+    <li onclick="closeSidebar();setTimeout(()=>requireLogin('points'),300)">⭐ Sadakat Puanım</li>
+    <li onclick="closeSidebar();setTimeout(()=>requireLogin('mycoupons'),300)">🎟 Kuponlarım</li>
     <li onclick="handleLogout()" id="logout-menu-item" style="color:#e74c3c;border-top:8px solid #f4f4f4;display:none;">🚪 Oturumu Kapat</li>
    </ul>
   </div>
