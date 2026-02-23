@@ -543,10 +543,10 @@
   </div>
   <div class="header" id="main-header">
    <div style="display:flex;align-items:center;gap:10px;">
-    <button id="hamburger-btn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-      <span style="display:block;width:20px;height:2px;background:white;border-radius:2px;"></span>
-      <span style="display:block;width:20px;height:2px;background:white;border-radius:2px;"></span>
-      <span style="display:block;width:20px;height:2px;background:white;border-radius:2px;"></span>
+    <button id="hamburger-btn" onclick="if(typeof toggleHamburgerMenu==='function')toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:8px 6px;display:flex;flex-direction:column;justify-content:center;gap:5px;flex-shrink:0;z-index:9999;">
+      <span style="display:block;width:22px;height:2.5px;background:white;border-radius:3px;"></span>
+      <span style="display:block;width:22px;height:2.5px;background:white;border-radius:3px;"></span>
+      <span style="display:block;width:22px;height:2.5px;background:white;border-radius:3px;"></span>
     </button>
     <div class="logo" id="header-logo">DÖNERCİ <span>İSMAİL</span></div>
    </div>
@@ -560,10 +560,10 @@
     </div>
    </div>
   </div>
-  <div id="hamburger-overlay" onclick="closeHamburgerMenu()"></div>
+  <div id="hamburger-overlay" onclick="if(typeof closeHamburgerMenu==='function')closeHamburgerMenu()"></div>
   <div id="hamburger-menu">
-    <a href="/">🍽️ Menü</a>
-    <a href="/bizeulasin">📞 Bize Ulaşın</a>
+    <a href="/menü/">🍽️ Menü</a>
+    <a href="/bizeulasın/">📞 Bize Ulaşın</a>
     <a href="/yonetimpaneli">⚙️ Yönetim Paneli</a>
   </div>
   <div id="order-status-bar"></div>
@@ -2905,6 +2905,7 @@ window.closeHamburgerMenu = () => {
     document.getElementById('hamburger-overlay').classList.remove('open');
 };
 
+window.requireLogin = (sec) => {
     if(!activePhone) { openModal('login'); return; }
     openModal(sec);
 };
