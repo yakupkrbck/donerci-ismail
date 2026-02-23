@@ -23,79 +23,61 @@
         @keyframes pulse-red { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.6); } 70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(230, 57, 70, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); } }
         #imageModal { display: none; position: fixed; inset: 0; z-index: 100; background-color: rgba(0, 0, 0, 0.9); backdrop-filter: blur(5px); align-items: center; justify-content: center; padding: 20px; }
         .modal-content { max-width: 90%; max-height: 80vh; border: 6px solid #e63946; border-radius: 20px; box-shadow: 0 0 30px rgba(230, 57, 70, 0.5); animation: modalZoom 0.3s ease-out; }
-        
-        /* --- YENİ EKLENEN ASİSTAN BUTON STİLİ --- */
-        .bot-button {
-            display: inline-flex;
-            align-items: center;
-            background: rgba(20, 20, 20, 0.9);
-            border: 1px solid #333;
-            border-left: 4px solid #e63946;
-            padding: 10px 20px;
-            border-radius: 12px;
-            margin-top: 15px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            max-width: 320px;
-            position: relative;
-            overflow: hidden;
-        }
-        .bot-button:hover {
-            background: #1a1a1a;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(230, 57, 70, 0.2);
-            border-color: #555;
-        }
-        .bot-icon-wrapper {
-            margin-right: 12px;
-            position: relative;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .bot-text-content {
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-        }
-        .bot-title {
-            font-size: 0.65rem;
-            color: #e63946;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 800;
-        }
-        .bot-msg {
-            font-size: 0.8rem;
-            color: #ddd;
-            font-weight: 500;
-            line-height: 1.2;
-        }
+        .bot-button { display: inline-flex; align-items: center; background: rgba(20, 20, 20, 0.9); border: 1px solid #333; border-left: 4px solid #e63946; padding: 10px 20px; border-radius: 12px; margin-top: 15px; text-decoration: none; transition: all 0.3s ease; max-width: 320px; position: relative; overflow: hidden; }
+        .bot-button:hover { background: #1a1a1a; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(230, 57, 70, 0.2); border-color: #555; }
+        .bot-icon-wrapper { margin-right: 12px; position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .bot-text-content { text-align: left; display: flex; flex-direction: column; }
+        .bot-title { font-size: 0.65rem; color: #e63946; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .bot-msg { font-size: 0.8rem; color: #ddd; font-weight: 500; line-height: 1.2; }
+
+        /* HAMBURGER - SADECE BU EKLENDİ */
+        #hamburger-menu { display:none; position:fixed; top:0; left:0; width:100%; z-index:9999; background:#111; padding:60px 0 20px; box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+        #hamburger-menu.open { display:block; animation:slideDown 0.2s ease; }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        #hamburger-menu a { display:flex; align-items:center; gap:12px; padding:14px 24px; color:white; text-decoration:none; font-size:15px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.07); transition:background 0.2s; }
+        #hamburger-menu a:hover { background:rgba(230,57,70,0.15); }
+        #hamburger-menu a.active { color:#e63946; }
+        #hamburger-overlay { display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.5); }
+        #hamburger-overlay.open { display:block; }
+        #close-hbg { background:none; border:none; cursor:pointer; color:white; font-size:26px; position:absolute; top:14px; right:18px; z-index:10000; line-height:1; }
+        #hbg-btn { position:fixed; top:12px; left:12px; z-index:200; background:rgba(0,0,0,0.6); border:none; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:8px; border-radius:8px; }
+        #hbg-btn span { display:block; width:22px; height:2.5px; background:white; border-radius:3px; }
     </style>
 </head>
 <body class="pb-10">
+
+    <!-- HAMBURGER BUTONU (SOL ÜST SABİT) -->
+    <button id="hbg-btn" onclick="toggleHamburger()">
+        <span></span><span></span><span></span>
+    </button>
+
+    <!-- HAMBURGER OVERLAY & MENU -->
+    <div id="hamburger-overlay" onclick="toggleHamburger()"></div>
+    <div id="hamburger-menu">
+        <button id="close-hbg" onclick="toggleHamburger()">×</button>
+        <a href="/menü/" class="active">🍽️ Menü</a>
+        <a href="/bizeulasın/">📞 Bize Ulaşın</a>
+        <a href="/yonetimpaneli">⚙️ Yönetim Paneli</a>
+        <a href="/">🛒 Online Sipariş</a>
+    </div>
+
     <div id="imageModal" onclick="closeModal()"><span class="absolute top-5 right-5 text-white text-4xl cursor-pointer font-bold">×</span><img id="modalImage" class="modal-content" src="" alt="Dönerci İsmail"></div>
 
     <header class="py-10 text-center bg-gradient-to-b from-red-900/30 to-transparent">
         <h1 class="text-5xl font-extrabold tracking-tighter text-white uppercase italic">Dönerci <span class="text-red-500">İsmail</span></h1>
         <div class="mt-2 flex justify-center items-center gap-2 mb-6"><span class="h-px w-8 bg-red-600"></span><p class="text-gray-400 text-xs font-bold tracking-[0.3em]">GELENEKSEL LEZZET</p><span class="h-px w-8 bg-red-600"></span></div>
-
-        <!-- YENİ EKLENEN ROBOT ASİSTAN BUTONU (Başlangıç) -->
         <div class="flex justify-center w-full px-4">
             <a href="https://www.donercismail.com/sanal-garson" class="bot-button">
                 <div class="bot-icon-wrapper">
-                    <!-- Aşçı şapkalı robot SVG ikon -->
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 6C7 3.5 9.5 2 12 2C14.5 2 17 3.5 17 6V8H7V6Z" fill="#FFFFFF"/> <!-- Şapka -->
-                        <rect x="5" y="8" width="14" height="12" rx="3" fill="#e63946"/> <!-- Kafa -->
-                        <circle cx="9" cy="13" r="1.5" fill="white"/> <!-- Göz -->
-                        <circle cx="15" cy="13" r="1.5" fill="white"/> <!-- Göz -->
-                        <path d="M9 16H15" stroke="white" stroke-width="1.5" stroke-linecap="round"/> <!-- Ağız -->
-                        <path d="M3 11L5 11" stroke="#e63946" stroke-width="2" stroke-linecap="round"/> <!-- Kulak Sol -->
-                        <path d="M19 11L21 11" stroke="#e63946" stroke-width="2" stroke-linecap="round"/> <!-- Kulak Sağ -->
-                        <circle cx="12" cy="1.5" r="1" fill="#e63946"/> <!-- Şapka Tepesi -->
+                        <path d="M7 6C7 3.5 9.5 2 12 2C14.5 2 17 3.5 17 6V8H7V6Z" fill="#FFFFFF"/>
+                        <rect x="5" y="8" width="14" height="12" rx="3" fill="#e63946"/>
+                        <circle cx="9" cy="13" r="1.5" fill="white"/>
+                        <circle cx="15" cy="13" r="1.5" fill="white"/>
+                        <path d="M9 16H15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M3 11L5 11" stroke="#e63946" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M19 11L21 11" stroke="#e63946" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="12" cy="1.5" r="1" fill="#e63946"/>
                     </svg>
                 </div>
                 <div class="bot-text-content">
@@ -104,8 +86,6 @@
                 </div>
             </a>
         </div>
-        <!-- YENİ EKLENEN ROBOT ASİSTAN BUTONU (Bitiş) -->
-
     </header>
 
     <main class="px-4 max-w-5xl mx-auto">
@@ -172,12 +152,15 @@
              <a href="http://googleusercontent.com/maps.google.com/3" target="_blank" class="footer-link flex flex-col items-center"><span>📍</span><span class="text-[10px]">KONUM</span></a>
         </div>
     </footer>
+
     <script src="https://www.fbgcdn.com/embedder/js/ewm2.js" defer async></script>
     <script>
         function openModal(e){const t=e.querySelector("img").src,o=document.getElementById("imageModal"),n=document.getElementById("modalImage");n.src=t,o.style.display="flex",document.body.style.overflow="hidden"}
         function closeModal(){document.getElementById("imageModal").style.display="none",document.body.style.overflow="auto"}
+        function toggleHamburger(){
+            document.getElementById('hamburger-menu').classList.toggle('open');
+            document.getElementById('hamburger-overlay').classList.toggle('open');
+        }
     </script>
 </body>
 </html>
-
-
