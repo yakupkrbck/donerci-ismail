@@ -1529,6 +1529,7 @@ async function processLoginSuccess(id,isAuto=false){
     const snap=await getDoc(doc(db,"phone_customers",activePhone));
     if(snap.exists()){
         const d=snap.data(); userData={name:d.name,phone:d.phone||id};
+        if(d.name) localStorage.setItem('savedUserName', d.name);
         userAddresses=d.addresses||[]; loyaltyPoints=d.loyaltyPoints||0; pointsHistory=d.pointsHistory||[];
         window.selectedAddressIndex=0;
         updateUserDisplay();
@@ -2843,9 +2844,20 @@ window.requireLogin = (sec) => {
 };
 
 window.onload=()=>{
-    checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay();
-    if(activePhone) processLoginSuccess(activePhone,true);
-    else loadFirstOrderBanner();
+    checkStore(); updateStoreUI(); loadMenu(); updateCart();
+    // Önce localStorage'dan hızlı göster
+    if(activePhone){
+        const cachedName = localStorage.getItem('savedUserName');
+        if(cachedName){
+            userData.name = cachedName;
+            userData.phone = activePhone;
+        }
+        updateUserDisplay();
+        processLoginSuccess(activePhone, true);
+    } else {
+        updateUserDisplay();
+        loadFirstOrderBanner();
+    }
     setTimeout(startClosingCountdown, 1500);
 };
 </script>
