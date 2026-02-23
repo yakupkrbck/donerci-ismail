@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dönerci İsmail | Online Sipariş</title>
+  <meta name="description" content="Dönerci İsmail — Online sipariş, döner, pide, cantık ve daha fazlası. Hızlı teslimat, taze malzeme.">
+  <meta name="keywords" content="dönerci ismail, döner sipariş, online sipariş, pide, cantık, lahmacun">
+  <link rel="canonical" href="https://donercismail.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
   <style>
         :root {
@@ -27,7 +30,29 @@
         .work-hours-badge { font-size:10px; font-weight:400; color:#aaa; text-transform:none; display:block; margin-top:3px; }
 
         /* ── KULLANICI BUTONU — MODERN ── */
-        .nav-icons { display:flex; align-items:center; gap:8px; }
+        .header-nav { display:flex; align-items:center; gap:2px; }
+        .header-nav a { color:rgba(255,255,255,0.7); text-decoration:none; font-size:10px; font-weight:600; padding:4px 7px; border-radius:6px; transition:all 0.2s; white-space:nowrap; }
+        .header-nav a:hover { color:white; background:rgba(255,255,255,0.1); }
+        .header-nav a.active { color:white; background:rgba(255,102,0,0.4); }
+        /* Hamburger dropdown */
+        #hamburger-menu {
+            display:none; position:fixed; top:var(--header-height); left:0;
+            background:#1a1a2e; min-width:200px; z-index:9500;
+            border-radius:0 0 14px 0; box-shadow:4px 4px 20px rgba(0,0,0,0.4);
+            overflow:hidden;
+        }
+        #hamburger-menu.open { display:block; animation:slideDown 0.2s ease; }
+        #hamburger-menu a {
+            display:flex; align-items:center; gap:10px;
+            padding:14px 20px; color:white; text-decoration:none;
+            font-size:14px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.07);
+            transition:background 0.2s;
+        }
+        #hamburger-menu a:hover { background:rgba(255,102,0,0.2); }
+        #hamburger-menu a:last-child { border-bottom:none; }
+        #hamburger-overlay { display:none; position:fixed; inset:0; z-index:9400; }
+        #hamburger-overlay.open { display:block; }
+
         .user-panel {
             display:flex; align-items:center;
             background:rgba(255,255,255,0.07);
@@ -199,8 +224,10 @@
         /* ── KAMPANYALAR ── */
         #campaigns-section { margin-bottom:20px; }
         .camp-title { font-size:15px; font-weight:800; color:var(--dark); display:flex; align-items:center; gap:7px; margin-bottom:12px; }
-        .camp-scroll { display:flex; flex-direction:column; gap:12px; }
+        .camp-scroll { display:flex; flex-direction:row; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; -ms-overflow-style:none; }
+        .camp-scroll::-webkit-scrollbar { display:none; }
         .camp-card {
+            flex-shrink:0; width:280px;
             background:white; border-radius:18px; overflow:hidden;
             box-shadow:0 6px 20px rgba(255,102,0,0.15);
             border:1.5px solid rgba(255,102,0,0.1);
@@ -515,8 +542,13 @@
    </div>
   </div>
   <div class="header" id="main-header">
-   <div class="logo" id="header-logo">
-    DÖNERCİ <span>İSMAİL</span>
+   <div style="display:flex;align-items:center;gap:10px;">
+    <button id="hamburger-btn" onclick="toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+      <span style="display:block;width:20px;height:2px;background:white;border-radius:2px;"></span>
+      <span style="display:block;width:20px;height:2px;background:white;border-radius:2px;"></span>
+      <span style="display:block;width:20px;height:2px;background:white;border-radius:2px;"></span>
+    </button>
+    <div class="logo" id="header-logo">DÖNERCİ <span>İSMAİL</span></div>
    </div>
    <div class="nav-icons">
     <!-- Modern kullanıcı butonu -->
@@ -527,6 +559,12 @@
      </div>
     </div>
    </div>
+  </div>
+  <div id="hamburger-overlay" onclick="closeHamburgerMenu()"></div>
+  <div id="hamburger-menu">
+    <a href="/">🍽️ Menü</a>
+    <a href="/bizeulasin">📞 Bize Ulaşın</a>
+    <a href="/yonetimpaneli">⚙️ Yönetim Paneli</a>
   </div>
   <div id="order-status-bar"></div>
   <div class="cart-bar-top normal" id="cart-bar-top">
@@ -1697,10 +1735,11 @@ function launchConfetti(){
 function updateStatusUI(order){
     const h=document.getElementById('main-header'),sb=document.getElementById('order-status-bar'),l=document.getElementById('header-logo');
     h.classList.remove('hazirlaniyor','yolacikti'); sb.className=''; sb.style.display='none';
+    const hbtn = document.getElementById('hamburger-btn'); if(hbtn) hbtn.style.display='flex';
     if(!order){ updateStoreUI(); return; }
     const mc = document.getElementById('main-content');
-    if(order.status==='Hazırlanıyor'){ h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; sb.innerHTML='🔥 Siparişiniz mutfakta hazırlanıyor...'; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); }
-    else if(order.status==='Yola Çıktı'){ h.classList.add('yolacikti'); sb.className='yolacikti'; sb.innerHTML='🛵 Siparişiniz yola çıktı! Az kaldı...'; l.innerHTML='SİPARİŞ <span>YOLDA 🛵</span>'; mc.classList.add('status-visible'); }
+    if(order.status==='Hazırlanıyor'){ h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; sb.innerHTML='🔥 Siparişiniz mutfakta hazırlanıyor...'; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
+    else if(order.status==='Yola Çıktı'){ h.classList.add('yolacikti'); sb.className='yolacikti'; sb.innerHTML='🛵 Siparişiniz yola çıktı! Az kaldı...'; l.innerHTML='SİPARİŞ <span>YOLDA 🛵</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
     else updateStoreUI();
 }
 window.handleForgotPassword=()=>{ const p=tempPhone||userData.phone||""; window.open(`https://wa.me/902242466120?text=${encodeURIComponent(`Merhaba ${p} nolu hesabın şifresini unuttum`)}`,'_blank'); };
@@ -2854,7 +2893,18 @@ window.submitReview = async () => {
     showReviewStep();
 };
 
-window.requireLogin = (sec) => {
+window.toggleHamburgerMenu = () => {
+    const menu = document.getElementById('hamburger-menu');
+    const overlay = document.getElementById('hamburger-overlay');
+    const isOpen = menu.classList.contains('open');
+    if(isOpen){ menu.classList.remove('open'); overlay.classList.remove('open'); }
+    else { menu.classList.add('open'); overlay.classList.add('open'); }
+};
+window.closeHamburgerMenu = () => {
+    document.getElementById('hamburger-menu').classList.remove('open');
+    document.getElementById('hamburger-overlay').classList.remove('open');
+};
+
     if(!activePhone) { openModal('login'); return; }
     openModal(sec);
 };
