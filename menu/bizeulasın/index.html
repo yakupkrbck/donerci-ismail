@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İletişim | Dönerci İsmail Bursa</title>
+    <meta name="description" content="Dönerci İsmail iletişim, adres ve telefon bilgileri. Bursa Osmangazi Mehmet Akif Mahallesi'nde lezzetin adresi. Hemen arayın veya yol tarifi alın.">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f9fafb; color: #1f2937; }
+        h1, h2, .brand-font { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+        .brand-red { color: #E63946; }
+        
+        .contact-card {
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(230, 57, 70, 0.15);
+            border-color: #E63946;
+        }
+        .map-container iframe {
+            width: 100%;
+            height: 450px;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      "name": "Dönerci İsmail",
+      "image": "https://menum.co/storage/menu/16443121566202365c3de78.jpg",
+      "telephone": "+902242466120",
+      "email": "donercismail@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Mehmet Akif Mah. 2. Mutlular Cad. No: 14/A",
+        "addressLocality": "Osmangazi",
+        "addressRegion": "Bursa",
+        "postalCode": "16140",
+        "addressCountry": "TR"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 40.2065, 
+        "longitude": 29.0345 
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          "opens": "09:00",
+          "closes": "20:00"
+        }
+      ],
+      "url": "https://www.donercismail.com",
+      "servesCuisine": "Türk Mutfağı, Döner, Pide, Lahmacun",
+      "priceRange": "₺₺"
+    }
+    </script>
+</head>
+<body class="pb-10 fade-in">
+
+    <header class="text-center py-8 bg-white shadow-sm sticky top-0 z-50">
+        <h1 class="text-3xl font-bold tracking-wider text-gray-800">
+            DÖNERCİ <span class="brand-red">İSMAİL</span>
+        </h1>
+        <p class="text-sm text-gray-500 font-semibold tracking-[0.2em] mt-1">OSMANGAZİ / BURSA</p>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <a href="tel:02242466120" class="contact-card bg-white p-8 rounded-2xl text-center shadow-sm cursor-pointer group">
+                <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                    <i class="fas fa-phone-alt text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Alo Paket</h3>
+                <p class="text-gray-600 text-sm mb-2">Hızlı Sipariş Hattı</p>
+                <p class="text-xl font-bold text-gray-800">0224 246 61 20</p>
+            </a>
+
+            <a href="https://www.google.com/maps/dir//Mehmet+Akif,+D%C3%B6nerci+%C4%B0smail,+2.+Mutlular+Cd.+No:14%2FA,+16140+Osmangazi%2FBursa/@40.222728,29.032223,17z" target="_blank" class="contact-card bg-white p-8 rounded-2xl text-center shadow-sm cursor-pointer group">
+                <div class="w-16 h-16 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#1D3557] group-hover:text-white transition-colors">
+                    <i class="fas fa-map-marker-alt text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Adresimiz</h3>
+                <p class="text-gray-600 text-xs mb-2">Mehmet Akif Mah. 2. Mutlular Cad. No: 14/A</p>
+                <p class="font-bold text-[#1D3557]">Osmangazi / BURSA</p>
+            </a>
+
+            <div class="contact-card bg-white p-8 rounded-2xl text-center shadow-sm group">
+                <div class="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                    <i class="fas fa-clock text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Çalışma Saatleri</h3>
+                <div class="text-sm text-gray-600 space-y-1">
+                    <p><span class="font-semibold">Hafta İçi & Cmt:</span> 09:00 - 20:00</p>
+                    <p><span class="font-semibold">Salı:</span> Kapalı</p>
+                </div>
+                <div class="mt-3 inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                    Sipariş Hattı Açık
+                </div>
+            </div>
+        </div>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <div class="lg:col-span-2 map-container">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3047.457884489622!2d29.03222307656685!3d40.22272807147171!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14ca3e20606d157f%3A0x6a053427f7173b22!2zRMO2bmVyY2kgxLBzbWFpbA!5e0!3m2!1str!2str!4v1709670000000!5m2!1str!2str" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+
+            <div class="flex flex-col gap-4 justify-center">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Hızlı Menü</h3>
+                    
+                    <a href="https://www.google.com/maps/dir//Mehmet+Akif,+D%C3%B6nerci+%C4%B0smail,+2.+Mutlular+Cd.+No:14%2FA,+16140+Osmangazi%2FBursa/@40.222728,29.032223,17z" target="_blank" class="flex items-center gap-4 p-4 mb-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition border border-gray-200">
+                        <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-location-arrow"></i></div>
+                        <div>
+                            <p class="font-bold text-gray-800">Yol Tarifi Al</p>
+                            <p class="text-xs text-gray-500">Navigasyonu Başlat</p>
+                        </div>
+                    </a>
+
+                    <a href="https://wa.me/902242466120" target="_blank" class="flex items-center gap-4 p-4 mb-3 rounded-xl bg-green-50 hover:bg-green-100 transition border border-green-200">
+                        <div class="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center"><i class="fab fa-whatsapp"></i></div>
+                        <div>
+                            <p class="font-bold text-gray-800">WhatsApp Sipariş</p>
+                            <p class="text-xs text-gray-500">Mesaj Gönder</p>
+                        </div>
+                    </a>
+
+                    <a href="tel:02242466120" class="flex items-center gap-4 p-4 rounded-xl bg-red-50 hover:bg-red-100 transition border border-red-200">
+                        <div class="bg-[#E63946] text-white w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-phone"></i></div>
+                        <div>
+                            <p class="font-bold text-gray-800">Hemen Ara</p>
+                            <p class="text-xs text-gray-500">0224 246 61 20</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-6 text-gray-400 text-sm border-t">
+        <p>© 2024 Dönerci İsmail. Mehmet Akif Mah. 2. Mutlular Cad. No:14/A</p>
+    </footer>
+
+</body>
+</html>
