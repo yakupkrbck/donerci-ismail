@@ -1212,7 +1212,7 @@ window.updStatus=async(id,s)=>{
             const snap=await getDocs(q);
             if(!snap.empty){
               const earnedPoints=Math.floor(order.total/10);
-              await updateDoc(snap.docs[0].ref,{orderCount:increment(1),lastOrderDate:new Date(),points:increment(earnedPoints)});
+              await updateDoc(snap.docs[0].ref,{orderCount:increment(1),lastOrderDate:new Date(),loyaltyPoints:increment(earnedPoints)});
               toast(`✅ Teslim edildi. Müşteri ${earnedPoints} puan kazandı!`);
             } else { toast('⚠️ Teslim edildi ama müşteri kaydı bulunamadı'); }
           }
@@ -1324,7 +1324,7 @@ async function fetchCustomers(){
       let addr='-';
       if(data.addresses?.length>0) addr=data.addresses[0].address||data.addresses[0].details||'-';
       else addr=data.details||data.address||data.adres||'-';
-      allCustomers.push({id:d.id,name:data.fullName||data.name||'İsimsiz',phone,address:addr,pin:data.pin||data.password||'-',blacklist:data.blacklist||false,points:data.points||0,orderCount:data.orderCount||0,lastOrderDate:data.lastOrderDate||null});
+      allCustomers.push({id:d.id,name:data.fullName||data.name||'İsimsiz',phone,address:addr,pin:data.pin||data.password||'-',blacklist:data.blacklist||false,points:data.loyaltyPoints||data.points||0,orderCount:data.orderCount||0,lastOrderDate:data.lastOrderDate||null});
     };
     phSnap.forEach(proc); usSnap.forEach(proc); renderCustomers(allCustomers);
   }catch(e){ tbody.innerHTML=`<tr><td colspan="7" style="color:red;text-align:center;">Hata: ${e.message}</td></tr>`; }
@@ -1354,7 +1354,7 @@ function renderCustomers(list){
 window.filterCustomers=()=>{ const q=document.getElementById('cust-search').value.toLowerCase(); renderCustomers(allCustomers.filter(u=>u.name.toLowerCase().includes(q)||u.phone.includes(q))); };
 window.openEditCust=async id=>{
   const snap=await getDoc(doc(db,"phone_customers",id)); if(!snap.exists()) return; const d=snap.data();
-  document.getElementById('cust-edit-id').value=id; document.getElementById('cust-name').value=d.name||''; document.getElementById('cust-phone').value=d.phone||id; document.getElementById('cust-addr').value=d.addresses?.[0]?.address||d.address||''; document.getElementById('cust-pin').value=''; document.getElementById('cust-blacklist').value=String(d.blacklist||false); document.getElementById('cust-points').value=d.points||0;
+  document.getElementById('cust-edit-id').value=id; document.getElementById('cust-name').value=d.name||''; document.getElementById('cust-phone').value=d.phone||id; document.getElementById('cust-addr').value=d.addresses?.[0]?.address||d.address||''; document.getElementById('cust-pin').value=''; document.getElementById('cust-blacklist').value=String(d.blacklist||false); document.getElementById('cust-points').value=d.loyaltyPoints||d.points||0;
   document.getElementById('cust-modal-title').innerHTML=`👤 Müşteri Düzenle <button class="modal-close" onclick="closeModal('cust-modal')">×</button>`;
   loadCustOrdersInModal(d.phone||id); openModal('cust-modal');
 };
@@ -1369,7 +1369,7 @@ async function loadCustOrdersInModal(phone){
 }
 window.saveCust=async()=>{
   const id=document.getElementById('cust-edit-id').value, name=document.getElementById('cust-name').value, addr=document.getElementById('cust-addr').value, pin=document.getElementById('cust-pin').value, bl=document.getElementById('cust-blacklist').value==='true', pts=parseInt(document.getElementById('cust-points').value)||0;
-  const upd={name,blacklist:bl,points:pts}; if(addr) upd.addresses=[{label:'Ev',address:addr}]; if(pin&&pin.length===4) upd.pin=pin;
+  const upd={name,blacklist:bl,loyaltyPoints:pts}; if(addr) upd.addresses=[{label:'Ev',address:addr}]; if(pin&&pin.length===4) upd.pin=pin;
   try{ await setDoc(doc(db,"phone_customers",id),upd,{merge:true}); toast("Müşteri güncellendi ✅"); closeModal('cust-modal'); fetchCustomers(); }catch(e){ toast("❌ Hata: "+e.message); }
 };
 
@@ -2060,8 +2060,21 @@ window.updateVolume = (val) => {
 window.reqNotif=()=>{ if("Notification" in window) Notification.requestPermission().then(p=>{ toast(p==='granted'?'✅ Bildirim izni verildi':'⚠️ Bildirim izni reddedildi',p!=='granted'); }); };
 function sendNotif(o){ 
     const s = getNotifSettings();
-    if((s.popupEnabled !== false) && Notification.permission==="granted") 
-        new Notification("🔔 YENİ SİPARİŞ!",{body:`${o.customer} — ${o.total} TL`,requireInteraction:true}); 
+    console.log('sendNotif çağrıldı, popupEnabled:', s.popupEnabled, 'izin:', Notification.permission);
+    if(s.popupEnabled === false) return;
+    if(!("Notification" in window)) return;
+    if(Notification.permission === "granted"){
+        try {
+            const n = new Notification("🔔 YENİ SİPARİŞ!", {
+                body: `${o.customer} — ${o.total} TL\n📍 ${(o.addressDetails||'').substring(0,40)}`,
+                requireInteraction: true,
+                tag: 'new-order-' + o.id
+            });
+            console.log('Bildirim oluşturuldu:', n);
+        } catch(e){ console.error('Bildirim hatası:', e); }
+    } else if(Notification.permission !== "denied"){
+        Notification.requestPermission().then(p => { if(p==='granted') sendNotif(o); });
+    }
 }
 function toast(msg,isErr=false){ const t=document.createElement('div'); t.className='toast'+(isErr?' err':''); t.innerHTML=msg; document.getElementById('toast-c').appendChild(t); setTimeout(()=>t.remove(),3000); }
 
