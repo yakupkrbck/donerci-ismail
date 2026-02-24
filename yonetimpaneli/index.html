@@ -1019,7 +1019,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, query, orderBy, where, onSnapshot, doc,
-         updateDoc, getDocs, writeBatch, addDoc, deleteDoc, setDoc, getDoc, increment }
+         updateDoc, getDocs, writeBatch, addDoc, deleteDoc, setDoc, getDoc, increment, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const fbCfg = {
@@ -1967,11 +1967,16 @@ document.querySelectorAll('.modal-bg').forEach(bg=>{ bg.addEventListener('click'
 
 function playAlarm(){ 
     const settings = getNotifSettings();
-    if(settings.newOrderEnabled) {
-        cancelAlarm.pause(); cancelAlarm.currentTime=0;
-        alarm.src = settings.newOrderSound;
-        alarm.loop = settings.loop;
-        alarm.volume = settings.volume;
+    if(!settings.newOrderEnabled) return;
+    cancelAlarm.pause(); cancelAlarm.currentTime=0;
+    const newSrc = settings.newOrderSound;
+    alarm.loop = settings.loop;
+    alarm.volume = settings.volume;
+    if(alarm.src !== newSrc && newSrc) {
+        alarm.src = newSrc;
+        alarm.load();
+        alarm.addEventListener('canplay', ()=>{ alarm.play().catch(()=>{}); }, {once:true});
+    } else {
         alarm.currentTime=0; alarm.play().catch(()=>{});
     }
 }
@@ -1979,17 +1984,38 @@ window.stopAlarm=()=>{ alarm.pause(); alarm.currentTime=0; cancelAlarm.pause(); 
 
 function playCancelAlarm(){
     const settings = getNotifSettings();
-    if(settings.cancelEnabled){
-        alarm.pause(); alarm.currentTime=0;
-        cancelAlarm.src = settings.cancelSound;
-        cancelAlarm.loop = false;
-        cancelAlarm.volume = settings.volume;
+    if(!settings.cancelEnabled) return;
+    alarm.pause(); alarm.currentTime=0;
+    const newSrc = settings.cancelSound;
+    cancelAlarm.loop = false;
+    cancelAlarm.volume = settings.volume;
+    if(cancelAlarm.src !== newSrc && newSrc) {
+        cancelAlarm.src = newSrc;
+        cancelAlarm.load();
+        cancelAlarm.addEventListener('canplay', ()=>{ cancelAlarm.play().catch(()=>{}); }, {once:true});
+    } else {
         cancelAlarm.currentTime=0; cancelAlarm.play().catch(()=>{});
     }
 }
 
 function getNotifSettings(){
-    try { return JSON.parse(localStorage.getItem('notifSettings')||'{}'); } catch(e){ return {}; }
+    try { 
+        const s = JSON.parse(localStorage.getItem('notifSettings')||'{}');
+        // Varsayılan değerler
+        return {
+            newOrderEnabled: s.newOrderEnabled !== undefined ? s.newOrderEnabled : true,
+            cancelEnabled: s.cancelEnabled !== undefined ? s.cancelEnabled : true,
+            popupEnabled: s.popupEnabled !== undefined ? s.popupEnabled : true,
+            loop: s.loop !== undefined ? s.loop : true,
+            volume: s.volume !== undefined ? s.volume : 1,
+            newOrderSound: s.newOrderSound || 'https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3',
+            cancelSound: s.cancelSound || 'https://assets.mixkit.co/active_storage/sfx/2201/2201-preview.mp3',
+        };
+    } catch(e){ 
+        return { newOrderEnabled:true, cancelEnabled:true, popupEnabled:true, loop:true, volume:1,
+            newOrderSound:'https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3',
+            cancelSound:'https://assets.mixkit.co/active_storage/sfx/2201/2201-preview.mp3' };
+    }
 }
 
 function loadNotifSettings(){
@@ -2039,8 +2065,18 @@ function sendNotif(o){
 }
 function toast(msg,isErr=false){ const t=document.createElement('div'); t.className='toast'+(isErr?' err':''); t.innerHTML=msg; document.getElementById('toast-c').appendChild(t); setTimeout(()=>t.remove(),3000); }
 
-window.onload=()=>{ document.getElementById('panel-email').focus(); initReportDates(); loadNotifSettings(); document.body.addEventListener('click',()=>{ alarm.play().then(()=>alarm.pause()).catch(()=>{}); },{once:true}); };
+window.onload=()=>{ 
+    document.getElementById('panel-email').focus(); 
+    initReportDates(); 
+    loadNotifSettings();
+    // Alarm src'yi ayarlardan başlat
+    const s = getNotifSettings();
+    alarm.src = s.newOrderSound;
+    alarm.loop = s.loop;
+    alarm.volume = s.volume;
+    alarm.load();
+    document.body.addEventListener('click',()=>{ alarm.play().then(()=>alarm.pause()).catch(()=>{}); },{once:true}); 
+};
 </script>
 </body>
 </html>
-
