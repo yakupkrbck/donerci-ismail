@@ -1682,7 +1682,7 @@ async function processLoginSuccess(id,isAuto=false){
 }
 
 // ── DURUM DİNLEYİCİ ──
-let lastNotifiedOrderId = null;
+let lastNotifiedOrderId = localStorage.getItem('lastDeliveredOrderId') || null;
 let _notifiedStatus = {}; // const → let yapıldı (logout'ta reset için)
 let _statusUnsubscribe = null; // listener referansı (leak önlemek için)
 
@@ -1696,6 +1696,11 @@ function startStatusListener(phone){
         // Aktif (teslim/iptal olmayan) siparişi bul
         const active=docs.filter(o=>o.status!=='Teslim Edildi'&&o.status!=='İptal').sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0))[0];
         updateStatusUI(active);
+
+        // Sayfa yüklenince zaten Hazırlanıyor ise timer başlat
+        if(active && active.status==='Hazırlanıyor') {
+            startCancelTimer(active.id);
+        }
 
         // Durum değişince bildirim gönder
         docs.forEach(o=>{
@@ -1723,6 +1728,7 @@ function startStatusListener(phone){
             const oDate=(o.date?.seconds||0)*1000;
             if(oDate>fiveMinsAgo && o.id!==lastNotifiedOrderId){
                 lastNotifiedOrderId=o.id;
+                localStorage.setItem('lastDeliveredOrderId', o.id);
                 showDeliveryNotification();
             }
         });
@@ -2034,7 +2040,7 @@ window.handleLogout=()=>{
     if(currentOrderListener){ currentOrderListener(); currentOrderListener=null; }
     if(_statusUnsubscribe){ _statusUnsubscribe(); _statusUnsubscribe=null; }
     if(_loyaltyUnsubscribe){ _loyaltyUnsubscribe(); _loyaltyUnsubscribe=null; }
-    _notifiedStatus = {}; lastNotifiedOrderId = null; // bildirim geçmişini temizle
+    _notifiedStatus = {}; lastNotifiedOrderId = null; localStorage.removeItem('lastDeliveredOrderId'); // bildirim geçmişini temizle
     // UI güncelle
     closeSidebar();
     updateUserDisplay();
@@ -3010,6 +3016,7 @@ function startCancelTimer(orderId) {
 }
 
 function updateCancelTimerDisplay() {
+    if(!_cancelDeadline) return; // deadline henüz set edilmedi
     const remaining = Math.max(0, _cancelDeadline - Date.now());
     const btn = document.getElementById("cancel-order-btn");
     const txt = document.getElementById("cancel-timer-txt");
@@ -3021,9 +3028,10 @@ function updateCancelTimerDisplay() {
 }
 
 window.showCancelConfirm = () => {
+    if(!_cancelDeadline){ showToast('⏱ Sayaç henüz başlamadı, lütfen bekleyin...'); return; }
     const remaining = Math.max(0, _cancelDeadline - Date.now());
-    if(remaining <= 0){ showToast("⏱ İptal süresi doldu!"); return; }
-    if(!confirm("Siparişinizi iptal etmek istediğinizden emin misiniz?")) return;
+    if(remaining <= 0){ showToast('⏱ İptal süresi doldu!'); return; }
+    if(!confirm('Siparişinizi iptal etmek istediğinizden emin misiniz?')) return;
     cancelOrder();
 };
 
