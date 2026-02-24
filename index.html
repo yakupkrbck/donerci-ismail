@@ -1420,6 +1420,16 @@ window.finalizeOrder=async()=>{
     if (!storeStatus.open) {
       return alert(`⚠️ MAĞAZA KAPALI\n\n${storeStatus.message}`);
     }
+
+    // Kara liste kontrolü
+    const phone = userData.phone || activePhone;
+    const isBlacklisted = await checkBlacklist(phone);
+    if(isBlacklisted){
+        openModal('rejected');
+        document.querySelector('#sec-rejected h3').textContent = 'Sipariş Verilemiyor';
+        document.querySelector('#sec-rejected p').textContent = 'Üzgünüz, bu hesaptan sipariş verilemiyor. Bilgi için bize ulaşın.';
+        return;
+    }
     
     openModal('waiting');
     try{
@@ -1652,6 +1662,7 @@ function startStatusListener(phone){
 
             if(o.status==='Hazırlanıyor'){
                 showForegroundNotif("🔥 Siparişiniz Hazırlanıyor!","Mutfak siparişinizi hazırlıyor. Yakında yola çıkacak!");
+                startCancelTimer(o.id); // 3 dk iptal sayacı başlat
             } else if(o.status==='Yola Çıktı'){
                 showForegroundNotif("🛵 Siparişiniz Yola Çıktı!","Kurye kapınıza doğru yola çıktı. Az kaldı!");
             } else if(o.status==='Teslim Edildi'){
@@ -1738,7 +1749,7 @@ function updateStatusUI(order){
     const hbtn = document.getElementById('hamburger-btn'); if(hbtn) hbtn.style.display='flex';
     if(!order){ updateStoreUI(); return; }
     const mc = document.getElementById('main-content');
-    if(order.status==='Hazırlanıyor'){ h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; sb.innerHTML='🔥 Siparişiniz mutfakta hazırlanıyor...'; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
+    if(order.status==='Hazırlanıyor'){ h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; sb.innerHTML='🔥 Siparişiniz mutfakta hazırlanıyor... <button id="cancel-order-btn" onclick="showCancelConfirm()" style="margin-left:12px;background:rgba(255,255,255,0.25);border:1px solid white;color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">⏱ İptal Et <span id="cancel-timer-txt"></span></button>'; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
     else if(order.status==='Yola Çıktı'){ h.classList.add('yolacikti'); sb.className='yolacikti'; sb.innerHTML='🛵 Siparişiniz yola çıktı! Az kaldı...'; l.innerHTML='SİPARİŞ <span>YOLDA 🛵</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
     else updateStoreUI();
 }
@@ -2904,6 +2915,66 @@ window.closeHamburgerMenu = () => {
     document.getElementById('hamburger-menu').classList.remove('open');
     document.getElementById('hamburger-overlay').classList.remove('open');
 };
+
+// ── İPTAL SAYACI ──
+let _cancelTimerInterval = null;
+let _cancelOrderId = null;
+let _cancelDeadline = null;
+
+function startCancelTimer(orderId) {
+    if(_cancelOrderId === orderId) return;
+    _cancelOrderId = orderId;
+    getDoc(doc(db,"orders",orderId)).then(d=>{
+        if(!d.exists()) return;
+        const data = d.data();
+        const approvedAt = data.approvedAt?.toMillis ? data.approvedAt.toMillis() : Date.now();
+        _cancelDeadline = approvedAt + 3*60*1000;
+        updateCancelTimerDisplay();
+        if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
+        _cancelTimerInterval = setInterval(updateCancelTimerDisplay, 1000);
+    }).catch(()=>{
+        _cancelDeadline = Date.now() + 3*60*1000;
+        updateCancelTimerDisplay();
+        if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
+        _cancelTimerInterval = setInterval(updateCancelTimerDisplay, 1000);
+    });
+}
+
+function updateCancelTimerDisplay() {
+    const remaining = Math.max(0, _cancelDeadline - Date.now());
+    const btn = document.getElementById("cancel-order-btn");
+    const txt = document.getElementById("cancel-timer-txt");
+    if(!btn) return;
+    if(remaining <= 0){ btn.style.display="none"; clearInterval(_cancelTimerInterval); return; }
+    const mins = Math.floor(remaining/60000);
+    const secs = Math.floor((remaining%60000)/1000);
+    if(txt) txt.textContent = "("+mins+":"+secs.toString().padStart(2,"0")+")";
+}
+
+window.showCancelConfirm = () => {
+    const remaining = Math.max(0, _cancelDeadline - Date.now());
+    if(remaining <= 0){ showToast("⏱ İptal süresi doldu!"); return; }
+    if(!confirm("Siparişinizi iptal etmek istediğinizden emin misiniz?")) return;
+    cancelOrder();
+};
+
+async function cancelOrder() {
+    if(!_cancelOrderId) return;
+    try {
+        await updateDoc(doc(db,"orders",_cancelOrderId), { status: "İptal", cancelledBy: "customer", cancelledAt: serverTimestamp() });
+        clearInterval(_cancelTimerInterval);
+        _cancelOrderId = null;
+        showToast("✅ Siparişiniz iptal edildi.");
+    } catch(e) { showToast("❌ İptal işlemi başarısız."); }
+}
+
+async function checkBlacklist(phone) {
+    try { 
+        const d = await getDoc(doc(db,"phone_customers",phone)); 
+        return d.exists() && d.data().blacklist === true;
+    }
+    catch(e) { return false; }
+}
 
 window.requireLogin = (sec) => {
     if(!activePhone) { openModal('login'); return; }
