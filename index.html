@@ -972,6 +972,41 @@ function calcPointsDiscount(){
     return rewards*REWARD_TL;
 }
 
+async function syncPointsFromOrders(phone) {
+    try {
+        // Firebase'deki mevcut puanı al
+        const custDoc = await getDoc(doc(db,"phone_customers",phone));
+        if(!custDoc.exists()) return;
+        const currentPts = custDoc.data().loyaltyPoints || 0;
+
+        // Teslim edilmiş siparişlerden puan hesapla
+        const ordersSnap = await getDocs(query(
+            collection(db,"orders"),
+            where("phone","==",phone),
+            where("status","==","Teslim Edildi")
+        ));
+        if(ordersSnap.empty) return;
+
+        // Her teslim edilmiş sipariş için 10TL = 1 puan
+        const earnedTotal = ordersSnap.docs.reduce((sum, d) => {
+            return sum + Math.floor((d.data().total||0) / 10);
+        }, 0);
+
+        // Harcanan puanları da hesapla (siparişlerdeki pointsUsed)
+        const spentTotal = ordersSnap.docs.reduce((sum, d) => {
+            return sum + (d.data().pointsUsed || 0);
+        }, 0);
+
+        const correctPts = Math.max(0, earnedTotal - spentTotal);
+
+        // Eğer Firebase'deki puan hesaplanan puandan düşükse güncelle
+        if(currentPts < correctPts) {
+            await updateDoc(doc(db,"phone_customers",phone), { loyaltyPoints: correctPts });
+            console.log(`✅ Puan eşitlendi: ${currentPts} → ${correctPts}`);
+        }
+    } catch(e) { console.log('Puan eşitleme hatası:', e); }
+}
+
 async function loadLoyalty(phone) {
     try {
         const s=await getDoc(doc(db,"phone_customers",phone));
@@ -1471,15 +1506,11 @@ window.finalizeOrder=async()=>{
         
         const ph=userData.phone||activePhone;
         if(ph){
-            // Sadece kullanılan puanları düş (kazanım panel'den teslim edilince olacak)
             if(usingPoints&&usedPtsRewards>0){
                 const spentPts=usedPtsRewards*PTS_GOAL;
-                
-                // Firestore'da puanları düş
                 await updateDoc(doc(db,"phone_customers",ph), {
-                  points: increment(-spentPts)
+                  loyaltyPoints: increment(-spentPts)
                 });
-                
                 console.log(`✅ ${spentPts} puan kullanıldı`);
             }
         }
@@ -1618,6 +1649,8 @@ async function processLoginSuccess(id,isAuto=false){
         document.getElementById('sb-stats').style.display='flex';
         refreshMinFromAddr();
         startStatusListener(userData.phone||id);
+        // Puan eşitleme — kayıt silinip yeniden oluşturulmuşsa puanları geri hesapla
+        syncPointsFromOrders(userData.phone||id);
         // FCM token al (bildirimler için)
         if(!isAuto) initFcmToken(userData.phone||id);
         else if('Notification' in window && Notification.permission==='granted') initFcmToken(userData.phone||id);
@@ -1749,7 +1782,13 @@ function updateStatusUI(order){
     const hbtn = document.getElementById('hamburger-btn'); if(hbtn) hbtn.style.display='flex';
     if(!order){ updateStoreUI(); return; }
     const mc = document.getElementById('main-content');
-    if(order.status==='Hazırlanıyor'){ h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; sb.innerHTML='🔥 Siparişiniz mutfakta hazırlanıyor... <button id="cancel-order-btn" onclick="showCancelConfirm()" style="margin-left:12px;background:rgba(255,255,255,0.25);border:1px solid white;color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">⏱ İptal Et <span id="cancel-timer-txt"></span></button>'; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
+    if(order.status==='Hazırlanıyor'){ 
+        h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; 
+        // Cancel butonu zaten varsa yeniden yazma (timer sıfırlanmasın)
+        if(!document.getElementById('cancel-order-btn')){
+            sb.innerHTML='🔥 Siparişiniz mutfakta hazırlanıyor... <button id="cancel-order-btn" onclick="showCancelConfirm()" style="margin-left:12px;background:rgba(255,255,255,0.25);border:1px solid white;color:white;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">⏱ İptal Et <span id="cancel-timer-txt"></span></button>';
+        }
+        sb.style.display=''; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
     else if(order.status==='Yola Çıktı'){ h.classList.add('yolacikti'); sb.className='yolacikti'; sb.innerHTML='🛵 Siparişiniz yola çıktı! Az kaldı...'; l.innerHTML='SİPARİŞ <span>YOLDA 🛵</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
     else updateStoreUI();
 }
