@@ -1212,7 +1212,23 @@ window.updStatus=async(id,s)=>{
             const snap=await getDocs(q);
             if(!snap.empty){
               const earnedPoints=Math.floor(order.total/10);
-              await updateDoc(snap.docs[0].ref,{orderCount:increment(1),lastOrderDate:new Date(),loyaltyPoints:increment(earnedPoints)});
+              const custData = snap.docs[0].data();
+              const history = custData.pointsHistory || [];
+              const currentPts = custData.loyaltyPoints || 0;
+              const newEntry = {
+                earned: earnedPoints,
+                total: currentPts + earnedPoints,
+                date: new Date().toLocaleDateString('tr-TR'),
+                orderTotal: order.total
+              };
+              history.unshift(newEntry);
+              if(history.length > 20) history.pop();
+              await updateDoc(snap.docs[0].ref,{
+                orderCount: increment(1),
+                lastOrderDate: new Date(),
+                loyaltyPoints: increment(earnedPoints),
+                pointsHistory: history
+              });
               toast(`✅ Teslim edildi. Müşteri ${earnedPoints} puan kazandı!`);
             } else { toast('⚠️ Teslim edildi ama müşteri kaydı bulunamadı'); }
           }
@@ -1312,21 +1328,31 @@ window.saveProduct=async()=>{
 };
 
 // ── MÜŞTERİLER ─────────────────────────────────────────────────────────────
+let _customersUnsubscribe = null;
 async function fetchCustomers(){
   const tbody=document.getElementById('cust-body');
   tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;">Yükleniyor...</td></tr>';
+  
+  // Önceki listener varsa kapat
+  if(_customersUnsubscribe){ _customersUnsubscribe(); _customersUnsubscribe=null; }
+  
   try{
-    const [usSnap,phSnap]=await Promise.all([getDocs(collection(db,"users")),getDocs(collection(db,"phone_customers"))]);
-    const seen=new Set(); allCustomers=[];
-    const proc=d=>{
-      const data=d.data(); const phone=data.phoneNumber||data.phone||d.id||'-';
-      if(seen.has(phone)) return; seen.add(phone);
-      let addr='-';
-      if(data.addresses?.length>0) addr=data.addresses[0].address||data.addresses[0].details||'-';
-      else addr=data.details||data.address||data.adres||'-';
-      allCustomers.push({id:d.id,name:data.fullName||data.name||'İsimsiz',phone,address:addr,pin:data.pin||data.password||'-',blacklist:data.blacklist||false,points:data.loyaltyPoints||data.points||0,orderCount:data.orderCount||0,lastOrderDate:data.lastOrderDate||null});
-    };
-    phSnap.forEach(proc); usSnap.forEach(proc); renderCustomers(allCustomers);
+    // users koleksiyonunu tek seferlik al
+    const usSnap = await getDocs(collection(db,"users"));
+    
+    // phone_customers'ı gerçek zamanlı dinle
+    _customersUnsubscribe = onSnapshot(collection(db,"phone_customers"), phSnap => {
+      const seen=new Set(); allCustomers=[];
+      const proc=d=>{
+        const data=d.data(); const phone=data.phoneNumber||data.phone||d.id||'-';
+        if(seen.has(phone)) return; seen.add(phone);
+        let addr='-';
+        if(data.addresses?.length>0) addr=data.addresses[0].address||data.addresses[0].details||'-';
+        else addr=data.details||data.address||data.adres||'-';
+        allCustomers.push({id:d.id,name:data.fullName||data.name||'İsimsiz',phone,address:addr,pin:data.pin||data.password||'-',blacklist:data.blacklist||false,points:data.loyaltyPoints||data.points||0,orderCount:data.orderCount||0,lastOrderDate:data.lastOrderDate||null});
+      };
+      phSnap.forEach(proc); usSnap.forEach(proc); renderCustomers(allCustomers);
+    });
   }catch(e){ tbody.innerHTML=`<tr><td colspan="7" style="color:red;text-align:center;">Hata: ${e.message}</td></tr>`; }
 }
 function renderCustomers(list){
@@ -1848,6 +1874,7 @@ window.showTab=(id,el)=>{
   if(id==='coupons')  fetchCoupons();
   if(id==='campaigns') fetchCampaigns();
   if(id==='customers') fetchCustomers();
+  else if(_customersUnsubscribe){ _customersUnsubscribe(); _customersUnsubscribe=null; }
   if(id==='reports'){ const hasDate=document.getElementById('rpt-date-start')?.value; if(!hasDate) initReportDates(); loadReports(); }
   if(id==='daily-report'){ const hasDate=document.getElementById('daily-date')?.value; if(!hasDate) setToday(); else loadDailyReport(); }
   if(id==='store-hours') loadStoreHours();
@@ -2058,19 +2085,51 @@ window.updateVolume = (val) => {
 };
 
 window.reqNotif=()=>{ if("Notification" in window) Notification.requestPermission().then(p=>{ toast(p==='granted'?'✅ Bildirim izni verildi':'⚠️ Bildirim izni reddedildi',p!=='granted'); }); };
+// ── SERVICE WORKER KAYDI ──
+let _swRegistration = null;
+if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+        _swRegistration = reg;
+        console.log('SW kayıtlı');
+    }).catch(e => console.log('SW hatası:', e));
+    
+    // SW'den gelen mesajları dinle (Onayla/Reddet)
+    navigator.serviceWorker.addEventListener('message', async event => {
+        const { type, orderId } = event.data || {};
+        if(type === 'APPROVE_ORDER' && orderId) {
+            await approve(orderId);
+        } else if(type === 'REJECT_ORDER' && orderId) {
+            await updStatus(orderId, 'İptal');
+        }
+    });
+}
+
 function sendNotif(o){ 
     const s = getNotifSettings();
     console.log('sendNotif çağrıldı, popupEnabled:', s.popupEnabled, 'izin:', Notification.permission);
     if(s.popupEnabled === false) return;
     if(!("Notification" in window)) return;
+    
+    const itemsList = (o.items||[]).map(i=>i.n).join(', ');
+    const notifOptions = {
+        body: `👤 ${o.customer} — ${o.total} TL\n🛒 ${itemsList}\n📍 ${(o.addressDetails||'').substring(0,35)}`,
+        requireInteraction: true,
+        tag: 'new-order-' + o.id,
+        data: { orderId: o.id },
+        actions: [
+            { action: 'approve', title: '✅ Onayla' },
+            { action: 'reject',  title: '❌ Reddet' }
+        ]
+    };
+
     if(Notification.permission === "granted"){
         try {
-            const n = new Notification("🔔 YENİ SİPARİŞ!", {
-                body: `${o.customer} — ${o.total} TL\n📍 ${(o.addressDetails||'').substring(0,40)}`,
-                requireInteraction: true,
-                tag: 'new-order-' + o.id
-            });
-            console.log('Bildirim oluşturuldu:', n);
+            // Service Worker varsa SW üzerinden gönder (action butonları için)
+            if(_swRegistration) {
+                _swRegistration.showNotification("🔔 YENİ SİPARİŞ!", notifOptions);
+            } else {
+                new Notification("🔔 YENİ SİPARİŞ!", notifOptions);
+            }
         } catch(e){ console.error('Bildirim hatası:', e); }
     } else if(Notification.permission !== "denied"){
         Notification.requestPermission().then(p => { if(p==='granted') sendNotif(o); });
