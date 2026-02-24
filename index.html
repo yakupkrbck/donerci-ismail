@@ -1508,8 +1508,20 @@ window.finalizeOrder=async()=>{
         if(ph){
             if(usingPoints&&usedPtsRewards>0){
                 const spentPts=usedPtsRewards*PTS_GOAL;
+                const custSnap = await getDoc(doc(db,"phone_customers",ph));
+                const history = custSnap.exists() ? (custSnap.data().pointsHistory||[]) : [];
+                const currentPts = custSnap.exists() ? (custSnap.data().loyaltyPoints||0) : 0;
+                history.unshift({
+                    earned: -spentPts,
+                    total: currentPts - spentPts,
+                    date: new Date().toLocaleDateString('tr-TR'),
+                    orderTotal: total,
+                    type: 'spent'
+                });
+                if(history.length>20) history.pop();
                 await updateDoc(doc(db,"phone_customers",ph), {
-                  loyaltyPoints: increment(-spentPts)
+                    loyaltyPoints: increment(-spentPts),
+                    pointsHistory: history
                 });
                 console.log(`✅ ${spentPts} puan kullanıldı`);
             }
@@ -1955,7 +1967,10 @@ function renderPoints(){
     const hist=document.getElementById('pts-history');
     hist.innerHTML=!pointsHistory.length
         ?'<div style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;padding:10px;">Henüz işlem yok</div>'
-        :pointsHistory.slice(0,8).map(e=>`<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — ${e.orderTotal} TL sipariş</span><span class="ph-plus">+${e.earned} puan</span></div>`).join('');
+        :pointsHistory.slice(0,8).map(e=>{
+            if(e.type==='spent') return `<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — Puan kullanıldı</span><span style="color:#e74c3c;font-weight:700;">${e.earned} puan</span></div>`;
+            return `<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — ${e.orderTotal} TL sipariş</span><span class="ph-plus">+${e.earned} puan</span></div>`;
+        }).join('');
 }
 
 // ── GEÇMİŞ ──
@@ -2961,22 +2976,37 @@ let _cancelOrderId = null;
 let _cancelDeadline = null;
 
 function startCancelTimer(orderId) {
-    if(_cancelOrderId === orderId) return;
+    if(_cancelOrderId === orderId && _cancelDeadline) return; // zaten başladı
     _cancelOrderId = orderId;
-    getDoc(doc(db,"orders",orderId)).then(d=>{
-        if(!d.exists()) return;
-        const data = d.data();
-        const approvedAt = data.approvedAt?.toMillis ? data.approvedAt.toMillis() : Date.now();
-        _cancelDeadline = approvedAt + 3*60*1000;
-        updateCancelTimerDisplay();
-        if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
-        _cancelTimerInterval = setInterval(updateCancelTimerDisplay, 1000);
-    }).catch(()=>{
-        _cancelDeadline = Date.now() + 3*60*1000;
-        updateCancelTimerDisplay();
-        if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
-        _cancelTimerInterval = setInterval(updateCancelTimerDisplay, 1000);
-    });
+    
+    let retries = 0;
+    function tryLoad() {
+        getDoc(doc(db,"orders",orderId)).then(d=>{
+            if(!d.exists()) return;
+            const data = d.data();
+            if(data.approvedAt && data.approvedAt.toMillis) {
+                // approvedAt geldi, deadline hesapla
+                _cancelDeadline = data.approvedAt.toMillis() + 3*60*1000;
+            } else if(retries < 5) {
+                // approvedAt henüz yazılmadı, 1 sn sonra tekrar dene
+                retries++;
+                setTimeout(tryLoad, 1000);
+                return;
+            } else {
+                // 5 deneme sonra şimdiden başlat
+                _cancelDeadline = Date.now() + 3*60*1000;
+            }
+            if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
+            _cancelTimerInterval = setInterval(updateCancelTimerDisplay, 1000);
+            updateCancelTimerDisplay();
+        }).catch(()=>{
+            _cancelDeadline = Date.now() + 3*60*1000;
+            if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
+            _cancelTimerInterval = setInterval(updateCancelTimerDisplay, 1000);
+            updateCancelTimerDisplay();
+        });
+    }
+    tryLoad();
 }
 
 function updateCancelTimerDisplay() {
