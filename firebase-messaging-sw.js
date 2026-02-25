@@ -12,18 +12,13 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Uygulama kapalı veya arka planda iken bildirimleri bu fonksiyon gösterir
-messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] Arka plan bildirimi alındı:', payload);
-
-    const title = payload.notification?.title || 'Yeni Bildirim';
-    const body  = payload.notification?.body  || '';
-    const icon  = payload.notification?.icon  || '/icon.png';
-
-    self.registration.showNotification(title, {
-        body: body,
-        icon: icon,
-        badge: '/icon.png',
-        vibrate: [200, 100, 200]
+// Uygulama arka plandayken bildirim göster
+messaging.onBackgroundMessage(payload => {
+    const { title, body } = payload.notification || {};
+    self.registration.showNotification(title || '🔔 Bildirim', {
+        body: body || '',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        requireInteraction: false,
     });
 });
