@@ -4,14 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dönerci İsmail | Online Sipariş</title>
-  <meta name="description" content="Dönerci İsmail — Online sipariş, döner, pide, cantık ve daha fazlası. Hızlı teslimat, taze malzeme.">
-  <meta name="keywords" content="dönerci ismail, döner sipariş, online sipariş, pide, cantık, lahmacun">
-  <link rel="canonical" href="https://donercismail.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
   <style>
         :root {
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
-            --grey:#f4f4f4; --white:#FFFFFF; --header-height:75px; --cart-bar-height:72px; --status-bar-height:38px; --bottom-nav-height:56px;
+            --grey:#f4f4f4; --white:#FFFFFF; --header-height:75px; --cart-bar-height:72px; --status-bar-height:44px; --bottom-nav-height:56px;
         }
         body { font-family:'Poppins',sans-serif; margin:0; background:var(--grey); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
 
@@ -20,26 +17,9 @@
         .header.hazirlaniyor { background:#1a6b3a !important; }
         .header.yolacikti    { background:#7d6008 !important; }
 
-        #order-status-bar { display:none; position:fixed; top:var(--header-height); left:0; right:0; z-index:8998; padding:0; text-align:center; }
-        #order-status-bar.hazirlaniyor { display:block; }
-        #order-status-bar.yolacikti    { display:block; }
-        .status-inner {
-            display:flex; align-items:center; justify-content:center; gap:10px;
-            padding:10px 16px; flex-wrap:wrap;
-            font-size:13px; font-weight:700; color:white; letter-spacing:0.3px;
-            min-height:44px;
-        }
-        #order-status-bar.hazirlaniyor .status-inner { background:linear-gradient(135deg,#27ae60,#2ecc71); }
-        #order-status-bar.yolacikti .status-inner    { background:linear-gradient(135deg,#e67e22,#f39c12); color:#1a1a1a; }
-        .status-icon { font-size:18px; flex-shrink:0; }
-        .status-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .status-cancel-btn {
-            flex-shrink:0; background:rgba(255,255,255,0.25); border:1.5px solid rgba(255,255,255,0.6);
-            color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700;
-            cursor:pointer; white-space:nowrap; transition:all 0.2s;
-        }
-        .status-cancel-btn:hover { background:rgba(255,255,255,0.4); }
-        #order-status-bar.yolacikti .status-cancel-btn { color:#1a1a1a; border-color:rgba(0,0,0,0.3); }
+        #order-status-bar { display:none; position:fixed; top:var(--header-height); left:0; right:0; z-index:8998; padding:9px 15px; text-align:center; font-size:13px; font-weight:700; color:white; letter-spacing:0.3px; }
+        #order-status-bar.hazirlaniyor { background:#27ae60; display:block; }
+        #order-status-bar.yolacikti    { background:#f39c12; display:block; color:#1a1a1a; }
 
         .logo { font-size:13px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; line-height:1.25; }
         .logo span  { color:var(--white); display:block; }
@@ -47,29 +27,7 @@
         .work-hours-badge { font-size:10px; font-weight:400; color:#aaa; text-transform:none; display:block; margin-top:3px; }
 
         /* ── KULLANICI BUTONU — MODERN ── */
-        .header-nav { display:flex; align-items:center; gap:2px; }
-        .header-nav a { color:rgba(255,255,255,0.7); text-decoration:none; font-size:10px; font-weight:600; padding:4px 7px; border-radius:6px; transition:all 0.2s; white-space:nowrap; }
-        .header-nav a:hover { color:white; background:rgba(255,255,255,0.1); }
-        .header-nav a.active { color:white; background:rgba(255,102,0,0.4); }
-        /* Hamburger dropdown */
-        #hamburger-menu {
-            display:none; position:fixed; top:var(--header-height); left:0;
-            background:#1a1a2e; min-width:200px; z-index:9500;
-            border-radius:0 0 14px 0; box-shadow:4px 4px 20px rgba(0,0,0,0.4);
-            overflow:hidden;
-        }
-        #hamburger-menu.open { display:block; animation:slideDown 0.2s ease; }
-        #hamburger-menu a {
-            display:flex; align-items:center; gap:10px;
-            padding:14px 20px; color:white; text-decoration:none;
-            font-size:14px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.07);
-            transition:background 0.2s;
-        }
-        #hamburger-menu a:hover { background:rgba(255,102,0,0.2); }
-        #hamburger-menu a:last-child { border-bottom:none; }
-        #hamburger-overlay { display:none; position:fixed; inset:0; z-index:9400; }
-        #hamburger-overlay.open { display:block; }
-
+        .nav-icons { display:flex; align-items:center; gap:8px; }
         .user-panel {
             display:flex; align-items:center;
             background:rgba(255,255,255,0.07);
@@ -231,70 +189,25 @@
         .pulse-loader  { width:50px; height:50px; background:var(--primary); border-radius:50%; margin:20px auto; animation:pulse 1.5s infinite; }
         @keyframes pulse { 0%{transform:scale(0.8);opacity:0.5;} 100%{transform:scale(1.2);opacity:0;} }
         .reorder-btn { margin-top:10px; width:100%; background:#eee; color:#333; border:none; padding:8px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:12px; }
-        .toast-container { position:fixed; top:calc(var(--header-height) + 12px); left:50%; transform:translateX(-50%); z-index:9100; display:flex; flex-direction:column; gap:10px; pointer-events:none; width:calc(100% - 32px); max-width:360px; }
-        .toast { background:rgba(20,20,20,0.92); color:white; padding:12px 20px; border-radius:16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; backdrop-filter:blur(10px); box-shadow:0 8px 24px rgba(0,0,0,0.25); animation:toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1); border:1px solid rgba(255,255,255,0.08); white-space:normal; word-break:break-word; }
-        .toast.status-toast { padding:0; overflow:hidden; background:none; border:none; box-shadow:none; }
-        .toast.status-toast .st-inner { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:18px; width:100%; box-shadow:0 8px 30px rgba(0,0,0,0.3); }
-        .toast.status-toast.hazirlaniyor .st-inner { background:linear-gradient(135deg,#27ae60,#2ecc71); }
-        .toast.status-toast.yolacikti .st-inner    { background:linear-gradient(135deg,#e67e22,#f39c12); }
-        .toast.status-toast.iptal .st-inner        { background:linear-gradient(135deg,#e74c3c,#c0392b); }
-        .toast.status-toast.teslim .st-inner       { background:linear-gradient(135deg,#8e44ad,#9b59b6); }
-        .st-icon { font-size:28px; flex-shrink:0; }
-        .st-text { flex:1; min-width:0; }
-        .st-title { font-size:14px; font-weight:800; color:white; margin-bottom:2px; }
-        .st-body  { font-size:12px; color:rgba(255,255,255,0.85); font-weight:500; }
+        .toast-container { position:fixed; bottom:50%; transform:translate(-50%, 50%); left:50%; z-index:9000; display:flex; flex-direction:column; gap:10px; pointer-events:none; width:calc(100% - 32px); max-width:360px; }
+        .toast { background:rgba(30,30,30,0.95); color:white; padding:12px 24px; border-radius:25px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:10px; white-space:nowrap; animation:toastIn 0.3s ease; }
         @keyframes toastIn { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
         @keyframes shake { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-6px);} 40%,80%{transform:translateX(6px);} }
         @keyframes popIn { from{opacity:0;transform:scale(0.7);} to{opacity:1;transform:scale(1);} }
         @keyframes slideUpDetail { from{opacity:0;transform:translateY(60px);} to{opacity:1;transform:translateY(0);} }
 
-        /* ── KAMPANYALAR ── */
-        #campaigns-section { margin-bottom:20px; }
-        .camp-title { font-size:15px; font-weight:800; color:var(--dark); display:flex; align-items:center; gap:7px; margin-bottom:12px; }
-        .camp-scroll { display:flex; flex-direction:row; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; -ms-overflow-style:none; }
-        .camp-scroll::-webkit-scrollbar { display:none; }
-        .camp-card {
-            flex-shrink:0; width:280px;
-            background:white; border-radius:18px; overflow:hidden;
-            box-shadow:0 6px 20px rgba(255,102,0,0.15);
-            border:1.5px solid rgba(255,102,0,0.1);
-            display:flex; flex-direction:row; min-height:120px;
-            transition:transform 0.2s, box-shadow 0.2s;
+        /* WhatsApp sabit buton */
+        .wa-fab {
+            position:fixed; bottom:calc(var(--bottom-nav-height) + 10px); right:16px; z-index:8400;
+            width:52px; height:52px; border-radius:50%;
+            background:#25D366; border:none; cursor:pointer;
+            box-shadow:0 4px 18px rgba(37,211,102,0.5);
+            display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s; animation:waPop 0.5s 1.5s cubic-bezier(0.34,1.56,0.64,1) both;
         }
-        .camp-card:active { transform:scale(0.98); }
-        .camp-card-header {
-            background:linear-gradient(160deg,#FF6600,#CC5200);
-            padding:14px 16px; position:relative;
-            display:flex; flex-direction:column; justify-content:center;
-            min-width:140px; max-width:140px; flex-shrink:0;
-        }
-        .camp-card-name { font-size:13px; font-weight:800; color:white; line-height:1.3; }
-        .camp-card-desc { font-size:10px; color:rgba(255,255,255,.75); margin-top:3px; line-height:1.4; }
-        .camp-price-row { margin-top:10px; }
-        .camp-old-price { font-size:11px; color:rgba(255,255,255,.55); text-decoration:line-through; display:block; }
-        .camp-new-price { font-size:22px; font-weight:900; color:white; line-height:1; }
-        .camp-new-price small { font-size:12px; font-weight:600; }
-        .camp-badge {
-            position:absolute; top:8px; right:-1px;
-            background:white; color:#FF6600;
-            font-size:9px; font-weight:800;
-            padding:3px 7px 3px 8px; border-radius:20px 0 0 20px;
-            box-shadow:0 2px 6px rgba(0,0,0,0.15);
-        }
-        .camp-body { padding:12px 14px; flex:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0; }
-        .camp-items { margin-bottom:10px; flex:1; overflow:hidden; }
-        .camp-item-row { font-size:11px; color:#666; display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid #f5f5f5; }
-        .camp-item-row:last-child { border-bottom:none; }
-        .camp-item-qty { background:#fff5eb; color:#FF6600; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; margin-right:4px; flex-shrink:0; }
-        .camp-add-btn {
-            width:100%; padding:9px 6px;
-            background:linear-gradient(135deg,#FF6600,#CC5200);
-            color:white; border:none; border-radius:10px;
-            font-weight:800; font-size:12px; cursor:pointer;
-            transition:all 0.2s; box-shadow:0 3px 10px rgba(255,102,0,0.35);
-        }
-        .camp-add-btn:active { transform:scale(0.97); }
-        .camp-add-btn:disabled { background:#ddd; color:#999; cursor:not-allowed; box-shadow:none; }
+        .wa-fab:hover { transform:scale(1.12); box-shadow:0 6px 24px rgba(37,211,102,0.65); }
+        .wa-fab svg { width:28px; height:28px; }
+        @keyframes waPop { from{opacity:0;transform:scale(0);} to{opacity:1;transform:scale(1);} }
 
         #service-unavailable-overlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.98); z-index:10000; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
 
@@ -569,29 +482,18 @@
    </div>
   </div>
   <div class="header" id="main-header">
-   <div style="display:flex;align-items:center;gap:10px;">
-    <button id="hamburger-btn" onclick="if(typeof toggleHamburgerMenu==='function')toggleHamburgerMenu()" style="background:none;border:none;cursor:pointer;padding:8px 6px;display:flex;flex-direction:column;justify-content:center;gap:5px;flex-shrink:0;z-index:9999;">
-      <span style="display:block;width:22px;height:2.5px;background:white;border-radius:3px;"></span>
-      <span style="display:block;width:22px;height:2.5px;background:white;border-radius:3px;"></span>
-      <span style="display:block;width:22px;height:2.5px;background:white;border-radius:3px;"></span>
-    </button>
-    <div class="logo" id="header-logo">DÖNERCİ <span>İSMAİL</span></div>
+   <div class="logo" id="header-logo">
+    DÖNERCİ <span>İSMAİL</span>
    </div>
    <div class="nav-icons">
     <!-- Modern kullanıcı butonu -->
-    <div class="user-panel" id="user-panel-btn" onclick="if(typeof handleUserPanelClick==='function')handleUserPanelClick();else if(!localStorage.getItem('savedUserPhone'))document.getElementById('modal').style.display='flex'">
+    <div class="user-panel" id="user-panel-btn" onclick="handleUserPanelClick()">
      <div class="user-avatar" id="user-avatar">👤</div>
      <div class="user-text">
       <span class="user-name" id="user-panel-name">Giriş Yap</span> <span class="user-sub" id="user-panel-sub">Hesabına gir →</span>
      </div>
     </div>
    </div>
-  </div>
-  <div id="hamburger-overlay" onclick="if(typeof closeHamburgerMenu==='function')closeHamburgerMenu()"></div>
-  <div id="hamburger-menu">
-    <a href="/menü/">🍽️ Menü</a>
-    <a href="/bizeulasın/">📞 Bize Ulaşın</a>
-    <a href="/yonetimpaneli">⚙️ Yönetim Paneli</a>
   </div>
   <div id="order-status-bar"></div>
   <div class="cart-bar-top normal" id="cart-bar-top">
@@ -631,12 +533,18 @@
       </div>
     </div>
   </div>
+  <!-- WhatsApp Destek Butonu -->
+  <button class="wa-fab" onclick="window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank')" title="WhatsApp Destek">
+   <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+   </svg>
+  </button>
   <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
   <div id="sidebar" class="sidebar">
    <div class="sb-header">
     <button class="sb-close" onclick="closeSidebar()">×</button>
     <div class="sb-img">👤</div>
-    <div id="sb-name" style="font-weight:700;font-size:16px;cursor:pointer;" onclick="if(!activePhone){closeSidebar();setTimeout(()=>openModal('login'),300);}">Giriş Yap</div>
+    <div id="sb-name" style="font-weight:700;font-size:16px;">Giriş Yap</div>
     <div id="sb-phone" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px;"></div>
     <div class="sb-stats" id="sb-stats" style="display:none;">
      <div class="sb-stat" onclick="closeSidebar();openModal('points')">
@@ -648,11 +556,11 @@
     </div>
    </div>
    <ul class="sb-menu">
-    <li onclick="closeSidebar();setTimeout(()=>requireLogin('profile'),300)">👤 Kişisel Bilgiler</li>
-    <li onclick="closeSidebar();setTimeout(()=>requireLogin('addresses'),300)">📍 Adreslerim</li>
-    <li onclick="closeSidebar();setTimeout(()=>requireLogin('history'),300)">🕒 Siparişlerim</li>
-    <li onclick="closeSidebar();setTimeout(()=>requireLogin('points'),300)">⭐ Sadakat Puanım</li>
-    <li onclick="closeSidebar();setTimeout(()=>requireLogin('mycoupons'),300)">🎟 Kuponlarım</li>
+    <li onclick="closeSidebar();openModal('profile')">👤 Kişisel Bilgiler</li>
+    <li onclick="closeSidebar();openModal('addresses')">📍 Adreslerim</li>
+    <li onclick="closeSidebar();openModal('history')">🕒 Siparişlerim</li>
+    <li onclick="closeSidebar();openModal('points')">⭐ Sadakat Puanım</li>
+    <li onclick="closeSidebar();openModal('mycoupons')">🎟 Kuponlarım</li>
     <li onclick="handleLogout()" id="logout-menu-item" style="color:#e74c3c;border-top:8px solid #f4f4f4;display:none;">🚪 Oturumu Kapat</li>
    </ul>
   </div>
@@ -712,7 +620,7 @@
       <h3 style="text-align:center;margin-top:0;">Giriş Yap</h3>
       <p style="text-align:center;font-size:13px;color:#666;margin-bottom:15px;">Telefon numaranızı girin</p>
       <div class="phone-wrapper">
-       <span class="phone-prefix">0</span><input type="tel" id="login-phone-input" class="phone-input" placeholder="5XX XXX XX XX" maxlength="13" oninput="formatPhoneInput(this)" onkeydown="phoneKeyDown(this,event)">
+       <span class="phone-prefix">0</span><input type="tel" id="login-phone-input" class="phone-input" placeholder="5XX XXX XX XX" maxlength="13" oninput="formatPhoneInput(this)">
       </div>
       <button class="action-btn" style="background:var(--dark);" onclick="processPhoneEntry()">Devam Et</button>
       <div style="display:flex;align-items:center;margin:20px 0 15px;">
@@ -728,7 +636,7 @@
       </button>
      </div>
      <div id="login-step-register" style="display:none;">
-      <div style="background:#fff5eb;border:1px solid #ffe0cc;color:#CC5200;padding:12px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:15px;text-align:center;">İlk defa giriş yapıyorsunuz. Bilgilerinizi kaydedin.</div>
+      <div style="background:#fff5eb;border:1px solid #ffe0cc;color:#cc5200;padding:12px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:15px;text-align:center;">İlk defa giriş yapıyorsunuz. Bilgilerinizi kaydedin.</div>
       <input type="text" id="reg-name" placeholder="Ad Soyad"> <select id="reg-hood"><option value="" disabled selected>Mahalle Seçin</option><option>Mehmet Akif Mah.</option><option>Çeltik Mah.</option><option>Çukurca Mah.</option></select> <input type="text" id="reg-street" placeholder="Sokak / Cadde">
       <div class="split-inputs">
        <input type="text" id="reg-door" placeholder="No"><input type="text" id="reg-floor" placeholder="Kat">
@@ -999,41 +907,6 @@ function calcPointsDiscount(){
     return rewards*REWARD_TL;
 }
 
-async function syncPointsFromOrders(phone) {
-    try {
-        // Firebase'deki mevcut puanı al
-        const custDoc = await getDoc(doc(db,"phone_customers",phone));
-        if(!custDoc.exists()) return;
-        const currentPts = custDoc.data().loyaltyPoints || 0;
-
-        // Teslim edilmiş siparişlerden puan hesapla
-        const ordersSnap = await getDocs(query(
-            collection(db,"orders"),
-            where("phone","==",phone),
-            where("status","==","Teslim Edildi")
-        ));
-        if(ordersSnap.empty) return;
-
-        // Her teslim edilmiş sipariş için 10TL = 1 puan
-        const earnedTotal = ordersSnap.docs.reduce((sum, d) => {
-            return sum + Math.floor((d.data().total||0) / 10);
-        }, 0);
-
-        // Harcanan puanları da hesapla (siparişlerdeki pointsUsed)
-        const spentTotal = ordersSnap.docs.reduce((sum, d) => {
-            return sum + (d.data().pointsUsed || 0);
-        }, 0);
-
-        const correctPts = Math.max(0, earnedTotal - spentTotal);
-
-        // Eğer Firebase'deki puan hesaplanan puandan düşükse güncelle
-        if(currentPts < correctPts) {
-            await updateDoc(doc(db,"phone_customers",phone), { loyaltyPoints: correctPts });
-            console.log(`✅ Puan eşitlendi: ${currentPts} → ${correctPts}`);
-        }
-    } catch(e) { console.log('Puan eşitleme hatası:', e); }
-}
-
 async function loadLoyalty(phone) {
     try {
         const s=await getDoc(doc(db,"phone_customers",phone));
@@ -1077,12 +950,7 @@ function refreshMinFromAddr() {
 function calcTotal() {
     const sub=basket.reduce((a,b)=>a+b.p,0);
     let discount=0;
-    if(appliedCoupon){
-        // Kampanya ürünleri varsa kuponu iptal et
-        const hasCampaign = basket.some(i => i.c === 'Kampanya');
-        if(hasCampaign){ appliedCoupon=null; }
-        else { discount=Math.round(sub*appliedCoupon.discount/100); }
-    }
+    if(appliedCoupon) discount=Math.round(sub*appliedCoupon.discount/100);
     const ptsDis=calcPointsDiscount();
     const total=Math.max(0,sub-discount-ptsDis);
     return{sub,discount,ptsDis,total};
@@ -1092,9 +960,6 @@ let storeHours = { isOpen: true, openTime: "10:30", closeTime: "22:00" };
 function isOpen() {
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
-    // Salı günü kapalı (0=Pazar, 1=Pazartesi, 2=Salı...)
-    if (now.getDay() === 2) return false;
     
     // Manuel kapatma kontrolü
     if (storeHours.isOpen === false) return false;
@@ -1115,9 +980,7 @@ function updateStoreUI() {
     
     if (!isOpen()) {
         h.classList.add('kapali');
-        if (new Date().getDay() === 2) {
-            l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">Salı Günü Kapalı</span>`;
-        } else if (storeHours.isOpen === false) {
+        if (storeHours.isOpen === false) {
             l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">Geçici Kapalı</span>`;
         } else {
             l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">${storeHours.openTime} - ${storeHours.closeTime}</span>`;
@@ -1202,7 +1065,7 @@ function renderMenu(products) {
     const sorted=[...CAT_ORDER.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CAT_ORDER.includes(c)).sort((a,b)=>(catOrderMap[a]||999)-(catOrderMap[b]||999))];
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
-    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
+    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="popular-section" style="display:none;"></div>`+sorted.map(cat=>`
         <div class="cat-title">${catEmojis[cat]||'🍽'} ${cat}</div>
         ${cats[cat].map(item=>{
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
@@ -1236,7 +1099,7 @@ function renderMenu(products) {
     // Eğer countdown zaten çalışıyorsa yeniden başlatma
     if(!_cdInterval) startClosingCountdown();
     // Değerlendirme puanlarını yükle, sonra popüler ürünleri render et
-    loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); });
+    loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); });
 }
 
 window.openItemDetail = n => {
@@ -1302,25 +1165,18 @@ function updateCart() {
     // Puan teklif kutusu
     const pob=document.getElementById('points-offer-box');
     const rewards=Math.floor(loyaltyPoints/PTS_GOAL);
-    const MIN_POINTS_ORDER = 200; // Puan kullanmak için minimum sipariş tutarı
-    if(count>0&&activePhone&&loyaltyPoints>=PTS_GOAL&&sub>=MIN_POINTS_ORDER){
+    if(count>0&&activePhone&&loyaltyPoints>=PTS_GOAL){
         pob.style.display='block';
         const totalPtsDis=rewards*REWARD_TL;
         if(usingPoints){
             document.getElementById('points-offer-text').innerText=`✓ ${totalPtsDis} TL puan indirimi uygulandı`;
             const btn=document.getElementById('points-use-btn');
-            btn.innerText='✓ Uygulandı'; btn.style.background='#27ae60'; btn.disabled=false;
+            btn.innerText='✓ Uygulandı'; btn.style.background='#27ae60';
         } else {
             document.getElementById('points-offer-text').innerText=`⭐ ${loyaltyPoints} puan = ${totalPtsDis} TL indirim hakkınız var!`;
             const btn=document.getElementById('points-use-btn');
-            btn.innerText='Sepete Uygula'; btn.style.background='var(--primary)'; btn.disabled=false;
+            btn.innerText='Sepete Uygula'; btn.style.background='var(--primary)';
         }
-    } else if(count>0&&activePhone&&loyaltyPoints>=PTS_GOAL&&sub<MIN_POINTS_ORDER){
-        pob.style.display='block';
-        document.getElementById('points-offer-text').innerText=`⭐ Puanları kullanmak için minimum ${MIN_POINTS_ORDER} TL sipariş gerekli (şu an ${sub} TL)`;
-        const btn=document.getElementById('points-use-btn');
-        btn.innerText='Yetersiz Tutar'; btn.style.background='#95a5a6'; btn.disabled=true;
-        if(usingPoints){ usingPoints=false; }
     } else { pob.style.display='none'; }
 
     document.getElementById('cart-subtotal').innerText=sub+' TL';
@@ -1412,21 +1268,8 @@ function showOpts(t,opts){
     openModal('options');
 }
 window.addToCart=(n,p,note)=>{
-    const cat = currentItemToAdd?.c || '';
-    basket.push({n,p,note,c:cat});
+    basket.push({n,p,note,c:currentItemToAdd?.c||''});
     updateCart();
-    // Cantık & Lahmacun — sepette başka yiyecek yoksa uyar
-    if(cat === 'Cantıklar & Lahmacun') {
-        const otherFood = basket.filter(i => i.c !== 'Cantıklar & Lahmacun' && i.c !== 'İçecekler' && i.c !== 'Kampanya');
-        const thisCount = basket.filter(i=>i.n===n).length;
-        if(otherFood.length === 0 && thisCount === 1) {
-            showToast(`🫓 <strong>${n}</strong> eklendi — Tek başına en az 2 adet gerekli`,'warn');
-        } else {
-            showToast(`🛒 <strong>${n}</strong> sepete eklendi`);
-        }
-    } else {
-        showToast(`🛒 <strong>${n}</strong> sepete eklendi`);
-    }
 };
 window.completeAddToCart=()=>{
     const out=INGS.filter(i=>ingState[i.id]===false).map(i=>i.label);
@@ -1439,15 +1282,6 @@ window.applyCoupon=async()=>{
     const code=document.getElementById('coupon-code-input').value.trim().toUpperCase();
     const res=document.getElementById('coupon-result');
     if(!code) return;
-
-    // Sepette kampanya ürünü varsa kupon uygulanmasın
-    const hasCampaign = basket.some(i => i.c === 'Kampanya');
-    if(hasCampaign){
-        res.style.display='block';
-        res.className='coupon-result error';
-        res.innerText='❌ Kampanya paketlerine kupon uygulanamaz.';
-        return;
-    }
     
     res.style.display='block'; 
     res.className='coupon-result'; 
@@ -1500,50 +1334,11 @@ window.finalizeOrder=async()=>{
     // (puan indirimi zaten sepet toplamını düşürüyor, minimum subtotal üzerinden kontrol edilmeli)
     const checkAmt = sub - discount; // puan indirimi hariç tutar
     if(checkAmt<minL) return alert(`⚠️ MİNİMUM SİPARİŞ\n\n📍 ${regN} için minimum: ${minL} TL\n🛒 Sepetiniz: ${checkAmt} TL`);
-
-    // Sadece içecek ile sipariş verilemez
-    const onlyDrinks = basket.every(i => i.c === 'İçecekler' || i.c === 'Kampanya' && false);
-    if(onlyDrinks) return alert(`⚠️ SADECE İÇECEK SİPARİŞİ\n\nYalnızca içecek ile sipariş verilememektedir. Lütfen menüden bir yiyecek ekleyin.`);
-
-    // Cantık & Lahmacun minimum 2 adet kontrolü
-    // Kural: Sepette SADECE cantık/lahmacun varsa minimum 2 adet olmalı
-    const cantikItems = basket.filter(i => i.c === 'Cantıklar & Lahmacun');
-    const otherFoodItems = basket.filter(i => i.c !== 'Cantıklar & Lahmacun' && i.c !== 'İçecekler' && i.c !== 'Kampanya');
-    if(cantikItems.length > 0 && otherFoodItems.length === 0) {
-        // Sepette sadece cantık/lahmacun var — her birinden en az 2 adet olmalı
-        const cantikCounts = {};
-        cantikItems.forEach(i => { cantikCounts[i.n] = (cantikCounts[i.n]||0) + 1; });
-        for(const [name, count] of Object.entries(cantikCounts)){
-            if(count < 2) return alert(`⚠️ MİNİMUM ADET\n\n🫓 "${name}" tek başına sipariş edilemez.\n\nEn az 2 adet alın veya başka bir ürün ekleyin.`);
-        }
-    }
     
-    // Kampanya içinde pide/cantık varsa ve saat 12'den önceyse engelle
-    if(new Date().getHours() < 12) {
-        const bakeryKeywords = ['pide', 'cantık', 'lahmacun'];
-        const hasBakeryCamp = basket.some(i => {
-            if(i.c !== 'Kampanya') return false;
-            const idx = i._campIdx;
-            const camp = window._campaigns && window._campaigns[idx];
-            return camp ? campHasBakeryItem(camp) : (i.note && bakeryKeywords.some(k => i.note.toLowerCase().includes(k)));
-        });
-        if(hasBakeryCamp) return alert(`⏰ SEPETİNİZDE 12:00'DAN ÖNCE SİPARİŞ VERİLEMEYEN ÜRÜN VAR\n\nPide veya cantık içeren kampanyalar saat 12:00'dan itibaren sipariş alınmaktadır.`);
-    }
-
     // Çalışma saati kontrolü (yeni)
     const storeStatus = await checkStoreHoursDetailed();
     if (!storeStatus.open) {
       return alert(`⚠️ MAĞAZA KAPALI\n\n${storeStatus.message}`);
-    }
-
-    // Kara liste kontrolü
-    const phone = userData.phone || activePhone;
-    const isBlacklisted = await checkBlacklist(phone);
-    if(isBlacklisted){
-        openModal('rejected');
-        document.querySelector('#sec-rejected h3').textContent = 'Sipariş Verilemiyor';
-        document.querySelector('#sec-rejected p').textContent = 'Üzgünüz, bu hesaptan sipariş verilemiyor. Bilgi için bize ulaşın.';
-        return;
     }
     
     openModal('waiting');
@@ -1586,23 +1381,15 @@ window.finalizeOrder=async()=>{
         
         const ph=userData.phone||activePhone;
         if(ph){
+            // Sadece kullanılan puanları düş (kazanım panel'den teslim edilince olacak)
             if(usingPoints&&usedPtsRewards>0){
                 const spentPts=usedPtsRewards*PTS_GOAL;
-                const custSnap = await getDoc(doc(db,"phone_customers",ph));
-                const history = custSnap.exists() ? (custSnap.data().pointsHistory||[]) : [];
-                const currentPts = custSnap.exists() ? (custSnap.data().loyaltyPoints||0) : 0;
-                history.unshift({
-                    earned: -spentPts,
-                    total: currentPts - spentPts,
-                    date: new Date().toLocaleDateString('tr-TR'),
-                    orderTotal: total,
-                    type: 'spent'
-                });
-                if(history.length>20) history.pop();
+                
+                // Firestore'da puanları düş
                 await updateDoc(doc(db,"phone_customers",ph), {
-                    loyaltyPoints: increment(-spentPts),
-                    pointsHistory: history
+                  points: increment(-spentPts)
                 });
+                
                 console.log(`✅ ${spentPts} puan kullanıldı`);
             }
         }
@@ -1721,7 +1508,6 @@ async function processLoginSuccess(id,isAuto=false){
     const snap=await getDoc(doc(db,"phone_customers",activePhone));
     if(snap.exists()){
         const d=snap.data(); userData={name:d.name,phone:d.phone||id};
-        if(d.name) localStorage.setItem('savedUserName', d.name);
         userAddresses=d.addresses||[]; loyaltyPoints=d.loyaltyPoints||0; pointsHistory=d.pointsHistory||[];
         window.selectedAddressIndex=0;
         updateUserDisplay();
@@ -1741,8 +1527,6 @@ async function processLoginSuccess(id,isAuto=false){
         document.getElementById('sb-stats').style.display='flex';
         refreshMinFromAddr();
         startStatusListener(userData.phone||id);
-        // Puan eşitleme — kayıt silinip yeniden oluşturulmuşsa puanları geri hesapla
-        syncPointsFromOrders(userData.phone||id);
         // FCM token al (bildirimler için)
         if(!isAuto) initFcmToken(userData.phone||id);
         else if('Notification' in window && Notification.permission==='granted') initFcmToken(userData.phone||id);
@@ -1762,7 +1546,7 @@ async function processLoginSuccess(id,isAuto=false){
 }
 
 // ── DURUM DİNLEYİCİ ──
-let lastNotifiedOrderId = localStorage.getItem('lastDeliveredOrderId') || null;
+let lastNotifiedOrderId = null;
 let _notifiedStatus = {}; // const → let yapıldı (logout'ta reset için)
 let _statusUnsubscribe = null; // listener referansı (leak önlemek için)
 
@@ -1776,11 +1560,7 @@ function startStatusListener(phone){
         // Aktif (teslim/iptal olmayan) siparişi bul
         const active=docs.filter(o=>o.status!=='Teslim Edildi'&&o.status!=='İptal').sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0))[0];
         updateStatusUI(active);
-
-        // Sayfa yüklenince zaten Hazırlanıyor ise timer başlat
-        if(active && active.status==='Hazırlanıyor') {
-            startCancelTimer(active.id);
-        }
+        if(active && active.status==='Hazırlanıyor') startCancelTimer(active.id);
 
         // Durum değişince bildirim gönder
         docs.forEach(o=>{
@@ -1792,7 +1572,6 @@ function startStatusListener(phone){
 
             if(o.status==='Hazırlanıyor'){
                 showForegroundNotif("🔥 Siparişiniz Hazırlanıyor!","Mutfak siparişinizi hazırlıyor. Yakında yola çıkacak!");
-                startCancelTimer(o.id); // 3 dk iptal sayacı başlat
             } else if(o.status==='Yola Çıktı'){
                 showForegroundNotif("🛵 Siparişiniz Yola Çıktı!","Kurye kapınıza doğru yola çıktı. Az kaldı!");
             } else if(o.status==='Teslim Edildi'){
@@ -1808,7 +1587,6 @@ function startStatusListener(phone){
             const oDate=(o.date?.seconds||0)*1000;
             if(oDate>fiveMinsAgo && o.id!==lastNotifiedOrderId){
                 lastNotifiedOrderId=o.id;
-                localStorage.setItem('lastDeliveredOrderId', o.id);
                 showDeliveryNotification();
             }
         });
@@ -1817,27 +1595,27 @@ function startStatusListener(phone){
 
 // Uygulama açıkken tarayıcı bildirimi + toast
 function showForegroundNotif(title, body){
-    const icons = {
-        'Hazırlanıyor': { icon:'🔥', cls:'hazirlaniyor' },
-        'Yola Çıktı':   { icon:'🛵', cls:'yolacikti' },
-        'Teslim Edildi':{ icon:'🎉', cls:'teslim' },
-        'İptal':        { icon:'❌', cls:'iptal' },
-    };
-    const match = Object.entries(icons).find(([k]) => title.includes(k));
-    const { icon, cls } = match ? match[1] : { icon:'🔔', cls:'' };
-
     const c = document.getElementById('toast-container');
     const t = document.createElement('div');
-    t.className = `toast status-toast ${cls}`;
-    t.innerHTML = `<div class="st-inner">
-        <span class="st-icon">${icon}</span>
-        <div class="st-text">
-            <div class="st-title">${title}</div>
-            <div class="st-body">${body}</div>
-        </div>
-    </div>`;
+    t.className = 'toast';
+    
+    // Durum tipine göre renk
+    let bg = 'linear-gradient(135deg,#c0392b,#e74c3c)'; // varsayılan kırmızı
+    let icon = '🔔';
+    if(title.includes('Hazırlanıyor'))   { bg='linear-gradient(135deg,#c0392b,#e74c3c)'; icon='🔥'; }
+    else if(title.includes('Yola'))      { bg='linear-gradient(135deg,#e67e22,#f39c12)'; icon='🛵'; }
+    else if(title.includes('Teslim'))    { bg='linear-gradient(135deg,#27ae60,#2ecc71)'; icon='🎉'; }
+    else if(title.includes('İptal'))     { bg='linear-gradient(135deg,#7f8c8d,#95a5a6)'; icon='❌'; }
+
+    t.style.cssText = `background:${bg};border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(0,0,0,0.3);pointer-events:auto;`;
+    t.innerHTML = `
+        <span style="font-size:26px;flex-shrink:0;">${icon}</span>
+        <div style="flex:1;">
+            <div style="font-size:14px;font-weight:800;color:white;">${title}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.85);margin-top:2px;">${body}</div>
+        </div>`;
     c.appendChild(t);
-    setTimeout(() => t.remove(), 4500);
+    setTimeout(() => t.remove(), 5000);
 
     // Tarayıcı bildirimi (izin varsa)
     if(Notification.permission === "granted"){
@@ -1896,27 +1674,35 @@ function launchConfetti(){
 
 function updateStatusUI(order){
     const h=document.getElementById('main-header'),sb=document.getElementById('order-status-bar'),l=document.getElementById('header-logo');
-    h.classList.remove('hazirlaniyor','yolacikti'); sb.className=''; sb.style.display='none';
-    const hbtn = document.getElementById('hamburger-btn'); if(hbtn) hbtn.style.display='flex';
-    if(!order){ updateStoreUI(); return; }
+    const cd=document.getElementById('closing-countdown');
+    h.classList.remove('hazirlaniyor','yolacikti'); sb.className=''; sb.style.display='';
+    if(!order){ 
+        sb.style.display='none';
+        updateStoreUI(); 
+        if(cd) cd.style.display='';
+        return; 
+    }
     const mc = document.getElementById('main-content');
     if(order.status==='Hazırlanıyor'){ 
-        h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor'; 
+        h.classList.add('hazirlaniyor'); sb.className='hazirlaniyor';
         if(!document.getElementById('cancel-order-btn')){
-            sb.innerHTML=`<div class="status-inner">
-                <span class="status-icon">🔥</span>
-                <span class="status-text">Siparişiniz mutfakta hazırlanıyor...</span>
-                <button id="cancel-order-btn" class="status-cancel-btn" onclick="showCancelConfirm()">⏱ İptal Et <span id="cancel-timer-txt"></span></button>
+            sb.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 15px;">
+                <span>🔥 Siparişiniz mutfakta hazırlanıyor...</span>
+                <button id="cancel-order-btn" onclick="showCancelConfirm()" style="background:rgba(255,255,255,0.25);border:1.5px solid rgba(255,255,255,0.6);color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">⏱ İptal Et <span id="cancel-timer-txt"></span></button>
             </div>`;
         }
-        sb.style.display=''; l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
+        l.innerHTML='SİPARİŞ <span>HAZIRLANIYOR</span>'; 
+        mc.classList.add('status-visible');
+        if(cd) cd.style.display='none';
+        startCancelTimer(order.id);
+    }
     else if(order.status==='Yola Çıktı'){ 
         h.classList.add('yolacikti'); sb.className='yolacikti'; 
-        sb.innerHTML=`<div class="status-inner">
-            <span class="status-icon">🛵</span>
-            <span class="status-text">Siparişiniz yola çıktı! Az kaldı...</span>
-        </div>`;
-        l.innerHTML='SİPARİŞ <span>YOLDA 🛵</span>'; mc.classList.add('status-visible'); document.getElementById('hamburger-btn').style.display='none'; closeHamburgerMenu(); }
+        sb.innerHTML='<div style="padding:9px 15px;">🛵 Siparişiniz yola çıktı! Az kaldı...</div>';
+        l.innerHTML='SİPARİŞ <span>YOLDA 🛵</span>'; 
+        mc.classList.add('status-visible');
+        if(cd) cd.style.display='none';
+    }
     else updateStoreUI();
 }
 window.handleForgotPassword=()=>{ const p=tempPhone||userData.phone||""; window.open(`https://wa.me/902242466120?text=${encodeURIComponent(`Merhaba ${p} nolu hesabın şifresini unuttum`)}`,'_blank'); };
@@ -2048,11 +1834,6 @@ async function loadMyCoupons(){
 }
 window.togglePointsUse=()=>{
     if(loyaltyPoints<PTS_GOAL) return;
-    const {sub} = calcTotal();
-    if(!usingPoints && sub < 200) {
-        showToast('⚠️ Puan kullanmak için minimum 200 TL sipariş gerekli');
-        return;
-    }
     usingPoints=!usingPoints;
     updateCart();
     showToast(usingPoints?`⭐ ${calcPointsDiscount()} TL puan indirimi uygulandı`:'Puan indirimi kaldırıldı');
@@ -2087,10 +1868,7 @@ function renderPoints(){
     const hist=document.getElementById('pts-history');
     hist.innerHTML=!pointsHistory.length
         ?'<div style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;padding:10px;">Henüz işlem yok</div>'
-        :pointsHistory.slice(0,8).map(e=>{
-            if(e.type==='spent') return `<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — Puan kullanıldı</span><span style="color:#e74c3c;font-weight:700;">${e.earned} puan</span></div>`;
-            return `<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — ${e.orderTotal} TL sipariş</span><span class="ph-plus">+${e.earned} puan</span></div>`;
-        }).join('');
+        :pointsHistory.slice(0,8).map(e=>`<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — ${e.orderTotal} TL sipariş</span><span class="ph-plus">+${e.earned} puan</span></div>`).join('');
 }
 
 // ── GEÇMİŞ ──
@@ -2154,7 +1932,7 @@ window.handleLogout=()=>{
     if(currentOrderListener){ currentOrderListener(); currentOrderListener=null; }
     if(_statusUnsubscribe){ _statusUnsubscribe(); _statusUnsubscribe=null; }
     if(_loyaltyUnsubscribe){ _loyaltyUnsubscribe(); _loyaltyUnsubscribe=null; }
-    _notifiedStatus = {}; lastNotifiedOrderId = null; localStorage.removeItem('lastDeliveredOrderId'); // bildirim geçmişini temizle
+    _notifiedStatus = {}; lastNotifiedOrderId = null; // bildirim geçmişini temizle
     // UI güncelle
     closeSidebar();
     updateUserDisplay();
@@ -2173,7 +1951,7 @@ window.handleLogout=()=>{
     document.getElementById('login-step-phone').style.display='block';
     document.getElementById('login-step-pin').style.display='none';
     document.getElementById('login-step-register').style.display='none';
-    document.getElementById('login-phone-input').value='5';
+    document.getElementById('login-phone-input').value='';
     document.getElementById('login-pin-input').value='';
     
     // Telefon giriş ekranına aç
@@ -2336,10 +2114,6 @@ async function validateCouponCode(couponCode, basketTotal, customerPhone) {
 
 // ── 3. ÇALIŞMA SAATİ KONTROLÜ ──────────────────────────────────────────────
 async function checkStoreHoursDetailed() {
-    // Salı günü kapalı
-    if (new Date().getDay() === 2) {
-        return { open: false, message: "Salı günleri kapalıyız. Çarşamba görüşürüz! 👋" };
-    }
   try {
     const settingsDoc = await getDoc(doc(db, "ayarlar", "genel"));
     
@@ -2665,7 +2439,6 @@ async function loadPopularProducts() {
             return html;
         }
         const shopOpen = isOpen();
-        const bakeryOpen = new Date().getHours() >= 12;
 
         section.style.display = 'block';
         section.innerHTML = `
@@ -2684,9 +2457,7 @@ async function loadPopularProducts() {
                         ? `<img src="${item.i}" onerror="this.parentElement.innerHTML='<span style=\'font-size:44px;\'>${catEmojis[item.c]||'🍽'}</span>'">`
                         : catEmojis[item.c]||'🍽';
                     const safeN = item.n.replace(/'/g,"\'").replace(/"/g,'&quot;');
-                    const isBakery = item.c==='Pideler'||item.c==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm';
-                    const disabled = !shopOpen || !item.inStock || (isBakery && !bakeryOpen);
-                    const btnTxt = !item.inStock ? 'TÜKENDI' : !shopOpen ? 'KAPALI' : (isBakery && !bakeryOpen) ? "12:00'DA" : 'EKLE';
+                    const disabled = !shopOpen || !item.inStock;
                     const reviewCount = Math.max(12, Math.round(item.orderCount * 0.6));
                     return `
                     <div class="pop-card" onclick="openItemDetail('${safeN}')">
@@ -2701,9 +2472,9 @@ async function loadPopularProducts() {
                             </div>
                             <div class="pop-footer">
                                 <div class="pop-price">${item.p} TL</div>
-                                <button class="pop-btn" ${disabled?'disabled style="background:#ccc;cursor:not-allowed;font-size:10px;"':''} 
+                                <button class="pop-btn" ${disabled?'disabled style="background:#ccc;cursor:not-allowed;"':''} 
                                     onclick="event.stopPropagation();checkAndAdd('${safeN}',${item.p},'${item.c}')">
-                                    ${btnTxt}
+                                    ${disabled?'KAPALI':'EKLE'}
                                 </button>
                             </div>
                         </div>
@@ -2715,83 +2486,7 @@ async function loadPopularProducts() {
     }
 }
 
-// ── KAMPANYALAR ─────────────────────────────────────────────────────────────
-async function loadCampaigns() {
-    const section = document.getElementById('campaigns-section');
-    if(!section) return;
-    try {
-        const snap = await getDocs(collection(db, 'campaigns'));
-        if(snap.empty) return;
-        const shopOpen = isOpen();
-        window._campaigns = {};
-        const cards = snap.docs.map((d, idx) => {
-            const c = d.data();
-            window._campaigns[idx] = { name: c.name, price: c.price, items: c.items||[] };
-            const savings = (c.oldPrice||0) - c.price;
-            const pct = c.oldPrice > c.price ? Math.round(savings / c.oldPrice * 100) : 0;
-            const itemsHtml = (c.items||[]).map(it =>
-                `<div class="camp-item-row">
-                    <span><span class="camp-item-qty">${it.qty}x</span> ${it.name}</span>
-                    <span style="color:#FF6600;font-weight:700;">${((it.unitPrice||it.price||0)*it.qty)} TL</span>
-                </div>`
-            ).join('');
-            return `
-            <div class="camp-card">
-                <div class="camp-card-header">
-                    ${pct > 0 ? `<div class="camp-badge">%${pct} İNDİRİM</div>` : ''}
-                    <div class="camp-card-name">${c.name}</div>
-                    ${c.desc ? `<div class="camp-card-desc">${c.desc}</div>` : ''}
-                    <div class="camp-price-row">
-                        ${c.oldPrice > c.price ? `<span class="camp-old-price">${c.oldPrice} TL</span>` : ''}
-                        <div class="camp-new-price">${c.price} <small>TL</small></div>
-                    </div>
-                </div>
-                <div class="camp-body">
-                    <div class="camp-items">${itemsHtml}</div>
-                    <button class="camp-add-btn" ${shopOpen ? '' : 'disabled'} onclick="addCampaignToCart(${idx})">
-                        ${shopOpen ? '🛒 Sepete Ekle' : '🔒 Şu An Kapalı'}
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-        section.style.display = 'block';
-        section.innerHTML = `
-            <div class="camp-title">🏷️ Kampanyalar & Paketler</div>
-            <div class="camp-scroll">${cards}</div>`;
-    } catch(e) {
-        console.log('Kampanyalar yüklenemedi:', e);
-    }
-}
-
-// Kampanya içinde pide/cantık/lahmacun var mı kontrol et
-function campHasBakeryItem(camp) {
-    const bakeryKeywords = ['pide', 'cantık', 'lahmacun'];
-    const items = camp.items || [];
-    return items.some(it => bakeryKeywords.some(k => it.name?.toLowerCase().includes(k)));
-}
-
-window.addCampaignToCart = (idx) => {
-    if(!activePhone){ openModal('login'); return; }
-    const camp = window._campaigns && window._campaigns[idx];
-    if(!camp) { showToast('❌ Kampanya bulunamadı'); return; }
-
-    // Pide/cantık içeren kampanya saat 12'den önce eklenemez
-    if(campHasBakeryItem(camp) && new Date().getHours() < 12) {
-        showToast(`⏰ Bu kampanya saat 12:00'dan itibaren sipariş verilebilir`);
-        return;
-    }
-
-    basket.push({
-        n: `🏷️ ${camp.name}`,
-        p: camp.price,
-        c: 'Kampanya',
-        note: (camp.items||[]).map(it => `${it.qty}x ${it.name}`).join(', '),
-        _campIdx: idx
-    });
-    updateCart();
-    showToast(`✅ ${camp.name} sepete eklendi!`);
-};
-
+// Firebase'den kuponları çekip banner göster
 async function loadFirstOrderBanner() {
     // Giriş yapmış kullanıcıya gösterme
     if(activePhone) return;
@@ -2872,8 +2567,6 @@ async function loadFirstOrderBanner() {
 // ── TELEFON FORMAT ──
 window.formatPhoneInput = (inp) => {
     let v = inp.value.replace(/\D/g,'');
-    // Her zaman 5 ile başlamalı
-    if(!v.startsWith('5')) v = '5' + v.replace(/^5*/, '');
     if(v.length > 10) v = v.slice(0,10);
     let fmt = '';
     if(v.length <= 3)      fmt = v;
@@ -2881,18 +2574,6 @@ window.formatPhoneInput = (inp) => {
     else if(v.length <= 8) fmt = v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6);
     else                   fmt = v.slice(0,3)+' '+v.slice(3,6)+' '+v.slice(6,8)+' '+v.slice(8);
     inp.value = fmt;
-};
-window.phoneKeyDown = (inp, e) => {
-    const v = inp.value.replace(/\D/g,'');
-    // 5'i silmeye çalışırsa engelle
-    if(v === '5' && (e.key === 'Backspace' || e.key === 'Delete')) {
-        e.preventDefault();
-    }
-    // İlk hane olarak 5 dışında rakam girilirse engelle
-    if(v.length === 0 && e.key >= '0' && e.key <= '9' && e.key !== '5') {
-        e.preventDefault();
-        inp.value = '5';
-    }
 };
 
 // ── GERİ SAYIM ──
@@ -3114,42 +2795,26 @@ window.submitReview = async () => {
     showReviewStep();
 };
 
-window.toggleHamburgerMenu = () => {
-    const menu = document.getElementById('hamburger-menu');
-    const overlay = document.getElementById('hamburger-overlay');
-    const isOpen = menu.classList.contains('open');
-    if(isOpen){ menu.classList.remove('open'); overlay.classList.remove('open'); }
-    else { menu.classList.add('open'); overlay.classList.add('open'); }
-};
-window.closeHamburgerMenu = () => {
-    document.getElementById('hamburger-menu').classList.remove('open');
-    document.getElementById('hamburger-overlay').classList.remove('open');
-};
-
 // ── İPTAL SAYACI ──
 let _cancelTimerInterval = null;
 let _cancelOrderId = null;
 let _cancelDeadline = null;
 
 function startCancelTimer(orderId) {
-    if(_cancelOrderId === orderId && _cancelDeadline) return; // zaten başladı
+    if(_cancelOrderId === orderId && _cancelDeadline) return;
     _cancelOrderId = orderId;
-    
     let retries = 0;
     function tryLoad() {
         getDoc(doc(db,"orders",orderId)).then(d=>{
             if(!d.exists()) return;
             const data = d.data();
             if(data.approvedAt && data.approvedAt.toMillis) {
-                // approvedAt geldi, deadline hesapla
                 _cancelDeadline = data.approvedAt.toMillis() + 3*60*1000;
             } else if(retries < 5) {
-                // approvedAt henüz yazılmadı, 1 sn sonra tekrar dene
                 retries++;
                 setTimeout(tryLoad, 1000);
                 return;
             } else {
-                // 5 deneme sonra şimdiden başlat
                 _cancelDeadline = Date.now() + 3*60*1000;
             }
             if(_cancelTimerInterval) clearInterval(_cancelTimerInterval);
@@ -3166,7 +2831,7 @@ function startCancelTimer(orderId) {
 }
 
 function updateCancelTimerDisplay() {
-    if(!_cancelDeadline) return; // deadline henüz set edilmedi
+    if(!_cancelDeadline) return;
     const remaining = Math.max(0, _cancelDeadline - Date.now());
     const btn = document.getElementById("cancel-order-btn");
     const txt = document.getElementById("cancel-timer-txt");
@@ -3182,25 +2847,18 @@ window.showCancelConfirm = () => {
     const remaining = Math.max(0, _cancelDeadline - Date.now());
     if(remaining <= 0){ showToast('⏱ İptal süresi doldu!'); return; }
     if(!confirm('Siparişinizi iptal etmek istediğinizden emin misiniz?')) return;
-    cancelOrder();
+    cancelActiveOrder();
 };
 
-async function cancelOrder() {
+async function cancelActiveOrder() {
     if(!_cancelOrderId) return;
     try {
         await updateDoc(doc(db,"orders",_cancelOrderId), { status: "İptal", cancelledBy: "customer", cancelledAt: serverTimestamp() });
         clearInterval(_cancelTimerInterval);
         _cancelOrderId = null;
+        _cancelDeadline = null;
         showToast("✅ Siparişiniz iptal edildi.");
     } catch(e) { showToast("❌ İptal işlemi başarısız."); }
-}
-
-async function checkBlacklist(phone) {
-    try { 
-        const d = await getDoc(doc(db,"phone_customers",phone)); 
-        return d.exists() && d.data().blacklist === true;
-    }
-    catch(e) { return false; }
 }
 
 window.requireLogin = (sec) => {
@@ -3209,20 +2867,9 @@ window.requireLogin = (sec) => {
 };
 
 window.onload=()=>{
-    checkStore(); updateStoreUI(); loadMenu(); updateCart();
-    // Önce localStorage'dan hızlı göster
-    if(activePhone){
-        const cachedName = localStorage.getItem('savedUserName');
-        if(cachedName){
-            userData.name = cachedName;
-            userData.phone = activePhone;
-        }
-        updateUserDisplay();
-        processLoginSuccess(activePhone, true);
-    } else {
-        updateUserDisplay();
-        loadFirstOrderBanner();
-    }
+    checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay();
+    if(activePhone) processLoginSuccess(activePhone,true);
+    else loadFirstOrderBanner();
     setTimeout(startClosingCountdown, 1500);
 };
 </script>
@@ -3232,6 +2879,10 @@ window.onload=()=>{
       <span class="bn-icon">⭐</span>
       <span class="bn-label">Puanlarım</span>
     </div>
+    <div class="bn-item" onclick="requireLogin('addresses')">
+      <span class="bn-icon">📍</span>
+      <span class="bn-label">Adreslerim</span>
+    </div>
     <div class="bn-item" onclick="requireLogin('history')">
       <span class="bn-icon">🕒</span>
       <span class="bn-label">Siparişlerim</span>
@@ -3239,12 +2890,6 @@ window.onload=()=>{
     <div class="bn-item" onclick="requireLogin('mycoupons')">
       <span class="bn-icon">🎟</span>
       <span class="bn-label">Kuponlarım</span>
-    </div>
-    <div class="bn-item" onclick="window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank')" style="background:#25D366;border-top:3px solid #1da851;">
-      <span class="bn-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-      </span>
-      <span class="bn-label" style="color:white;font-weight:700;">WA Destek</span>
     </div>
   </div>
 
