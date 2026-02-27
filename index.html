@@ -364,6 +364,63 @@
             border-radius:10px; z-index:2;
         }
 
+        /* ── SON SİPARİŞ BANNER ── */
+        #last-order-banner {
+            display:none;
+            position:relative;
+            border-radius:20px;
+            overflow:hidden;
+            margin-bottom:16px;
+            box-shadow:0 8px 32px rgba(255,102,0,0.2);
+            animation:bannerIn 0.5s cubic-bezier(0.34,1.2,0.64,1);
+        }
+        #last-order-banner .lob-bg {
+            position:absolute; inset:0;
+            background:linear-gradient(135deg, #1a1a1a 0%, #2a1a0a 50%, #1a1a1a 100%);
+        }
+        #last-order-banner .lob-glow {
+            position:absolute; top:-30px; right:-30px;
+            width:160px; height:160px;
+            background:radial-gradient(circle, rgba(255,102,0,0.35) 0%, transparent 70%);
+            pointer-events:none;
+        }
+        #last-order-banner .lob-inner {
+            position:relative; z-index:1; padding:18px;
+        }
+        .lob-tag {
+            display:inline-flex; align-items:center; gap:5px;
+            background:rgba(255,102,0,0.2); border:1px solid rgba(255,102,0,0.4);
+            color:#FF6600; font-size:10px; font-weight:800;
+            padding:3px 10px; border-radius:20px; letter-spacing:0.5px;
+            text-transform:uppercase; margin-bottom:10px;
+        }
+        .lob-name { font-size:16px; font-weight:900; color:white; margin-bottom:4px; line-height:1.3; }
+        .lob-items-txt { font-size:12px; color:rgba(255,255,255,0.55); margin-bottom:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lob-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .lob-price-block { display:flex; flex-direction:column; }
+        .lob-price-label { font-size:10px; color:rgba(255,255,255,0.4); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+        .lob-price { font-size:22px; font-weight:900; color:white; line-height:1; }
+        .lob-price span { color:#FF6600; }
+        .lob-btn {
+            background:linear-gradient(135deg,#FF6600,#e05500);
+            color:white; border:none; padding:12px 22px;
+            border-radius:14px; font-weight:800; font-size:13px;
+            cursor:pointer; white-space:nowrap;
+            box-shadow:0 4px 16px rgba(255,102,0,0.5);
+            transition:all 0.2s; display:flex; align-items:center; gap:7px;
+        }
+        .lob-btn:active { transform:scale(0.96); box-shadow:0 2px 8px rgba(255,102,0,0.3); }
+        .lob-close {
+            position:absolute; top:14px; right:14px;
+            background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+            color:rgba(255,255,255,0.4); width:26px; height:26px;
+            border-radius:50%; font-size:13px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s; z-index:2;
+        }
+        .lob-close:hover { background:rgba(255,255,255,0.15); color:white; }
+        .lob-divider { height:1px; background:linear-gradient(90deg, transparent, rgba(255,102,0,0.3), transparent); margin:12px 0; }
+
         /* ── KAMPANYALAR ── */
         #campaigns-section { margin-bottom:20px; }
         .camp-title { font-size:15px; font-weight:800; color:var(--dark); display:flex; align-items:center; gap:7px; margin-bottom:12px; }
@@ -419,22 +476,34 @@
             position:fixed;
             bottom:0; left:0; right:0;
             z-index:8500;
-            height:calc(56px + env(safe-area-inset-bottom));
+            height:calc(64px + env(safe-area-inset-bottom));
             padding-bottom:env(safe-area-inset-bottom);
-            background:#1a1a1a;
-            border-top:2px solid rgba(255,102,0,0.25);
+            background:linear-gradient(180deg,#111111,#0d0d0d);
+            border-top:1px solid rgba(255,255,255,0.07);
             display:flex; justify-content:space-around; align-items:stretch;
-            box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+            box-shadow:0 -8px 30px rgba(0,0,0,0.4);
         }
         .bn-item {
             flex:1; display:flex; flex-direction:column; align-items:center;
-            justify-content:center; gap:3px; cursor:pointer;
-            transition:all 0.2s; padding:6px 0;
-            border-top:2px solid transparent;
+            justify-content:center; gap:4px; cursor:pointer;
+            transition:all 0.2s; padding:8px 0;
+            position:relative; overflow:hidden;
         }
-        .bn-item:hover, .bn-item:active { background:rgba(255,102,0,0.12); border-top-color:var(--primary); }
-        .bn-icon { font-size:19px; line-height:1; }
-        .bn-label { font-size:9px; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.3px; }
+        .bn-item::after {
+            content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+            width:0; height:2px; background:var(--primary);
+            border-radius:0 0 3px 3px; transition:width 0.25s ease;
+        }
+        .bn-item:active::after { width:60%; }
+        .bn-item:active { background:rgba(255,102,0,0.08); }
+        .bn-icon { font-size:20px; line-height:1; transition:transform 0.2s; }
+        .bn-item:active .bn-icon { transform:scale(0.88); }
+        .bn-label { font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; transition:color 0.2s; }
+        .bn-item:active .bn-label { color:var(--primary); }
+        .bn-item.wa-btn { background:rgba(37,211,102,0.08); border-left:1px solid rgba(37,211,102,0.15); }
+        .bn-item.wa-btn:active { background:rgba(37,211,102,0.18); }
+        .bn-item.wa-btn .bn-label { color:rgba(37,211,102,0.7); }
+        .bn-item.wa-btn:active .bn-label { color:#25D366; }
         .points-card { background:linear-gradient(135deg,#1a1a1a,#2c2c2c); border-radius:16px; padding:20px; color:white; margin-bottom:16px; }
         .points-big   { font-size:42px; font-weight:800; color:var(--primary); line-height:1; }
         .points-lbl   { font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
@@ -1079,7 +1148,7 @@ function renderMenu(products) {
     const sorted=[...CAT_ORDER.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CAT_ORDER.includes(c)).sort((a,b)=>(catOrderMap[a]||999)-(catOrderMap[b]||999))];
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
-    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
+    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="last-order-banner" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
         <div class="cat-title">${catEmojis[cat]||'🍽'} ${cat}</div>
         ${cats[cat].map(item=>{
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
@@ -1583,6 +1652,8 @@ async function processLoginSuccess(id,isAuto=false){
         if(!isAuto) {
           setTimeout(() => checkUserCoupons(userData.name), 500);
         }
+        // Son sipariş banner'ı göster
+        setTimeout(() => showLastOrderBanner(userData.phone||id), 800);
     }
 }
 
@@ -1937,6 +2008,86 @@ window.reorder=idx=>{
     updateCart();
     openModal('cart');
     showToast(`🔄 ${o.items.length} ürün sepete eklendi`);
+};
+
+async function showLastOrderBanner(phone) {
+    try {
+        // Session'da kapatılmışsa gösterme
+        if(sessionStorage.getItem('lob_hidden')) return;
+
+        const snap = await getDocs(query(
+            collection(db,"orders"),
+            where("phone","==",phone)
+        ));
+        if(snap.empty) return;
+
+        // En son teslim edilen veya tamamlanan siparişi bul
+        const orders = snap.docs.map(d=>({...d.data(),id:d.id}))
+            .filter(o => o.status === 'Teslim Edildi' || o.status === 'Hazırlanıyor' || o.status === 'Yola Çıktı')
+            .sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0));
+
+        // Aktif sipariş varsa gösterme (zaten status bar var)
+        const hasActive = orders.some(o => o.status==='Hazırlanıyor' || o.status==='Yola Çıktı');
+        if(hasActive) return;
+
+        const last = orders.find(o => o.status === 'Teslim Edildi');
+        if(!last || !last.items?.length) return;
+
+        const orderDate = last.date?.seconds ? new Date(last.date.seconds*1000) : null;
+        if(!orderDate) return;
+
+        const now = new Date();
+        const diffDays = Math.floor((now - orderDate) / (1000*60*60*24));
+        const timeAgo = diffDays === 0 ? 'Bugün' : diffDays === 1 ? 'Dün' : diffDays < 7 ? `${diffDays} gün önce` : orderDate.toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
+
+        const banner = document.getElementById('last-order-banner');
+        if(!banner) return;
+
+        const itemNames = last.items.map(i=>i.n).join(' · ');
+
+        banner.innerHTML = `
+            <div class="lob-bg"></div>
+            <div class="lob-glow"></div>
+            <button class="lob-close" onclick="hideLOB()">✕</button>
+            <div class="lob-inner">
+                <div class="lob-tag">🕐 ${timeAgo} · Son Siparişin</div>
+                <div class="lob-name">${last.items.length} Ürün · ${last.items[0].n}${last.items.length>1?` ve ${last.items.length-1} daha`:''}</div>
+                <div class="lob-items-txt">${itemNames}</div>
+                <div class="lob-divider"></div>
+                <div class="lob-footer">
+                    <div class="lob-price-block">
+                        <div class="lob-price-label">Toplam tutar</div>
+                        <div class="lob-price">${last.total} <span>TL</span></div>
+                    </div>
+                    <button class="lob-btn" onclick="reorderLastFromBanner()">
+                        🛒 Tekrar Sipariş
+                    </button>
+                </div>
+            </div>`;
+        banner.style.display = 'block';
+        window._lastOrderItems = last.items;
+    } catch(e) {
+        console.log('Son sipariş yüklenemedi:', e);
+    }
+}
+
+window.hideLOB = () => {
+    const b = document.getElementById('last-order-banner');
+    if(b) { b.style.animation='none'; b.style.opacity='0'; b.style.transform='scale(0.95)'; b.style.transition='all 0.2s'; setTimeout(()=>b.style.display='none',200); }
+    sessionStorage.setItem('lob_hidden','1');
+};
+
+window.reorderLastFromBanner = () => {
+    const items = window._lastOrderItems;
+    if(!items?.length) return;
+    if(basket.length > 0) {
+        if(!confirm(`Sepetinizde ${basket.length} ürün var. Temizlenip yeniden eklensin mi?`)) return;
+        basket=[]; appliedCoupon=null; usingPoints=false;
+    }
+    items.forEach(i => basket.push({...i}));
+    updateCart();
+    openModal('cart');
+    showToast(`🔄 ${items.length} ürün sepete eklendi`);
 };
 
 window.savePersonalInfo=async()=>{
@@ -3003,27 +3154,39 @@ window.onload=()=>{
     if(activePhone) processLoginSuccess(activePhone,true);
     else loadFirstOrderBanner();
     setTimeout(startClosingCountdown, 1500);
+
+    // Alt nav event listener'ları
+    document.getElementById('bn-points')?.addEventListener('click', () => requireLogin('points'));
+    document.getElementById('bn-history')?.addEventListener('click', () => requireLogin('history'));
+    document.getElementById('bn-coupons')?.addEventListener('click', () => requireLogin('mycoupons'));
+    document.getElementById('bn-wa')?.addEventListener('click', () => window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank'));
 };
 </script>
   <!-- ALT NAVİGASYON BAR -->
   <div id="bottom-nav">
-    <div class="bn-item" onclick="requireLogin('points')">
-      <span class="bn-icon">⭐</span>
+    <div class="bn-item" id="bn-points">
+      <span class="bn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </span>
       <span class="bn-label">Puanlarım</span>
     </div>
-    <div class="bn-item" onclick="requireLogin('history')">
-      <span class="bn-icon">🕒</span>
+    <div class="bn-item" id="bn-history">
+      <span class="bn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </span>
       <span class="bn-label">Siparişlerim</span>
     </div>
-    <div class="bn-item" onclick="requireLogin('mycoupons')">
-      <span class="bn-icon">🎟</span>
+    <div class="bn-item" id="bn-coupons">
+      <span class="bn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      </span>
       <span class="bn-label">Kuponlarım</span>
     </div>
-    <div class="bn-item" onclick="window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank')" style="background:#25D366;border-top:3px solid #1da851;">
+    <div class="bn-item wa-btn" id="bn-wa">
       <span class="bn-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
       </span>
-      <span class="bn-label" style="color:white;font-weight:700;">WA Destek</span>
+      <span class="bn-label">WA Destek</span>
     </div>
   </div>
 
