@@ -1348,6 +1348,26 @@ window.applyCoupon=async()=>{
 window.finalizeOrder=async()=>{
     if(!basket.length) return alert("Sepetiniz boş.");
     if(!userAddresses[window.selectedAddressIndex]) return alert("Lütfen bir teslimat adresi seçin.");
+
+    // ── SADECE İÇECEK KONTROLÜ ──
+    const drinkCats = ['İçecekler', 'İçecek'];
+    const hasOnlyDrinks = basket.every(i => drinkCats.includes(i.c) || (i.n||'').toLowerCase().includes('içecek') || (i.n||'').toLowerCase().includes('kola') || (i.n||'').toLowerCase().includes('su') || (i.n||'').toLowerCase().includes('ayran'));
+    if(hasOnlyDrinks) return alert("⚠️ Sadece içecek ile sipariş verilemez.\n\nLütfen en az bir yiyecek ekleyin.");
+
+    // ── CANTIK / LAHMACUN MİNİMUM 2 ADET ──
+    const cantikItems = basket.filter(i => {
+        const n = (i.n||'').toLowerCase();
+        return n.includes('cantık') || n.includes('cantik') || n.includes('lahmacun');
+    });
+    const nonCantikFood = basket.filter(i => {
+        const n = (i.n||'').toLowerCase();
+        const isDrink = drinkCats.includes(i.c) || n.includes('kola') || n.includes('su') || n.includes('ayran');
+        const isCantik = n.includes('cantık') || n.includes('cantik') || n.includes('lahmacun');
+        return !isDrink && !isCantik;
+    });
+    if(cantikItems.length > 0 && cantikItems.length < 2 && nonCantikFood.length === 0) {
+        return alert("⚠️ Cantık ve Lahmacun minimum 2 adet sipariş edilmelidir.\n\nBaşka bir yiyecek eklerseniz tek adet de verebilirsiniz.");
+    }
     const addrTxt=String(userAddresses[window.selectedAddressIndex].address||"");
     const{sub,discount,ptsDis,total}=calcTotal();
     const{limit:minL,label:regN}=getMinLimit(addrTxt);
@@ -2003,7 +2023,21 @@ window.openModal=sec=>{
     if(sec==='points')    renderPoints();
 };
 window.handleUserPanelClick=()=>{ if(!activePhone) openModal('login'); else toggleSidebar(); };
-window.handleCheckout=()=>openModal('checkout');
+window.handleCheckout=()=>{
+    // ── SADECE İÇECEK KONTROLÜ ──
+    const drinkCats = ['İçecekler', 'İçecek'];
+    const hasOnlyDrinks = basket.every(i => drinkCats.includes(i.c) || (i.n||'').toLowerCase().includes('kola') || (i.n||'').toLowerCase().includes('su ') || (i.n||'').toLowerCase().includes('ayran'));
+    if(hasOnlyDrinks) return alert("⚠️ Sadece içecek ile sipariş verilemez.\n\nLütfen en az bir yiyecek ekleyin.");
+
+    // ── CANTIK / LAHMACUN MİNİMUM 2 ADET ──
+    const cantikItems = basket.filter(i => { const n=(i.n||'').toLowerCase(); return n.includes('cantık')||n.includes('cantik')||n.includes('lahmacun'); });
+    const nonCantikFood = basket.filter(i => { const n=(i.n||'').toLowerCase(); const isDrink=drinkCats.includes(i.c)||n.includes('kola')||n.includes('su ')||n.includes('ayran'); const isCantik=n.includes('cantık')||n.includes('cantik')||n.includes('lahmacun'); return !isDrink&&!isCantik; });
+    if(cantikItems.length > 0 && cantikItems.length < 2 && nonCantikFood.length === 0) {
+        return alert("⚠️ Cantık ve Lahmacun minimum 2 adet sipariş edilmelidir.\n\nBaşka bir yiyecek eklerseniz tek adet de verebilirsiniz.");
+    }
+
+    openModal('checkout');
+};
 window.toggleSidebar=()=>{ document.getElementById('sidebar').classList.add('active'); document.getElementById('sidebar-overlay').style.display='block'; };
 window.closeSidebar=()=>{ document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').style.display='none'; };
 window.toggleAddressForm=()=>{ const f=document.getElementById('new-address-form'); f.style.display=f.style.display==='none'?'block':'none'; };
