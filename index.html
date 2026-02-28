@@ -18,7 +18,7 @@
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
             --grey:#f4f4f4; --white:#FFFFFF; --header-height:75px; --cart-bar-height:72px; --status-bar-height:44px; --bottom-nav-height:56px;
         }
-        body { font-family:'Poppins',sans-serif; margin:0; background:var(--grey); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
+        body { font-family:'Poppins',sans-serif; font-size:14px; margin:0; background:var(--grey); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
 
         .header { position:fixed; top:0; left:0; right:0; height:var(--header-height); background:var(--dark); padding:0 15px; display:flex; justify-content:space-between; align-items:center; z-index:9000; box-shadow:0 2px 10px rgba(0,0,0,0.3); transition:background 0.5s; }
         .header.kapali       { background:#555 !important; border-bottom:3px solid #333; }
@@ -110,7 +110,7 @@
         #main-content.status-visible    { margin-top:calc(var(--header-height) + var(--status-bar-height) + 10px); }
         #main-content.status-cart-visible { margin-top:calc(var(--header-height) + var(--status-bar-height) + var(--cart-bar-height) + 5px); }
 
-        .cat-title { font-size:16px; font-weight:700; color:var(--dark); margin:25px 0 12px; border-left:4px solid var(--primary); padding-left:12px; text-transform:uppercase; }
+        .cat-title { font-size:13px; font-weight:700; color:var(--dark); margin:25px 0 12px; border-left:4px solid var(--primary); padding-left:12px; text-transform:uppercase; }
         .item-card { background:var(--white); padding:15px; border-radius:16px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
         .item-card.out-of-stock { opacity:0.5; }
         .item-left { display:flex; align-items:center; gap:12px; }
@@ -130,7 +130,7 @@
         /* MODAL */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9500; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; backdrop-filter:blur(6px); }
         .modal-content { background:white; border-radius:20px; width:100%; max-width:380px; position:relative; max-height:calc(100vh - var(--header-height) - var(--bottom-nav-height) - 20px); overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
-        .close-modal { position:absolute; top:15px; right:20px; font-size:28px; cursor:pointer; color:#aaa; z-index:10; }
+        .close-modal { position:absolute; top:12px; right:16px; font-size:26px; cursor:pointer; color:white; z-index:10; line-height:1; opacity:0.85; }
         .section { display:none; }
         .section.active { display:block; }
 
@@ -707,7 +707,6 @@
     <div id="sec-cart" class="section">
      <div class="cart-modal-header">
       <h3>🛒 Sepetim <span class="cart-header-count" id="cart-header-count">boş</span></h3>
-      <span onclick="closeModal()" style="color:white;font-size:22px;cursor:pointer;line-height:1;opacity:0.8;">×</span>
      </div>
      <div class="cart-modal-body">
       <div id="cart-list"></div>
@@ -1206,13 +1205,13 @@ function renderMenu(products) {
             return `<div class="item-card${!item.inStock?' out-of-stock':''}">
                 <div class="item-left">${imgHtml}
                 <div>
-                    <div style="font-weight:bold;cursor:pointer;" onclick="openItemDetail('${safeN}')">${item.n}</div>
+                    <div style="font-size:14px;font-weight:700;cursor:pointer;" onclick="openItemDetail('${safeN}')">${item.n}</div>
                     ${item.desc?`<div style="font-size:11px;color:#999;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.desc}</div>`:''}
                     ${revHtml}
                     ${!item.inStock?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-top:2px;">Şu an mevcut değil</div>':''}
                 </div></div>
                 <div style="text-align:right;">
-                    <div style="color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>
+                    <div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>
                     <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.p},'${cat}')">${btnTxt}</button>
                 </div>
             </div>`;
@@ -2251,6 +2250,9 @@ window.openModal=sec=>{
     closeSidebar(); document.getElementById('modal').style.display='flex';
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
     document.getElementById('sec-'+sec).classList.add('active');
+    // Sepette X beyaz (koyu header), diğerlerinde koyu
+    const cm = document.querySelector('.close-modal');
+    if(cm) cm.style.color = sec==='cart' ? 'white' : '#aaa';
     if(sec==='addresses'||sec==='checkout') renderAddresses(sec);
     if(sec==='history')   loadHistory();
     if(sec==='cart')      updateCart();
