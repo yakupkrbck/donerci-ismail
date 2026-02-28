@@ -710,12 +710,11 @@
       <h3>🛒 Sepetim <span class="cart-header-count" id="cart-header-count">boş</span></h3>
      </div>
      <div class="cart-modal-body">
-      <div id="cart-list"></div>
-      <div class="cart-bottom-fixed">
+      <div id="cart-list" style="overflow-y:auto;flex:1;padding:12px 16px 8px;">
       <!-- KULLANILABİLİR KUPONLAR -->
-      <div id="available-coupons-section" style="display:none;margin-top:10px;"></div>
+      <div id="available-coupons-section" style="display:none;margin-top:8px;"></div>
       
-      <div id="coupon-section" style="display:none;margin-top:10px;">
+      <div id="coupon-section" style="display:none;margin-top:8px;">
        <div class="coupon-row">
         <input type="text" class="coupon-input" id="coupon-code-input" placeholder="KUPON KODU" maxlength="20">
         <button class="coupon-apply-btn" onclick="applyCoupon()">Uygula</button>
@@ -723,16 +722,16 @@
        <div class="coupon-result" id="coupon-result"></div>
       </div>
       <!-- PUAN KULLANIM TEKLİFİ -->
-      <div id="points-offer-box" style="display:none;background:linear-gradient(135deg,#1a1a1a,#2c2c2c);border-radius:14px;padding:14px 16px;margin-top:10px;">
+      <div id="points-offer-box" style="display:none;background:linear-gradient(135deg,#1a1a1a,#2c2c2c);border-radius:12px;padding:10px 14px;margin-top:8px;">
        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <div>
-         <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.7);">⭐ Puanlarım</div>
-         <div id="points-offer-text" style="font-size:14px;font-weight:800;color:var(--primary);margin-top:2px;"></div>
+         <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);">⭐ Puanlarım</div>
+         <div id="points-offer-text" style="font-size:13px;font-weight:800;color:var(--primary);margin-top:1px;"></div>
         </div>
-        <button id="points-use-btn" onclick="togglePointsUse()" style="background:var(--primary);color:white;border:none;padding:8px 16px;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0;transition:all 0.2s;">Kullan</button>
+        <button id="points-use-btn" onclick="togglePointsUse()" style="background:var(--primary);color:white;border:none;padding:7px 14px;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0;">Kullan</button>
        </div>
       </div>
-      <div class="cart-summary-box" id="cart-summary-box" style="display:none;">
+      <div class="cart-summary-box" id="cart-summary-box" style="display:none;margin-top:10px;padding:12px 14px;">
        <div class="cart-summary-row">
         <span>Ara Toplam</span><span id="cart-subtotal">0 TL</span>
        </div>
@@ -749,8 +748,12 @@
         <span>Toplam</span><span id="cart-total">0 TL</span>
        </div>
       </div>
-      <button class="cart-checkout-btn" id="cart-checkout-btn" onclick="handleCheckout()" style="display:none;">✅ Siparişi Tamamla</button>
-      </div><!-- /cart-bottom-fixed -->
+      </div><!-- /cart-list scroll -->
+
+      <!-- SADECE BUTON ALTTA SABİT -->
+      <div style="padding:10px 16px 14px;background:white;border-top:1px solid #f0f0f0;">
+       <button class="cart-checkout-btn" id="cart-checkout-btn" onclick="handleCheckout()" style="display:none;margin-top:0;">✅ Siparişi Tamamla</button>
+      </div>
      </div>
     </div>
     <!-- LOGIN -->
@@ -1299,7 +1302,8 @@ function updateCart() {
     } else { topBar.style.display='none'; warnB.style.display='none'; mainC.classList.remove('cart-visible','cart-warn-visible'); appliedCoupon=null; usingPoints=false; }
     document.getElementById('cart-header-count').innerText=count===0?'boş':`${count} ürün`;
     const sb=document.getElementById('cart-summary-box'),cb=document.getElementById('cart-checkout-btn'),cs=document.getElementById('coupon-section');
-    sb.style.display=cb.style.display=cs.style.display=count>0?'block':'none';
+    sb.style.display=cs.style.display=count>0?'block':'none';
+    cb.style.display=count>0?'block':'none';
 
     // Puan teklif kutusu
     const pob=document.getElementById('points-offer-box');
