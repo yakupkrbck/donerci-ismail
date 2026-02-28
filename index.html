@@ -129,16 +129,19 @@
 
         /* MODAL */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9500; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; backdrop-filter:blur(6px); }
-        .modal-content { background:white; border-radius:20px; width:100%; max-width:380px; position:relative; max-height:calc(100vh - var(--header-height) - var(--bottom-nav-height) - 20px); overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
+        .modal-content { background:white; border-radius:20px; width:100%; max-width:380px; position:relative; height:calc(100vh - var(--header-height) - var(--bottom-nav-height) - 40px); max-height:680px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.35); }
         .close-modal { position:absolute; top:15px; right:20px; font-size:28px; cursor:pointer; color:#aaa; z-index:10; }
         .section { display:none; }
-        .section.active { display:block; }
+        .section.active { display:block; overflow-y:auto; }
+        #sec-cart.active { display:flex !important; overflow:hidden; }
 
-        #sec-cart { padding:0; border-radius:24px; overflow:hidden; }
+        #sec-cart { padding:0; border-radius:24px; overflow:hidden; display:flex; flex-direction:column; max-height:calc(100vh - var(--header-height) - var(--bottom-nav-height) - 20px); }
         .cart-modal-header { background:linear-gradient(135deg,var(--dark),#2d2d2d); padding:22px 25px 18px; display:flex; align-items:center; justify-content:space-between; }
         .cart-modal-header h3 { margin:0; color:white; font-size:18px; font-weight:800; display:flex; align-items:center; gap:10px; }
         .cart-header-count { background:var(--primary); color:white; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; }
-        .cart-modal-body  { padding:20px; }
+        .cart-modal-body { padding:0; display:flex; flex-direction:column; flex:1; overflow:hidden; }
+        #cart-list { overflow-y:auto; flex:1; padding:15px 20px 8px; min-height:60px; }
+        .cart-bottom-fixed { padding:0 20px 20px; background:white; border-top:1px solid #f0f0f0; }
         .cart-item-row    { display:flex; align-items:center; gap:12px; padding:13px 16px; border-radius:14px; margin-bottom:10px; background:#fafafa; border:1px solid #f0f0f0; animation:fadeInUp 0.25s ease; }
         @keyframes fadeInUp { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
         .cart-item-emoji  { font-size:26px; width:42px; height:42px; background:white; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
@@ -708,9 +711,9 @@
      </div>
      <div class="cart-modal-body">
       <div id="cart-list"></div>
-      
+      <div class="cart-bottom-fixed">
       <!-- KULLANILABİLİR KUPONLAR -->
-      <div id="available-coupons-section" style="display:none;margin-top:15px;"></div>
+      <div id="available-coupons-section" style="display:none;margin-top:10px;"></div>
       
       <div id="coupon-section" style="display:none;margin-top:10px;">
        <div class="coupon-row">
@@ -720,7 +723,7 @@
        <div class="coupon-result" id="coupon-result"></div>
       </div>
       <!-- PUAN KULLANIM TEKLİFİ -->
-      <div id="points-offer-box" style="display:none;background:linear-gradient(135deg,#1a1a1a,#2c2c2c);border-radius:14px;padding:14px 16px;margin-top:14px;">
+      <div id="points-offer-box" style="display:none;background:linear-gradient(135deg,#1a1a1a,#2c2c2c);border-radius:14px;padding:14px 16px;margin-top:10px;">
        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <div>
          <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.7);">⭐ Puanlarım</div>
@@ -747,6 +750,7 @@
        </div>
       </div>
       <button class="cart-checkout-btn" id="cart-checkout-btn" onclick="handleCheckout()" style="display:none;">✅ Siparişi Tamamla</button>
+      </div><!-- /cart-bottom-fixed -->
      </div>
     </div>
     <!-- LOGIN -->
@@ -2012,25 +2016,26 @@ async function loadMyCoupons(){
 }
 window.togglePointsUse=()=>{
     if(loyaltyPoints<PTS_GOAL) return;
-    // Kampanyalı ürün varsa puan kullandırma
+
+    // Kampanyalı ürün varsa engelle
     const hasCampaign = basket.some(i => i.c === 'Kampanya');
     if(hasCampaign && !usingPoints){
-        showToast('⚠️ Kampanyalı ürünlerde puan kullanılamaz');
+        showCartMsg('⚠️ Kampanyalı ürünlerde puan kullanılamaz', 'warn');
         return;
     }
-    // Kupon uygulanmışsa puan kullandırma
+    // Kupon uygulanmışsa engelle
     if(appliedCoupon && !usingPoints){
-        showToast('⚠️ Kupon uygulandığında puan kullanılamaz');
+        showCartMsg('⚠️ Kupon uygulandığında puan kullanılamaz', 'warn');
         return;
     }
     const {sub} = calcTotal();
     if(!usingPoints && sub < 200){
-        showToast('⚠️ Puan kullanmak için minimum 200 TL sipariş gerekli');
+        showCartMsg('⚠️ Puan kullanmak için minimum 200 TL sipariş gerekli', 'warn');
         return;
     }
     usingPoints=!usingPoints;
     updateCart();
-    showToast(usingPoints?`⭐ ${calcPointsDiscount()} TL puan indirimi uygulandı`:'Puan indirimi kaldırıldı');
+    showCartMsg(usingPoints ? `⭐ ${calcPointsDiscount()} TL puan indirimi uygulandı` : 'Puan indirimi kaldırıldı', usingPoints ? 'ok' : 'info');
 };
 
 window.applyAndGoCart=async(code)=>{
@@ -2236,6 +2241,16 @@ window.handleLogout=()=>{
 function showToast(msg){
     const c=document.getElementById('toast-container'),t=document.createElement('div');
     t.className='toast'; t.innerHTML=msg; c.appendChild(t); setTimeout(()=>t.remove(),2500);
+}
+
+// Sepet içinde görünür mesaj (modal açıkken toast gözükmediğinde kullanılır)
+function showCartMsg(msg, type='info'){
+    const el = document.getElementById('coupon-result');
+    if(!el) return;
+    el.style.display='block';
+    el.className='coupon-result ' + (type==='warn'||type==='error' ? 'error' : 'success');
+    el.innerText = msg;
+    setTimeout(()=>{ el.style.display='none'; }, 3000);
 }
 
 // ── MODAL ──
