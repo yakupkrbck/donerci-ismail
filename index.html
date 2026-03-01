@@ -8,6 +8,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>eruda.init();</script>
   <meta name="apple-mobile-web-app-title" content="Dönerci İsmail">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
@@ -2313,9 +2315,13 @@ async function initFcmToken(phone){
                 fcmTokenUpdated: new Date().toISOString()
             },{merge:true});
             console.log("[FCM] ✅ Token güncellendi");
+            showToast("🔔 Bildirimler aktif!", "success");
+        } else {
+            showToast("⚠️ Bildirim token alınamadı", "warn");
         }
     } catch(e){
         console.warn("[FCM] Hata:", e.message);
+        showToast("⚠️ Bildirim hatası: " + e.message, "warn");
     }
 }
 
@@ -3285,4 +3291,4 @@ window.onload=()=>{
   </div>
 
  </body>
-</html>
+ </html>
