@@ -2309,7 +2309,7 @@ async function initFcmToken(phone){
         if(token && phone){
             // Eski token'ları temizle, sadece güncel token'ı tut
             await setDoc(doc(db,"phone_customers",phone),{
-                fcmTokens: [token],
+                fcmTokenlar: [token],
                 fcmTokenUpdated: new Date().toISOString()
             },{merge:true});
             console.log("[FCM] ✅ Token güncellendi");
