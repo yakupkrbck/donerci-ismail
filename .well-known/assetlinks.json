@@ -1,1 +1,8 @@
-
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.donercismail.www.twa",
+        "sha256_cert_fingerprints": ["53:D0:AE:BA:71:9C:EC:06:AD:E3:53:E2:FC:47:74:10:DF:1E:35:F6:3E:52:2E:05:AE:C2:08:94:4B:3A:2B:01"]
+      }
+    }]
