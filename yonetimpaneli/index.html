@@ -130,23 +130,35 @@ input:checked+.slider:before{transform:translateX(24px);}
 @keyframes si{from{transform:translateX(100%);}to{transform:translateX(0);}}
 
 /* SİPARİŞ POPUP */
-#order-popup{display:none;position:fixed;bottom:20px;left:20px;z-index:99999;background:white;border-radius:16px;box-shadow:0 20px 60px rgba(192,57,43,.4);border:3px solid var(--danger);min-width:320px;max-width:400px;animation:popIn .4s cubic-bezier(.68,-.55,.265,1.55);}
-#order-popup.show{display:block;}
-@keyframes popIn{from{transform:scale(.7) translateY(20px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
-.popup-header{background:var(--danger);color:white;padding:16px 20px;border-radius:13px 13px 0 0;display:flex;justify-content:space-between;align-items:center;}
-.popup-close{background:rgba(255,255,255,.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:bold;transition:.2s;}
-.popup-close:hover{background:rgba(255,255,255,.4);}
-.popup-body{padding:20px;}
-.popup-customer{font-size:20px;font-weight:800;color:var(--dark);margin-bottom:8px;}
-.popup-phone{font-size:13px;color:#7f8c8d;margin-bottom:12px;}
-.popup-items{background:#fff3e0;padding:12px;border-radius:8px;margin-bottom:12px;border-left:3px solid var(--warn);}
-.popup-item{font-size:14px;color:#555;margin-bottom:4px;font-weight:600;}
-.popup-total{font-size:24px;font-weight:900;color:var(--primary);text-align:center;margin-bottom:16px;}
-.popup-actions{display:flex;gap:10px;}
-.popup-btn{flex:1;padding:12px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;transition:.2s;}
-.popup-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.15);}
-.popup-btn.reject{background:#ecf0f1;color:#555;}
-.popup-btn.approve{background:var(--success);color:white;}
+#order-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99998;backdrop-filter:blur(4px);}
+#order-popup-overlay.show{display:flex;align-items:center;justify-content:center;}
+#order-popup{background:white;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.4);width:420px;max-width:95vw;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);overflow:hidden;}
+@keyframes popIn{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.popup-header{background:linear-gradient(135deg,#c0392b,#e74c3c);color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;}
+.popup-header-left{display:flex;align-items:center;gap:12px;}
+.popup-bell{width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;animation:bellRing 1s ease infinite;}
+@keyframes bellRing{0%,100%{transform:rotate(0);}20%{transform:rotate(-15deg);}40%{transform:rotate(15deg);}60%{transform:rotate(-8deg);}80%{transform:rotate(8deg);}}
+.popup-header-title{font-size:16px;font-weight:800;letter-spacing:.5px;}
+.popup-header-sub{font-size:12px;opacity:.8;margin-top:2px;}
+.popup-close{background:rgba(255,255,255,.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:20px;font-weight:bold;transition:.2s;line-height:1;}
+.popup-close:hover{background:rgba(255,255,255,.35);}
+.popup-body{padding:24px;}
+.popup-customer{font-size:22px;font-weight:800;color:var(--dark);margin-bottom:4px;}
+.popup-phone{font-size:13px;color:#95a5a6;margin-bottom:16px;display:flex;align-items:center;gap:5px;}
+.popup-items{background:#fdf6ec;padding:14px;border-radius:12px;margin-bottom:14px;border-left:4px solid var(--warn);}
+.popup-item{font-size:14px;color:#444;margin-bottom:5px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.popup-item:last-child{margin-bottom:0;}
+.popup-addr{background:#f8f9fa;padding:10px 14px;border-radius:10px;font-size:13px;color:#555;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px;}
+.popup-total-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:2px dashed #eee;margin-bottom:18px;}
+.popup-total-lbl{font-size:13px;color:#95a5a6;font-weight:600;}
+.popup-total{font-size:32px;font-weight:900;color:var(--primary);}
+.popup-actions{display:flex;gap:12px;}
+.popup-btn{flex:1;padding:15px;border:none;border-radius:14px;cursor:pointer;font-weight:800;font-size:15px;transition:all .2s;letter-spacing:.3px;}
+.popup-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.15);}
+.popup-btn:active{transform:translateY(0);}
+.popup-btn.reject{background:#f0f0f0;color:#777;}
+.popup-btn.reject:hover{background:#e0e0e0;}
+.popup-btn.approve{background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;box-shadow:0 4px 15px rgba(39,174,96,.4);}
 
 /* KATEGORİ BAŞLIĞI */
 .cat-header td{background:#34495e;color:white;font-weight:700;padding:9px 12px;font-size:12px;letter-spacing:1px;text-transform:uppercase;}
@@ -1003,12 +1015,20 @@ input:checked+.slider:before{transform:translateX(24px);}
 </div>
 
 <div id="print-area"></div>
+<div id="order-popup-overlay">
 <div id="order-popup">
   <div class="popup-header">
-    <div><div style="font-size:14px;font-weight:700;letter-spacing:1px;">🔔 YENİ SİPARİŞ</div></div>
+    <div class="popup-header-left">
+      <div class="popup-bell">🔔</div>
+      <div>
+        <div class="popup-header-title">YENİ SİPARİŞ!</div>
+        <div class="popup-header-sub" id="popup-order-num"></div>
+      </div>
+    </div>
     <button class="popup-close" onclick="closeOrderPopup()">×</button>
   </div>
   <div class="popup-body" id="popup-content"></div>
+</div>
 </div>
 <div id="toast-c"></div>
 <audio id="alarm" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto" loop></audio>
@@ -1096,24 +1116,63 @@ let currentPopupOrder = null;
 window.showOrderPopup = (order) => {
   currentPopupOrder = order;
   const items = (order.items||[]).map(i=>
-    `<div class="popup-item">• ${i.n}${i.note?` <span style="color:#999;font-size:12px;">(${i.note})</span>`:''}</div>`
+    `<div class="popup-item">🍽 ${i.n}${i.note?` <span style="color:#999;font-size:12px;">(${i.note})</span>`:''}</div>`
   ).join('');
+  document.getElementById('popup-order-num').textContent = order.orderNumber ? `Sipariş #${order.orderNumber}` : '';
   document.getElementById('popup-content').innerHTML = `
     <div class="popup-customer">${order.customer}</div>
     <div class="popup-phone">📞 ${order.phone || '-'}</div>
     <div class="popup-items">${items}</div>
-    ${order.orderNote?`<div style="background:#fff5f5;padding:8px;border-radius:6px;margin-bottom:12px;font-size:13px;color:#c0392b;border-left:3px solid var(--danger);">📝 ${order.orderNote}</div>`:''}
-    <div class="popup-total">${order.total} ₺</div>
+    ${order.orderNote?`<div style="background:#fff5f5;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px;color:#c0392b;border-left:3px solid var(--danger);display:flex;gap:8px;"><span>📝</span><span>${order.orderNote}</span></div>`:''}
+    <div class="popup-addr"><span>📍</span><span>${(order.addressDetails||'Adres belirtilmemiş').substring(0,80)}</span></div>
+    <div class="popup-total-row">
+      <span class="popup-total-lbl">TOPLAM TUTAR</span>
+      <span class="popup-total">${order.total} ₺</span>
+    </div>
     <div class="popup-actions">
       <button class="popup-btn reject" onclick="rejectFromPopup()">❌ Reddet</button>
-      <button class="popup-btn approve" onclick="approveFromPopup()">✅ Onayla</button>
+      <button class="popup-btn approve" onclick="approveFromPopup()">✅ Onayla & Yazdır</button>
     </div>`;
-  document.getElementById('order-popup').classList.add('show');
+  document.getElementById('order-popup-overlay').classList.add('show');
   playAlarm();
 };
-window.closeOrderPopup = () => { document.getElementById('order-popup').classList.remove('show'); currentPopupOrder=null; stopAlarm(); };
-window.rejectFromPopup = async () => { if(!currentPopupOrder) return; await updStatus(currentPopupOrder.id,'İptal'); closeOrderPopup(); };
-window.approveFromPopup = async () => { if(!currentPopupOrder) return; closeOrderPopup(); await approve(currentPopupOrder.id); };
+window.closeOrderPopup = () => { 
+  document.getElementById('order-popup-overlay').classList.remove('show'); 
+  currentPopupOrder=null; stopAlarm(); 
+};
+window.rejectFromPopup = async () => { 
+  if(!currentPopupOrder) return; 
+  const id = currentPopupOrder.id;
+  closeOrderPopup();
+  await updStatus(id,'İptal');
+};
+window.approveFromPopup = async () => { 
+  if(!currentPopupOrder) return; 
+  const id = currentPopupOrder.id; // önce id'yi al
+  closeOrderPopup();               // sonra kapat (currentPopupOrder=null olur)
+  await approve(id);               // kaydettiğimiz id ile onayla
+};
+
+// Overlay'e tıklayınca kapat
+document.getElementById('order-popup-overlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('order-popup-overlay')) closeOrderPopup();
+});
+
+// Electron: bildirime tıklanınca sipariş popup'ını aç
+if(window.electronAPI) {
+    window.electronAPI.onNotificationClick(orderId => {
+        const order = visibleOrders.find(o => o.id === orderId);
+        if(order) showOrderPopup(order);
+    });
+
+    // Alarm penceresinden onayla/reddet gelince
+    window.electronAPI.onAlarmAction(({ action, orderId }) => {
+        const order = visibleOrders.find(o => o.id === orderId) || visibleOrders.find(o => o.status === 'Onay Bekliyor');
+        if(!order) return;
+        if(action === 'approve') approve(order.id);
+        else if(action === 'reject') updStatus(order.id, 'İptal');
+    });
+}
 
 // ── MAĞAZA ─────────────────────────────────────────────────────────────────
 window.toggleStore = async open => {
@@ -1150,6 +1209,8 @@ function listenOrders(){
     document.getElementById('cnt-w').innerText=wc;
     document.getElementById('cnt-p').innerText=document.getElementById('col-p').children.length;
     document.getElementById('cnt-c').innerText=document.getElementById('col-c').children.length;
+    // Electron tepsisini güncelle
+    if(window.electronAPI) window.electronAPI.updateBadge(wc);
     snap.docChanges().forEach(ch=>{
       if(ch.type==="added"&&!isFirst&&ch.doc.data().status==='Onay Bekliyor'){
         const orderData={id:ch.doc.id,...ch.doc.data()};
@@ -1234,27 +1295,118 @@ window.updStatus=async(id,s)=>{
           }
         }
       }catch(e){ toast(`⚠️ Teslim edildi ama puan verilemedi`,true); }
+      sendPushToCustomer(id, '🎉 Siparişiniz Teslim Edildi!', 'Afiyet olsun! Tekrar bekleriz 😊');
+    } else if(s==='Yola Çıktı') {
+      toast("Güncellendi.");
+      sendPushToCustomer(id, '🛵 Siparişiniz Yola Çıktı!', 'Kurye kapınıza doğru yola çıktı. Az kaldı!');
+    } else if(s==='İptal') {
+      toast("Güncellendi.");
+      sendPushToCustomer(id, '❌ Siparişiniz İptal Edildi', 'Üzgünüz, siparişiniz iptal edildi.');
     } else { toast("Güncellendi."); }
   }catch(e){ toast("❌ Hata: "+e.message,true); }
 };
+
+async function sendPushToCustomer(orderId, title, body) {
+  if(!window.electronAPI) return; // Sadece Electron'da çalışır
+  try {
+    const orderDoc = await getDoc(doc(db,"orders",orderId));
+    if(!orderDoc.exists()) return;
+    const order = orderDoc.data();
+    const phone = order.phone;
+    if(!phone) return;
+    // Müşterinin FCM token'larını Firestore'dan al
+    const q = query(collection(db,"phone_customers"), where("phone","==",phone));
+    const snap = await getDocs(q);
+    if(snap.empty) return;
+    const custData = snap.docs[0].data();
+    const tokens = custData.fcmTokenlar || custData.fcmTokens || (custData.fcmToken ? [custData.fcmToken] : []);
+    if(!tokens.length) return;
+    window.electronAPI.sendFcmPush(tokens, title, body);
+    console.log(`📱 FCM push gönderildi: ${title} → ${tokens.length} token`);
+  } catch(e) {
+    console.error('sendPushToCustomer hata:', e.message);
+  }
+}
 window.approve=async id=>{
   stopAlarm();
   try{
     await updateDoc(doc(db,"orders",id),{status:'Hazırlanıyor', approvedAt: serverTimestamp()});
     toast(`✅ Sipariş onaylandı`);
     setTimeout(()=>printOrd(id),500);
+    // FCM push gönder
+    sendPushToCustomer(id, '🔥 Siparişiniz Hazırlanıyor!', 'Mutfak siparişinizi hazırlıyor. Yakında yola çıkacak!');
   }catch(e){ toast("❌ Onay hatası: "+e.message,true); }
 };
-window.printOrd=id=>{
+window.printOrd=async id=>{
   const o=visibleOrders.find(x=>x.id===id); if(!o) return;
-  const items=(o.items||[]).map(i=>`<div class="rrow"><span>${i.n}</span><span>${i.p||''} TL</span></div>`).join('');
-  document.getElementById('print-area').innerHTML=`
-    <div class="rh">DÖNERCİ İSMAİL<br>SİPARİŞ FİŞİ</div>
-    <div class="ri"><b>Tarih:</b> ${new Date().toLocaleString('tr-TR')}<br><b>Müşteri:</b> ${o.customer}<br><b>Tel:</b> ${o.phone||'-'}<br><b>Adres:</b> ${o.addressDetails||o.address||'-'}${o.orderNote?`<br><b>Not:</b> ${o.orderNote}`:''}</div>
-    <div class="rit">${items}</div>
-    <div class="rtot">TOPLAM: ${o.total} TL</div>
-    <div class="rf">Afiyet Olsun!</div>`;
-  window.print();
+  
+  const items=(o.items||[]).map(i=>{
+    const qty = i.qty||1;
+    const price = (i.p||0) * qty;
+    return `<div class="rrow"><span>-- ${qty > 1 ? qty+'x ':' '}${i.n}</span><span>${price.toFixed(2)}</span></div>`;
+  }).join('');
+
+  const discount = o.discountAmount > 0 ? `<div class="rrow"><span>İndirim (${o.discountRate||0}%)</span><span>-${o.discountAmount} TL</span></div>` : '';
+  const pointsDis = o.pointsDiscount > 0 ? `<div class="rrow"><span>Puan İndirimi</span><span>-${o.pointsDiscount} TL</span></div>` : '';
+
+  const printHTML = `<html><head><meta charset="UTF-8"><style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{font-family:'Courier New',Courier,monospace;font-size:13px;width:80mm;padding:4mm 3mm;color:#000;-webkit-font-smoothing:none;}
+    .online{text-align:center;font-size:12px;font-weight:bold;letter-spacing:4px;border-bottom:3px dashed #000;padding-bottom:5px;margin-bottom:5px;}
+    .brand{text-align:center;font-size:18px;font-weight:900;letter-spacing:3px;padding:4px 0;}
+    .sep{border:none;border-top:2px dashed #000;margin:6px 0;}
+    .sep2{border:none;border-top:3px solid #000;margin:6px 0;}
+    .info{font-size:12px;line-height:2;font-weight:600;}
+    .info b{font-weight:900;}
+    .rrow{display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:3px 0;border-bottom:1px dashed #000;}
+    .rrow span:first-child{flex:1;padding-right:4px;word-break:break-word;}
+    .rrow span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums;}
+    .rtot{display:flex;justify-content:space-between;font-size:15px;font-weight:900;padding:5px 0;}
+    .footer{text-align:center;font-size:11px;font-weight:700;margin-top:8px;line-height:2;}
+  </style></head><body>
+
+  <div class="online">✦ ONLİNE SİPARİŞ ✦</div>
+  <div class="brand">::: DÖNERCİ İSMAİL :::</div>
+  <hr class="sep">
+
+  <div class="info">
+    <b>${new Date().toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</b><br>
+    Müşteri: ${o.customer||'-'}<br>
+    Telefon: ${o.phone||'-'}<br>
+    Adres: ${o.addressDetails||o.address||'-'}
+    ${o.orderNote ? `<br>Not: ${o.orderNote}` : ''}
+  </div>
+  <hr class="sep">
+
+  ${items}
+  ${discount}
+  ${pointsDis}
+
+  <hr class="sep2">
+  <div class="rtot"><span>Toplam:</span><span>${o.total},00</span></div>
+  <hr class="sep2">
+
+  <div class="footer">
+    SİPARİŞ TEL: 0224 246 61 20<br>
+    www.donercismail.com<br>
+    ─────────────────────────<br>
+    Afiyet Olsun!
+  </div>
+
+  </body></html>`;
+
+  document.getElementById('print-area').innerHTML='';
+  
+  if(window.electronAPI) {
+    const result = await window.electronAPI.silentPrint(printHTML);
+    if(!result.success) window.print();
+  } else {
+    const w = window.open('','_blank','width=400,height=600');
+    w.document.write(printHTML);
+    w.document.close();
+    w.print();
+    setTimeout(()=>w.close(),1000);
+  }
 };
 
 // ── MENÜ YÖNETİMİ ──────────────────────────────────────────────────────────
@@ -1999,12 +2151,21 @@ function playAlarm(){
     const newSrc = settings.newOrderSound;
     alarm.loop = settings.loop;
     alarm.volume = settings.volume;
+
+    const doPlay = () => {
+        alarm.play().catch(e => {
+            // Autoplay engellendi — 500ms sonra tekrar dene
+            console.log('Ses engellendi, tekrar deneniyor...');
+            setTimeout(() => alarm.play().catch(()=>{}), 500);
+        });
+    };
+
     if(alarm.src !== newSrc && newSrc) {
         alarm.src = newSrc;
         alarm.load();
-        alarm.addEventListener('canplay', ()=>{ alarm.play().catch(()=>{}); }, {once:true});
+        alarm.addEventListener('canplay', doPlay, {once:true});
     } else {
-        alarm.currentTime=0; alarm.play().catch(()=>{});
+        alarm.currentTime=0; doPlay();
     }
 }
 window.stopAlarm=()=>{ alarm.pause(); alarm.currentTime=0; cancelAlarm.pause(); cancelAlarm.currentTime=0; };
@@ -2088,10 +2249,13 @@ window.reqNotif=()=>{ if("Notification" in window) Notification.requestPermissio
 // ── SERVICE WORKER KAYDI ──
 let _swRegistration = null;
 if('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
-        _swRegistration = reg;
-        console.log('SW kayıtlı');
-    }).catch(e => console.log('SW hatası:', e));
+    // Kayıt yap ve ready ile garantile
+    navigator.serviceWorker.register('/sw.js')
+        .then(reg => { _swRegistration = reg; console.log('SW kayıtlı'); })
+        .catch(e => console.log('SW hatası:', e));
+
+    // Sayfa yenilenince mevcut SW'yi de al
+    navigator.serviceWorker.ready.then(reg => { _swRegistration = reg; });
     
     // SW'den gelen mesajları dinle (Onayla/Reddet)
     navigator.serviceWorker.addEventListener('message', async event => {
@@ -2106,13 +2270,29 @@ if('serviceWorker' in navigator) {
 
 function sendNotif(o){ 
     const s = getNotifSettings();
-    console.log('sendNotif çağrıldı, popupEnabled:', s.popupEnabled, 'izin:', Notification.permission);
     if(s.popupEnabled === false) return;
-    if(!("Notification" in window)) return;
-    
+
     const itemsList = (o.items||[]).map(i=>i.n).join(', ');
+    const title = "🔔 YENİ SİPARİŞ!";
+    const body = `👤 ${o.customer} — ${o.total} TL
+🛒 ${itemsList}
+📍 ${(o.addressDetails||'').substring(0,35)}`;
+
+    // Electron varsa → alarm penceresi aç (SambaPOS üstüne çıkar)
+    if(window.electronAPI) {
+        window.electronAPI.showAlarmWindow(o);
+        return;
+    }
+
+    // Tarayıcı bildirimi
+    if(!("Notification" in window)) return;
+    if(Notification.permission !== "granted") {
+        if(Notification.permission !== "denied") Notification.requestPermission();
+        return;
+    }
+
     const notifOptions = {
-        body: `👤 ${o.customer} — ${o.total} TL\n🛒 ${itemsList}\n📍 ${(o.addressDetails||'').substring(0,35)}`,
+        body,
         requireInteraction: true,
         tag: 'new-order-' + o.id,
         data: { orderId: o.id },
@@ -2122,18 +2302,15 @@ function sendNotif(o){
         ]
     };
 
-    if(Notification.permission === "granted"){
-        try {
-            // Service Worker varsa SW üzerinden gönder (action butonları için)
-            if(_swRegistration) {
-                _swRegistration.showNotification("🔔 YENİ SİPARİŞ!", notifOptions);
-            } else {
-                new Notification("🔔 YENİ SİPARİŞ!", notifOptions);
-            }
-        } catch(e){ console.error('Bildirim hatası:', e); }
-    } else if(Notification.permission !== "denied"){
-        Notification.requestPermission().then(p => { if(p==='granted') sendNotif(o); });
-    }
+    try {
+        if(_swRegistration) {
+            _swRegistration.showNotification(title, notifOptions);
+        } else {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, notifOptions);
+            }).catch(()=>{ new Notification(title, notifOptions); });
+        }
+    } catch(e){ console.error('Bildirim hatası:', e); }
 }
 function toast(msg,isErr=false){ const t=document.createElement('div'); t.className='toast'+(isErr?' err':''); t.innerHTML=msg; document.getElementById('toast-c').appendChild(t); setTimeout(()=>t.remove(),3000); }
 
@@ -2147,7 +2324,21 @@ window.onload=()=>{
     alarm.loop = s.loop;
     alarm.volume = s.volume;
     alarm.load();
-    document.body.addEventListener('click',()=>{ alarm.play().then(()=>alarm.pause()).catch(()=>{}); },{once:true}); 
+    
+    // Ses unlock — birden fazla etkileşim tipi ile yakala
+    const unlockAudio = () => {
+        alarm.play().then(()=>{ alarm.pause(); alarm.currentTime=0; }).catch(()=>{});
+        // AudioContext unlock
+        if(window._audioCtx && window._audioCtx.state === 'suspended') {
+            window._audioCtx.resume();
+        }
+    };
+    ['click','touchstart','keydown'].forEach(ev => {
+        document.body.addEventListener(ev, unlockAudio, {once:true});
+    });
+
+    // Login formuna odaklanınca da unlock dene
+    document.getElementById('panel-email').addEventListener('focus', unlockAudio, {once:true});
 };
 </script>
 </body>
