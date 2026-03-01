@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="refresh" content="0; url=https://www.donercismail.com">
-<script>window.location.href="https://www.donercismail.com";</script>
+<script>
+  var path = window.location.pathname;
+  if (path.indexOf('men') !== -1) {
+    window.location.href = 'https://www.donercismail.com/men%C3%BC/';
+  } else {
+    window.location.href = 'https://www.donercismail.com';
+  }
+</script>
 </head>
 </html>
