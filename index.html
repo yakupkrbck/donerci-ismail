@@ -670,7 +670,6 @@
     <div class="user-panel" id="user-panel-btn" onclick="handleUserPanelClick()">
      <div style="position:relative;display:inline-flex;">
       <div class="user-avatar" id="user-avatar">👤</div>
-      <div id="vip-avatar-dot" class="vip-dot" style="display:none;"></div>
      </div>
      <div class="user-text">
       <span class="user-name" id="user-panel-name">Giriş Yap</span> <span class="user-sub" id="user-panel-sub">Hesabına gir →</span>
@@ -2573,13 +2572,11 @@ function updateVipDisplay(orderCount) {
     const labelEl = document.getElementById('sb-vip-label');
     const fillEl  = document.getElementById('sb-vip-fill');
     const nextEl  = document.getElementById('sb-vip-next');
-    const dotEl   = document.getElementById('vip-avatar-dot');
 
     const lvl = getVipLevel(orderCount);
 
     if(!lvl) {
         if(barEl) barEl.style.display = 'none';
-        if(dotEl) dotEl.style.display = 'none';
         // İlerleme: 5'e kadar
         const pct = Math.min((orderCount/2)*100, 100);
         if(barEl) {
@@ -2606,10 +2603,6 @@ function updateVipDisplay(orderCount) {
     } else {
         fillEl.style.width = '100%';
         nextEl.textContent = 'En yüksek seviyedesiniz! 🎉';
-    }
-
-    // Avatar üzerinde küçük dot
-    if(dotEl) { dotEl.className = 'vip-dot ' + lvl.key; dotEl.style.display = 'flex'; dotEl.textContent = lvl.icon.slice(0,1); }
 }
 
 function updateUserDisplay(){
