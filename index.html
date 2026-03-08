@@ -55,7 +55,7 @@
             display:flex; align-items:center; justify-content:center;
             font-size:13px; flex-shrink:0; transition:all 0.25s;
         }
-        .user-panel.logged-in .user-avatar { background:var(--primary); border-color:var(--primary); font-size:10px; font-weight:800; color:white; }
+        .user-panel.logged-in .user-avatar { font-size:10px; font-weight:800; }
 
         .user-text { display:flex; flex-direction:column; align-items:flex-start; overflow:hidden; min-width:0; flex:1; }
         .user-name { font-size:11px; font-weight:700; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; line-height:1.25; }
@@ -2625,8 +2625,18 @@ function updateUserDisplay(){
         // Alt satır: VIP rozet varsa göster, yoksa puan
         const oc = typeof userOrderCount !== 'undefined' ? userOrderCount : 0;
         const vipLvl = getVipLevel(oc);
+
+        // Avatar: VIP seviyesine göre renk, yoksa turuncu
+        const avatarColors = { altin:'linear-gradient(135deg,#f5c518,#e6a800)', gumus:'linear-gradient(135deg,#b0b0b0,#888)', bronz:'linear-gradient(135deg,#cd7f32,#a05a1a)' };
+        const avatarBorders = { altin:'#f5c518', gumus:'#aaa', bronz:'#cd7f32' };
+        const avatarBg = vipLvl ? avatarColors[vipLvl.key] : 'var(--primary)';
+        const avatarBorder = vipLvl ? avatarBorders[vipLvl.key] : 'var(--primary)';
+        icon.style.cssText = `width:26px;height:26px;border-radius:50%;background:${avatarBg};border:1.5px solid ${avatarBorder};display:flex;align-items:center;justify-content:center;flex-shrink:0;`;
+        icon.innerHTML = `<span style="font-size:10px;font-weight:900;color:${vipLvl?.key==='gumus'?'#333':'white'};">${ini}</span>`;
+
+        // Alt satır: rozet + puan
         if(vipLvl) {
-            subEl.innerHTML = `${vipLvl.icon} <span style="color:${vipLvl.color};font-weight:800;">${vipLvl.label}</span>`;
+            subEl.innerHTML = `${vipLvl.icon} <span style="color:${vipLvl.color};font-weight:800;">${loyaltyPoints} puan</span>`;
             subEl.classList.remove('pts');
         } else if(loyaltyPoints>0) {
             subEl.innerText=`⭐ ${loyaltyPoints} puan`; subEl.classList.add('pts');
