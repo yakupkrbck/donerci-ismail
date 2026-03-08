@@ -1907,18 +1907,40 @@ window.completeRegistration=async()=>{
     showLoginStep('success');
 };
 
+window.verifyPinAndLogin = () => {
+    const entered = document.getElementById('login-pin-input').value;
+    const errEl = document.getElementById('pin-login-error');
+    if(!entered || entered.length !== 4) return;
+    if(tempUserData && tempUserData.pin === entered) {
+        errEl.style.display = 'none';
+        processLoginSuccess(tempPhone);
+    } else {
+        errEl.style.display = 'block';
+        document.getElementById('login-pin-input').value = '';
+        document.getElementById('login-pin-input').focus();
+    }
+};
+
 window.closeSuccessAndContinue = () => {
     processLoginSuccess(tempPhone||tempGoogleUser?.uid);
 };
 
 let _loyaltyUnsubscribe = null; // puan dinleyici referansı
 
-async function processLoginSuccess(id,isAuto=false){
-    activePhone=id; localStorage.setItem("savedUserPhone",activePhone);
-    const snap=await getDoc(doc(db,"phone_customers",activePhone));
-    if(snap.exists()){
-        const d=snap.data(); userData={name:d.name,phone:d.phone||id};
-        userAddresses=d.addresses||[]; loyaltyPoints=d.loyaltyPoints||0; pointsHistory=d.pointsHistory||[];
+async function processLoginSuccess(id, isAuto=false){
+    activePhone = id;
+    localStorage.setItem("savedUserPhone", activePhone);
+    // tempUserData zaten varsa tekrar Firestore'a gitme
+    let d = tempUserData;
+    if(!d) {
+        const snap = await getDoc(doc(db,"phone_customers",activePhone));
+        if(snap.exists()) d = snap.data();
+    }
+    if(d) {
+        userData = {name:d.name, phone:d.phone||id};
+        userAddresses = d.addresses||[];
+        loyaltyPoints = d.loyaltyPoints||0;
+        pointsHistory = d.pointsHistory||[];
         window.selectedAddressIndex=0;
         updateUserDisplay();
         // ── Gerçek zamanlı puan dinleyicisi ──
