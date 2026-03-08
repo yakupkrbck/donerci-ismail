@@ -40,11 +40,11 @@
         .user-panel {
             display:flex; align-items:center;
             background:rgba(255,255,255,0.07);
-            padding:0 13px; border-radius:22px;
+            padding:0 11px; border-radius:22px;
             border:1.5px solid rgba(255,102,0,0.45);
             cursor:pointer; height:42px; box-sizing:border-box;
-            gap:8px; transition:all 0.25s; min-width:100px;
-            position:relative; overflow:hidden;
+            gap:7px; transition:all 0.25s; max-width:160px;
+            position:relative;
         }
         .user-panel:hover { border-color:var(--primary); background:rgba(255,102,0,0.1); }
         .user-panel.logged-in { background:rgba(255,102,0,0.13); border-color:rgba(255,102,0,0.65); }
@@ -57,9 +57,9 @@
         }
         .user-panel.logged-in .user-avatar { background:var(--primary); border-color:var(--primary); font-size:10px; font-weight:800; color:white; }
 
-        .user-text { display:flex; flex-direction:column; align-items:flex-start; overflow:hidden; max-width:85px; }
+        .user-text { display:flex; flex-direction:column; align-items:flex-start; overflow:hidden; min-width:0; flex:1; }
         .user-name { font-size:11px; font-weight:700; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; line-height:1.25; }
-        .user-sub  { font-size:9px; font-weight:600; color:rgba(255,255,255,0.5); white-space:nowrap; line-height:1.2; margin-top:1px; }
+        .user-sub  { font-size:9px; font-weight:600; color:rgba(255,255,255,0.5); white-space:nowrap; line-height:1.2; margin-top:1px; overflow:hidden; text-overflow:ellipsis; width:100%; }
         .user-sub.pts { color:rgba(255,200,80,0.9); }
 
         /* CART BAR */
@@ -809,7 +809,7 @@
       </div>
       <div id="phone-error" style="display:none;color:#c0392b;font-size:12px;font-weight:600;text-align:center;margin:-6px 0 10px;background:#fdedec;padding:8px;border-radius:10px;">❌ Lütfen geçerli bir telefon numarası girin</div>
       <button class="action-btn" style="background:var(--primary);" onclick="sendOtp()">
-       <span id="otp-send-txt">Doğrulama Kodu Gönder</span>
+       <span id="otp-send-txt">Devam Et</span>
       </button>
       <div style="display:flex;align-items:center;margin:18px 0 14px;">
        <div style="flex:1;height:1px;background:#eee;"></div>
@@ -1793,7 +1793,7 @@ window.sendOtp = async () => {
         tempUserData = snap.data();
         document.getElementById('welcome-back-name').textContent = `Hoş geldiniz, ${tempUserData.name} 👋`;
         btn.disabled = false;
-        btn.innerHTML = 'Doğrulama Kodu Gönder';
+        btn.innerHTML = 'Devam Et';
         showLoginStep('pin');
         setTimeout(() => document.getElementById('login-pin-input').focus(), 100);
         return;
@@ -1807,7 +1807,7 @@ window.sendOtp = async () => {
     const ok = await sendSmsViaNetgsm(otpPhone, msg);
 
     btn.disabled = false;
-    btn.innerHTML = 'Doğrulama Kodu Gönder';
+    btn.innerHTML = 'Devam Et';
 
     if(!ok) { alert('SMS gönderilemedi, lütfen tekrar deneyin.'); return; }
 
@@ -2461,26 +2461,20 @@ async function showLastOrderBanner(phone) {
         const banner = document.getElementById('last-order-banner');
         if(!banner) return;
 
-        const itemNames = last.items.map(i=>i.n).join(' · ');
+        const itemNames = last.items.map(i=>i.n).join(', ');
+        const shortItems = last.items.length === 1
+            ? last.items[0].n
+            : `${last.items[0].n} +${last.items.length-1}`;
 
         banner.innerHTML = `
-            <div class="lob-bg"></div>
-            <div class="lob-glow"></div>
-            <button class="lob-close" onclick="hideLOB()">✕</button>
-            <div class="lob-inner">
-                <div class="lob-tag">🕐 ${timeAgo} · Son Siparişin</div>
-                <div class="lob-name">${last.items.length} Ürün · ${last.items[0].n}${last.items.length>1?` ve ${last.items.length-1} daha`:''}</div>
-                <div class="lob-items-txt">${itemNames}</div>
-                <div class="lob-divider"></div>
-                <div class="lob-footer">
-                    <div class="lob-price-block">
-                        <div class="lob-price-label">Toplam tutar</div>
-                        <div class="lob-price">${last.total} <span>TL</span></div>
-                    </div>
-                    <button class="lob-btn" onclick="reorderLastFromBanner()">
-                        🛒 Tekrar Sipariş
-                    </button>
+            <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #f0f0f0;border-radius:14px;padding:11px 13px;position:relative;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#FF6600,#e05500);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🕐</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:11px;color:#aaa;font-weight:600;margin-bottom:2px;">${timeAgo} · Son siparişin</div>
+                    <div style="font-size:13px;font-weight:700;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${shortItems}</div>
                 </div>
+                <button onclick="reorderLastFromBanner()" style="background:var(--primary);color:white;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;">Tekrar 🛒</button>
+                <button onclick="hideLOB()" style="position:absolute;top:6px;right:6px;background:none;border:none;color:#ccc;font-size:14px;cursor:pointer;line-height:1;padding:2px;">✕</button>
             </div>`;
         banner.style.display = 'block';
         window._lastOrderItems = last.items;
@@ -2628,8 +2622,17 @@ function updateUserDisplay(){
         const ini=userData.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
         icon.innerHTML=`<span style="font-size:10px;font-weight:800;color:white;">${ini}</span>`;
         nameEl.innerText=userData.name.split(' ')[0];
-        if(loyaltyPoints>0){ subEl.innerText=`⭐ ${loyaltyPoints} puan`; subEl.classList.add('pts'); }
-        else{ subEl.innerText='Hesabım'; subEl.classList.remove('pts'); }
+        // Alt satır: VIP rozet varsa göster, yoksa puan
+        const oc = typeof userOrderCount !== 'undefined' ? userOrderCount : 0;
+        const vipLvl = getVipLevel(oc);
+        if(vipLvl) {
+            subEl.innerHTML = `${vipLvl.icon} <span style="color:${vipLvl.color};font-weight:800;">${vipLvl.label}</span>`;
+            subEl.classList.remove('pts');
+        } else if(loyaltyPoints>0) {
+            subEl.innerText=`⭐ ${loyaltyPoints} puan`; subEl.classList.add('pts');
+        } else {
+            subEl.innerText='Hesabım'; subEl.classList.remove('pts');
+        }
         document.getElementById('sb-name').innerText=userData.name;
         document.getElementById('sb-phone').innerText=userData.phone||activePhone;
         document.getElementById('sb-points-val').innerText=loyaltyPoints;
@@ -2637,8 +2640,6 @@ function updateUserDisplay(){
         document.getElementById('logout-menu-item').style.display='flex';
         document.getElementById('f-name').value=userData.name;
         document.getElementById('f-phone').value=userData.phone||activePhone||"";
-        // VIP rozet
-        const oc = typeof userOrderCount !== 'undefined' ? userOrderCount : 0;
         updateVipDisplay(oc);
     }
 }
@@ -2766,7 +2767,7 @@ async function initFcmToken(phone){
                 fcmTokenUpdated: new Date().toISOString()
             },{merge:true});
             console.log("[FCM] ✅ Token güncellendi");
-            showToast("🔔 Bildirimler aktif!", "success");
+            // showToast kaldırıldı — gereksiz bildirim
         } else {
             showToast("⚠️ Bildirim token alınamadı", "warn");
         }
@@ -3742,4 +3743,4 @@ window.onload=()=>{
   </div>
 
  </body>
- </html>
+</html>
