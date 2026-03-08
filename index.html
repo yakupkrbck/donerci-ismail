@@ -1095,7 +1095,7 @@ window.toggleIng = id => {
 window.setAllIng = val => { INGS.forEach(i=>{ ingState[i.id]=val; }); buildIngGrid(); };
 
 // ── MİNİMUM LİMİT ──
-const DEF_MIN = 300;
+let DEF_MIN = 300;
 
 // Türkçe + büyük/küçük harf farkını sil
 function normAddr(s){
@@ -1111,18 +1111,31 @@ function normAddr(s){
         .replace(/\s+/g," ").trim();
 }
 
-// Sadece mahalle adının geçip geçmediğine bak — mah/mahalle önemli değil
-const NH_LIMITS = [
+// Bölge limitleri — Firestore'dan güncellenir, yoksa hardcoded fallback
+let NH_LIMITS = [
     { keys:["mehmet akif"], limit:60,  label:"Mehmet Akif" },
     { keys:["celtik"],      limit:300, label:"Çeltik"      },
     { keys:["cukurca"],     limit:300, label:"Çukurca"     },
 ];
 
+async function loadDeliveryZones() {
+    try {
+        const snap = await getDoc(doc(db,'settings','deliveryZones'));
+        if(snap.exists()) {
+            const data = snap.data();
+            if(data.zones?.length) {
+                NH_LIMITS = data.zones.map(z=>({ keys: z.keys||[normAddr(z.label)], limit: z.min||0, label: z.label }));
+            }
+            if(data.defaultMin != null) DEF_MIN = data.defaultMin;
+        }
+    } catch(e) { console.warn('Teslimat bölgeleri yüklenemedi, varsayılan kullanılıyor.'); }
+}
+
 function getMinLimit(addr) {
     const t = normAddr(addr);
     for(const row of NH_LIMITS){
         for(const k of row.keys){
-            if(t.includes(k)) return {limit:row.limit, label:row.label};
+            if(t.includes(normAddr(k))) return {limit:row.limit, label:row.label};
         }
     }
     return {limit:DEF_MIN, label:"Bölgeniz"};
@@ -3739,7 +3752,7 @@ window.onload=()=>{
         navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
 
-    checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay();
+    checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay(); loadDeliveryZones();
     if(activePhone) processLoginSuccess(activePhone,true);
     else loadFirstOrderBanner();
     setTimeout(startClosingCountdown, 1500);
