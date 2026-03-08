@@ -425,60 +425,95 @@
         #last-order-banner {
             display:none;
             position:relative;
-            border-radius:20px;
+            border-radius:16px;
             overflow:hidden;
-            margin-bottom:16px;
-            box-shadow:0 8px 32px rgba(255,102,0,0.2);
-            animation:bannerIn 0.5s cubic-bezier(0.34,1.2,0.64,1);
+            margin-bottom:12px;
+            box-shadow:0 4px 16px rgba(255,102,0,0.15);
+            animation:bannerIn 0.4s cubic-bezier(0.34,1.2,0.64,1);
         }
         #last-order-banner .lob-bg {
             position:absolute; inset:0;
-            background:linear-gradient(135deg, #1a1a1a 0%, #2a1a0a 50%, #1a1a1a 100%);
+            background:linear-gradient(135deg, #1a1a1a 0%, #2a1a0a 100%);
         }
         #last-order-banner .lob-glow {
-            position:absolute; top:-30px; right:-30px;
-            width:160px; height:160px;
-            background:radial-gradient(circle, rgba(255,102,0,0.35) 0%, transparent 70%);
+            position:absolute; top:-20px; right:-20px;
+            width:100px; height:100px;
+            background:radial-gradient(circle, rgba(255,102,0,0.3) 0%, transparent 70%);
             pointer-events:none;
         }
         #last-order-banner .lob-inner {
-            position:relative; z-index:1; padding:18px;
+            position:relative; z-index:1; padding:12px 14px;
         }
         .lob-tag {
-            display:inline-flex; align-items:center; gap:5px;
+            display:inline-flex; align-items:center; gap:4px;
             background:rgba(255,102,0,0.2); border:1px solid rgba(255,102,0,0.4);
-            color:#FF6600; font-size:10px; font-weight:800;
-            padding:3px 10px; border-radius:20px; letter-spacing:0.5px;
-            text-transform:uppercase; margin-bottom:10px;
+            color:#FF6600; font-size:9px; font-weight:800;
+            padding:2px 8px; border-radius:20px; letter-spacing:0.5px;
+            text-transform:uppercase; margin-bottom:6px;
         }
-        .lob-name { font-size:16px; font-weight:900; color:white; margin-bottom:4px; line-height:1.3; }
-        .lob-items-txt { font-size:12px; color:rgba(255,255,255,0.55); margin-bottom:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .lob-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .lob-name { font-size:13px; font-weight:800; color:white; margin-bottom:2px; line-height:1.3; }
+        .lob-items-txt { font-size:11px; color:rgba(255,255,255,0.5); margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lob-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; }
         .lob-price-block { display:flex; flex-direction:column; }
-        .lob-price-label { font-size:10px; color:rgba(255,255,255,0.4); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-        .lob-price { font-size:22px; font-weight:900; color:white; line-height:1; }
+        .lob-price-label { font-size:9px; color:rgba(255,255,255,0.4); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+        .lob-price { font-size:16px; font-weight:900; color:white; line-height:1; }
         .lob-price span { color:#FF6600; }
         .lob-btn {
             background:linear-gradient(135deg,#FF6600,#e05500);
-            color:white; border:none; padding:12px 22px;
-            border-radius:14px; font-weight:800; font-size:13px;
+            color:white; border:none; padding:9px 16px;
+            border-radius:12px; font-weight:800; font-size:12px;
             cursor:pointer; white-space:nowrap;
-            box-shadow:0 4px 16px rgba(255,102,0,0.5);
-            transition:all 0.2s; display:flex; align-items:center; gap:7px;
+            box-shadow:0 3px 10px rgba(255,102,0,0.4);
+            transition:all 0.2s; display:flex; align-items:center; gap:6px;
         }
-        .lob-btn:active { transform:scale(0.96); box-shadow:0 2px 8px rgba(255,102,0,0.3); }
+        .lob-btn:active { transform:scale(0.96); }
         .lob-close {
-            position:absolute; top:14px; right:14px;
+            position:absolute; top:10px; right:10px;
             background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
-            color:rgba(255,255,255,0.4); width:26px; height:26px;
-            border-radius:50%; font-size:13px; cursor:pointer;
+            color:rgba(255,255,255,0.4); width:22px; height:22px;
+            border-radius:50%; font-size:11px; cursor:pointer;
             display:flex; align-items:center; justify-content:center;
             transition:all 0.2s; z-index:2;
         }
         .lob-close:hover { background:rgba(255,255,255,0.15); color:white; }
-        .lob-divider { height:1px; background:linear-gradient(90deg, transparent, rgba(255,102,0,0.3), transparent); margin:12px 0; }
+        .lob-divider { height:1px; background:linear-gradient(90deg, transparent, rgba(255,102,0,0.3), transparent); margin:8px 0; }
 
-        /* ── KAMPANYALAR ── */
+        @keyframes popupIn { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+        /* ── VIP ROZET ── */
+        .vip-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            padding:3px 10px 3px 6px; border-radius:20px;
+            font-size:11px; font-weight:800; letter-spacing:0.3px;
+            margin-top:6px; border:1px solid;
+        }
+        .vip-badge.bronz  { background:rgba(205,127,50,0.15); border-color:rgba(205,127,50,0.5); color:#cd7f32; }
+        .vip-badge.gumus  { background:rgba(180,180,180,0.15); border-color:rgba(180,180,180,0.5); color:#aaa; }
+        .vip-badge.altin  { background:rgba(255,200,0,0.15); border-color:rgba(255,200,0,0.6); color:#f5c518; }
+        .vip-badge-icon { font-size:14px; line-height:1; }
+        /* Üst bar avatar badge küçük gösterge */
+        .vip-dot {
+            position:absolute; bottom:-2px; right:-2px;
+            width:14px; height:14px; border-radius:50%;
+            border:2px solid white; font-size:8px;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .vip-dot.bronz { background:#cd7f32; }
+        .vip-dot.gumus { background:#aaa; }
+        .vip-dot.altin { background:#f5c518; }
+        /* Sidebar header VIP kuşak */
+        .sb-vip-bar {
+            margin:10px 16px 0;
+            background:rgba(255,255,255,0.07);
+            border-radius:12px; padding:10px 14px;
+            display:flex; align-items:center; gap:10px;
+        }
+        .sb-vip-progress-wrap { flex:1; }
+        .sb-vip-label { font-size:10px; color:rgba(255,255,255,0.45); margin-bottom:4px; font-weight:600; }
+        .sb-vip-bar-track { height:5px; background:rgba(255,255,255,0.1); border-radius:10px; overflow:hidden; }
+        .sb-vip-bar-fill { height:100%; border-radius:10px; transition:width 0.8s ease; }
+        .bronz-fill { background:linear-gradient(90deg,#cd7f32,#e8a96a); }
+        .gumus-fill { background:linear-gradient(90deg,#888,#ccc); }
+        .altin-fill { background:linear-gradient(90deg,#f5c518,#ffe066); }
         #campaigns-section { margin-bottom:20px; }
         .camp-title { font-size:15px; font-weight:800; color:var(--dark); display:flex; align-items:center; gap:7px; margin-bottom:12px; }
         .camp-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; -ms-overflow-style:none; }
@@ -633,7 +668,10 @@
    <div class="nav-icons">
     <!-- Modern kullanıcı butonu -->
     <div class="user-panel" id="user-panel-btn" onclick="handleUserPanelClick()">
-     <div class="user-avatar" id="user-avatar">👤</div>
+     <div style="position:relative;display:inline-flex;">
+      <div class="user-avatar" id="user-avatar">👤</div>
+      <div id="vip-avatar-dot" class="vip-dot" style="display:none;"></div>
+     </div>
      <div class="user-text">
       <span class="user-name" id="user-panel-name">Giriş Yap</span> <span class="user-sub" id="user-panel-sub">Hesabına gir →</span>
      </div>
@@ -692,6 +730,14 @@
      </div>
      <div class="sb-stat" onclick="closeSidebar();openModal('mycoupons')">
       <span class="sb-stat-val" id="sb-coupons-val">0</span> <span class="sb-stat-lbl">🎟 Kupon</span>
+     </div>
+    </div>
+    <div id="sb-vip-bar" style="display:none;" class="sb-vip-bar">
+     <div id="sb-vip-icon" style="font-size:26px;line-height:1;"></div>
+     <div class="sb-vip-progress-wrap">
+      <div class="sb-vip-label" id="sb-vip-label"></div>
+      <div class="sb-vip-bar-track"><div class="sb-vip-bar-fill" id="sb-vip-fill" style="width:0%"></div></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;" id="sb-vip-next"></div>
      </div>
     </div>
    </div>
@@ -1088,14 +1134,25 @@ let basket=[], activePhone=localStorage.getItem("savedUserPhone");
 let userAddresses=[], userData={name:"",phone:""};
 let tempPhone="", tempUserData=null, tempGoogleUser=null;
 let currentItemToAdd=null, currentOrderListener=null, historicalOrders=[];
-let appliedCoupon=null, loyaltyPoints=0, pointsHistory=[];
+let appliedCoupon=null, loyaltyPoints=0, pointsHistory=[], userOrderCount=0;
 window.selectedAddressIndex=0;
 let curMinLimit={limit:DEF_MIN,label:"Bölgeniz"};
 
 const PTS_GOAL=50, REWARD_TL=15;
 let usingPoints=false; // puan kullanım durumu
 
+function getVipBonus(orderCount) {
+    if(orderCount >= 8) return 0.10; // Altın: %10
+    if(orderCount >= 4) return 0.07; // Gümüş: %7
+    if(orderCount >= 2) return 0.04; // Bronz: %4
+    return 0; // Normal: puan yok
+}
 function calcPts(total){ return Math.floor(total/10); }
+function calcPtsWithBonus(total, orderCount) {
+    const rate  = getVipBonus(orderCount);
+    const pts   = Math.floor(total * rate);
+    return { base: pts, extra: 0, total: pts };
+}
 
 // Puan indirimi: her tam 50 puan için 15 TL
 function calcPointsDiscount(){
@@ -1587,10 +1644,12 @@ window.finalizeOrder=async()=>{
         console.log(`📋 Sipariş numarası: #${orderNumber}`);
         
         const usedPtsRewards=usingPoints?Math.floor(loyaltyPoints/PTS_GOAL):0;
-        
+        const vipPts = calcPtsWithBonus(total, userOrderCount);
+        const vipLvl = getVipLevel(userOrderCount);
+
         // Sipariş oluştur
         const orderData = {
-          orderNumber: orderNumber, // ← YENİ: Sıralı numara
+          orderNumber: orderNumber,
           customer: userData.name,
           phone: userData.phone||activePhone,
           addressDetails: addrTxt,
@@ -1598,14 +1657,18 @@ window.finalizeOrder=async()=>{
           subtotal: sub,
           discountRate: discount>0 ? appliedCoupon.discount : 0,
           discountAmount: discount,
-          discountCode: appliedCoupon ? appliedCoupon.code : null, // ← Düzeltildi
+          discountCode: appliedCoupon ? appliedCoupon.code : null,
           pointsDiscount: ptsDis,
-          pointsUsed: usingPoints ? (usedPtsRewards * PTS_GOAL) : 0, // ← YENİ: Panel ile uyumlu
+          pointsUsed: usingPoints ? (usedPtsRewards * PTS_GOAL) : 0,
           usedPointsRewards: usedPtsRewards,
           total: total,
           status: "Onay Bekliyor",
-          date: serverTimestamp(), // ← Düzeltildi: serverTimestamp kullan
-          orderNote: document.getElementById('order-note-input').value
+          date: serverTimestamp(),
+          orderNote: document.getElementById('order-note-input').value,
+          vipLevel: vipLvl ? vipLvl.key : null,
+          vipBonusPts: vipPts.extra,
+          basePts: vipPts.base,
+          totalPtsToEarn: vipPts.total,
         };
         
         const ref = await addDoc(collection(db,"orders"), orderData);
@@ -1955,6 +2018,23 @@ async function processLoginSuccess(id, isAuto=false){
             const ptsSection = document.getElementById('sec-points');
             if(ptsSection && ptsSection.classList.contains('active')) renderPoints();
         });
+        // Son 30 günün sipariş sayısını çek → VIP seviyesi buna göre belirlenir
+        const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000);
+        getDocs(query(
+            collection(db,'orders'),
+            where('phone','==', userData.phone||id),
+            where('date','>=', thirtyDaysAgo)
+        )).then(s => {
+            userOrderCount = s.size;
+            updateVipDisplay(userOrderCount);
+        }).catch(() => {
+            // index yoksa tüm siparişleri filtrele
+            getDocs(query(collection(db,'orders'), where('phone','==', userData.phone||id))).then(s => {
+                const cutoff = thirtyDaysAgo.getTime()/1000;
+                userOrderCount = s.docs.filter(d => (d.data().date?.seconds||0) >= cutoff).length;
+                updateVipDisplay(userOrderCount);
+            });
+        });
         document.getElementById('logout-menu-item').style.display='flex';
         document.getElementById('sb-stats').style.display='flex';
         refreshMinFromAddr();
@@ -2010,6 +2090,10 @@ function startStatusListener(phone){
                 showForegroundNotif("🛵 Siparişiniz Yola Çıktı!","Kurye kapınıza doğru yola çıktı. Az kaldı!");
             } else if(o.status==='Teslim Edildi'){
                 showForegroundNotif("🎉 Siparişiniz Teslim Edildi!","Afiyet olsun! Tekrar bekleriz 😊");
+                // VIP bonus puan bildirimi
+                if(o.totalPtsToEarn && o.totalPtsToEarn > 0) {
+                    setTimeout(() => showVipBonusPopup(o), 2000);
+                }
             } else if(o.status==='İptal'){
                 showForegroundNotif("❌ Siparişiniz İptal Edildi","Üzgünüz, siparişiniz iptal edildi.");
             }
@@ -2430,6 +2514,110 @@ window.savePersonalInfo=async()=>{
 };
 
 // ── KULLANICI GÖSTERGE ──
+function showVipBonusPopup(order) {
+    const existing = document.getElementById('vip-bonus-popup');
+    if(existing) existing.remove();
+
+    const lvl = getVipLevel(userOrderCount);
+    const rate = getVipBonus(userOrderCount);
+    const rateLabel = rate ? `%${Math.round(rate*100)} VIP oranı` : '';
+
+    const popup = document.createElement('div');
+    popup.id = 'vip-bonus-popup';
+    popup.style.cssText = `
+        position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+        background:#1a1a1a; border-radius:20px; padding:18px 22px;
+        box-shadow:0 12px 40px rgba(0,0,0,0.4); z-index:9999;
+        width:calc(100% - 40px); max-width:340px;
+        border:1px solid rgba(255,102,0,0.3);
+        opacity:0; transition:opacity 0.3s, transform 0.3s;
+    `;
+
+    popup.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <div style="font-size:28px;">${lvl ? lvl.icon : '⭐'}</div>
+            <div>
+                <div style="font-size:13px;font-weight:800;color:white;">Puan Kazandınız!</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.45);">${order.total} TL × ${rateLabel}</div>
+            </div>
+            <button onclick="document.getElementById('vip-bonus-popup').remove()"
+                style="margin-left:auto;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.4);
+                width:26px;height:26px;border-radius:50%;font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
+        </div>
+        <div style="text-align:center;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
+            <span style="font-size:26px;font-weight:900;color:#FF6600;">+${order.totalPtsToEarn} puan ⭐</span>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+    setTimeout(() => popup.style.opacity = '1', 10);
+    setTimeout(() => {
+        popup.style.transition = 'opacity 0.4s, transform 0.4s';
+        popup.style.opacity = '0';
+        popup.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => popup.remove(), 400);
+    }, 6000);
+}
+
+// ── VIP ROZET SİSTEMİ ────────────────────────────────────────
+const VIP_LEVELS = [
+    { key:'altin',  icon:'🥇', label:'Altın Müşteri',  min:8, next:null, color:'#f5c518', fillClass:'altin-fill' },
+    { key:'gumus',  icon:'🥈', label:'Gümüş Müşteri', min:4, next:8,    color:'#aaa',    fillClass:'gumus-fill' },
+    { key:'bronz',  icon:'🥉', label:'Bronz Müşteri', min:2, next:4,    color:'#cd7f32', fillClass:'bronz-fill' },
+];
+
+function getVipLevel(orderCount) {
+    for(const lvl of VIP_LEVELS) {
+        if(orderCount >= lvl.min) return lvl;
+    }
+    return null; // 5 siparişten az → rozet yok
+}
+
+function updateVipDisplay(orderCount) {
+    const barEl   = document.getElementById('sb-vip-bar');
+    const iconEl  = document.getElementById('sb-vip-icon');
+    const labelEl = document.getElementById('sb-vip-label');
+    const fillEl  = document.getElementById('sb-vip-fill');
+    const nextEl  = document.getElementById('sb-vip-next');
+    const dotEl   = document.getElementById('vip-avatar-dot');
+
+    const lvl = getVipLevel(orderCount);
+
+    if(!lvl) {
+        if(barEl) barEl.style.display = 'none';
+        if(dotEl) dotEl.style.display = 'none';
+        // İlerleme: 5'e kadar
+        const pct = Math.min((orderCount/2)*100, 100);
+        if(barEl) {
+            barEl.style.display = 'flex';
+            iconEl.textContent  = '🏅';
+            labelEl.textContent = `Bronz için ${2-orderCount} sipariş kaldı`;
+            fillEl.className    = 'sb-vip-bar-fill bronz-fill';
+            fillEl.style.width  = pct + '%';
+            nextEl.textContent  = `Son 30 günde ${orderCount} / 2 sipariş`;
+        }
+        return;
+    }
+
+    if(barEl) barEl.style.display = 'flex';
+    iconEl.textContent  = lvl.icon;
+    labelEl.textContent = lvl.label;
+    fillEl.className    = 'sb-vip-bar-fill ' + lvl.fillClass;
+
+    if(lvl.next) {
+        const range = lvl.next - lvl.min;
+        const prog  = orderCount - lvl.min;
+        fillEl.style.width = Math.min((prog/range)*100, 100) + '%';
+        nextEl.textContent = `Son 30 günde ${orderCount} / ${lvl.next} — ${lvl.next - orderCount} sipariş kaldı`;
+    } else {
+        fillEl.style.width = '100%';
+        nextEl.textContent = 'En yüksek seviyedesiniz! 🎉';
+    }
+
+    // Avatar üzerinde küçük dot
+    if(dotEl) { dotEl.className = 'vip-dot ' + lvl.key; dotEl.style.display = 'flex'; dotEl.textContent = lvl.icon.slice(0,1); }
+}
+
 function updateUserDisplay(){
     const panel=document.getElementById('user-panel-btn'),icon=document.getElementById('user-avatar'),nameEl=document.getElementById('user-panel-name'),subEl=document.getElementById('user-panel-sub');
     if(!activePhone||!userData.name){
@@ -2449,6 +2637,9 @@ function updateUserDisplay(){
         document.getElementById('logout-menu-item').style.display='flex';
         document.getElementById('f-name').value=userData.name;
         document.getElementById('f-phone').value=userData.phone||activePhone||"";
+        // VIP rozet
+        const oc = typeof userOrderCount !== 'undefined' ? userOrderCount : 0;
+        updateVipDisplay(oc);
     }
 }
 
@@ -2457,7 +2648,7 @@ window.handleLogout=()=>{
     localStorage.removeItem("savedUserPhone");
     // State sıfırla
     activePhone=null; userData={name:"",phone:""}; userAddresses=[]; basket=[];
-    appliedCoupon=null; loyaltyPoints=0; pointsHistory=[]; usingPoints=false;
+    appliedCoupon=null; loyaltyPoints=0; pointsHistory=[]; usingPoints=false; userOrderCount=0;
     tempPhone=""; tempUserData=null; tempGoogleUser=null;
     window.selectedAddressIndex=0; curMinLimit={limit:DEF_MIN,label:"Bölgeniz"};
     if(currentOrderListener){ currentOrderListener(); currentOrderListener=null; }
@@ -3551,4 +3742,4 @@ window.onload=()=>{
   </div>
 
  </body>
-</html>
+ </html>
