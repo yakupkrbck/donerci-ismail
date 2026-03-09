@@ -1749,11 +1749,11 @@ function listenApproval(orderId, orderNum){
 }
 
 // ── OTP SİSTEMİ ──────────────────────────────────────────────
-// Netgsm onayı gelince sadece NETGSM_MODE = true yapın
-const NETGSM_MODE = false; // false = mock mod (gerçek SMS gitmiyor)
-const NETGSM_USER = ''; // Netgsm kullanıcı adı (telefon)
-const NETGSM_PASS = ''; // Netgsm şifre
-const NETGSM_HEADER = 'DONERCI'; // Onaylı gönderici başlığı
+// Netgsm aktif
+const NETGSM_MODE = true;
+const NETGSM_USER = '8503096945';
+const NETGSM_PASS = 'Yakup1666@';
+const NETGSM_HEADER = '8503096945'; // Başlık onayı gelince buraya gönderici adı yazılır
 
 let otpCode = null;
 let otpPhone = null;
@@ -1766,16 +1766,24 @@ function generateOtp() {
 
 async function sendSmsViaNetgsm(phone, message) {
     if(!NETGSM_MODE) {
-        // MOCK MOD — gerçek SMS gitmiyor, kodu console'da göster
         console.log(`📱 [MOCK SMS] → ${phone}: ${message}`);
         return true;
     }
-    // Gerçek Netgsm entegrasyonu (onay gelince devreye girer)
     try {
         const url = `https://api.netgsm.com.tr/sms/send/get/?usercode=${NETGSM_USER}&password=${NETGSM_PASS}&gsmno=${phone}&message=${encodeURIComponent(message)}&msgheader=${NETGSM_HEADER}`;
         const res = await fetch(url);
         const text = await res.text();
-        return text.startsWith('00'); // 00 = başarılı
+        console.log('Netgsm yanıt:', text);
+        if(text.startsWith('00')) return true;
+        // Başlık hatası (20 = geçersiz başlık) → başlıksız tekrar dene
+        if(text.trim() === '20') {
+            const url2 = `https://api.netgsm.com.tr/sms/send/get/?usercode=${NETGSM_USER}&password=${NETGSM_PASS}&gsmno=${phone}&message=${encodeURIComponent(message)}`;
+            const res2 = await fetch(url2);
+            const text2 = await res2.text();
+            console.log('Netgsm başlıksız yanıt:', text2);
+            return text2.startsWith('00');
+        }
+        return false;
     } catch(e) {
         console.error('Netgsm hata:', e);
         return false;
@@ -3793,4 +3801,4 @@ window.onload=()=>{
   </div>
 
  </body>
-</html>
+ </html>
