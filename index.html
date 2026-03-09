@@ -1770,22 +1770,17 @@ async function sendSmsViaNetgsm(phone, message) {
         return true;
     }
     try {
-        const url = `https://api.netgsm.com.tr/sms/send/get/?usercode=${NETGSM_USER}&password=${NETGSM_PASS}&gsmno=${phone}&message=${encodeURIComponent(message)}&msgheader=${NETGSM_HEADER}`;
-        const res = await fetch(url);
-        const text = await res.text();
-        console.log('Netgsm yanıt:', text);
-        if(text.startsWith('00')) return true;
-        // Başlık hatası (20 = geçersiz başlık) → başlıksız tekrar dene
-        if(text.trim() === '20') {
-            const url2 = `https://api.netgsm.com.tr/sms/send/get/?usercode=${NETGSM_USER}&password=${NETGSM_PASS}&gsmno=${phone}&message=${encodeURIComponent(message)}`;
-            const res2 = await fetch(url2);
-            const text2 = await res2.text();
-            console.log('Netgsm başlıksız yanıt:', text2);
-            return text2.startsWith('00');
-        }
-        return false;
+        // Cloud Function üzerinden gönder (CORS sorunu olmaz)
+        const res = await fetch('https://netgsm-otp.donerciismal.workers.dev', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, message })
+        });
+        const data = await res.json();
+        console.log('SMS sonuç:', data);
+        return data.success === true;
     } catch(e) {
-        console.error('Netgsm hata:', e);
+        console.error('SMS gönderim hatası:', e);
         return false;
     }
 }
@@ -3801,4 +3796,4 @@ window.onload=()=>{
   </div>
 
  </body>
- </html>
+</html>
