@@ -3499,10 +3499,13 @@ function startClosingCountdown() {
 // ══════════════════════════════════════════════════════════════════════════
 
 window._itemRatings = {}; // { itemName: { avg, count } }
-let _reviewQueue = [];     // değerlendirilecek ürün listesi
-let _reviewIdx   = 0;
-let _reviewStar  = 0;
-let _reviewOrderIdx = -1;  // hangi sipariş için
+// Sipariş geçmişinden manuel değerlendirme başlatma
+window.openReviewFlow = (histIdx) => {
+    const o = historicalOrders[histIdx];
+    if(!o) return;
+    window._currentReviewOrderId = o.id || ('order_'+histIdx);
+    showSatisfactionModal(window._currentReviewOrderId);
+};
 
 // Firebase'den tüm ürünlerin ortalama puanını çek
 async function loadItemRatings() {
@@ -3535,7 +3538,6 @@ function getRealStars(itemName) {
     return null; // yoksa sipariş sayısına göre hesaplanan puan kullanılır
 }
 
-// Otomatik review: son teslim edilen siparişin ürünlerini kuyruğa al
 async function startAutoReview() {
     try {
         const phone = userData.phone || activePhone;
@@ -3549,134 +3551,108 @@ async function startAutoReview() {
         const orders = snap.docs.map(d=>({id:d.id,...d.data()}))
             .sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0));
         const last = orders[0];
-        // Daha önce değerlendirildi mi?
-        const alreadyKey = 'reviewed_' + last.id;
-        if(sessionStorage.getItem(alreadyKey)) return;
-        const items = (last.items||[]).map(i=>i.n).filter(Boolean);
-        const unique = [...new Set(items)]; // aynı ürün tekrar değerlendirme
-        if(!unique.length) return;
-        _reviewOrderIdx = -1; // otomatik mod
-        startReviewQueue(unique, last.id);
+        if(sessionStorage.getItem('reviewed_'+last.id)) return;
+        window._currentReviewOrderId = last.id;
+        showSatisfactionModal(last.id);
     } catch(e) { console.log('Auto review hatası:', e); }
 }
 
-// Sipariş geçmişinden manuel başlatma
-window.openReviewFlow = (histIdx) => {
-    const o = historicalOrders[histIdx];
-    if(!o) return;
-    const items = (o.items||[]).map(i=>i.n).filter(Boolean);
-    const unique = [...new Set(items)];
-    if(!unique.length) return;
-    _reviewOrderIdx = histIdx;
-    startReviewQueue(unique, o.id||('order_'+histIdx));
-};
-
-function startReviewQueue(items, orderId) {
-    _reviewQueue = items;
-    _reviewIdx   = 0;
-    _reviewStar  = 0;
-    window._currentReviewOrderId = orderId;
-    showReviewStep();
-}
-
 function showReviewStep() {
-    // Önceki overlay varsa kaldır
     const old = document.getElementById('review-overlay');
     if(old) old.remove();
+    // Basit memnuniyet ekranı göster (ürün bazlı değil, sipariş bazlı)
+    showSatisfactionModal(window._currentReviewOrderId);
+}
 
-    if(_reviewIdx >= _reviewQueue.length) {
-        // Bitti
-        if(window._currentReviewOrderId) {
-            sessionStorage.setItem('reviewed_'+window._currentReviewOrderId, '1');
-        }
-        showToast('⭐ Değerlendirmeleriniz için teşekkürler!');
-        return;
-    }
-
-    const itemName = _reviewQueue[_reviewIdx];
-    const total    = _reviewQueue.length;
-    const current  = _reviewIdx + 1;
-    const cat      = (window._menuProducts||[]).find(p=>p.n===itemName)?.c || '';
-    const emoji    = catEmojis[cat] || '🍽';
-    _reviewStar    = 0;
+function showSatisfactionModal(orderId) {
+    const old = document.getElementById('review-overlay');
+    if(old) old.remove();
+    if(sessionStorage.getItem('reviewed_'+orderId)) return;
 
     const ov = document.createElement('div');
     ov.id = 'review-overlay';
     ov.innerHTML = `
-        <div class="review-sheet">
+        <div class="review-sheet" style="text-align:center;">
             <div class="review-handle"></div>
-            ${total>1 ? `<div class="review-progress">${current} / ${total} ürün</div>` : ''}
-            <div class="review-emoji-wrap">${emoji}</div>
-            <div class="review-item-name">${itemName}</div>
-            <div style="text-align:center;font-size:13px;color:#888;margin-bottom:18px;font-weight:500;">Bu ürünü nasıl buldunuz?</div>
-            <div class="star-row" id="review-stars">
-                ${[1,2,3,4,5].map(s=>`
-                    <button class="star-btn" data-val="${s}" onclick="setReviewStar(${s})">⭐</button>
-                `).join('')}
+            <div style="font-size:52px;margin-bottom:10px;">🍽️</div>
+            <div style="font-size:19px;font-weight:800;color:#1a1a1a;margin-bottom:6px;">Siparişinizden memnun kaldınız mı?</div>
+            <div style="font-size:13px;color:#aaa;margin-bottom:28px;">Görüşleriniz bizim için değerli</div>
+            <div style="display:flex;gap:12px;margin-bottom:16px;">
+                <button onclick="submitSatisfaction(true,'${orderId}')"
+                    style="flex:1;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;padding:16px;border-radius:16px;font-size:22px;font-weight:800;cursor:pointer;">
+                    😊<br><span style="font-size:13px;">Memnunum</span>
+                </button>
+                <button onclick="showProblemBox('${orderId}')"
+                    style="flex:1;background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;border:none;padding:16px;border-radius:16px;font-size:22px;font-weight:800;cursor:pointer;">
+                    😞<br><span style="font-size:13px;">Sorun yaşadım</span>
+                </button>
             </div>
-            <div id="review-star-label" style="text-align:center;font-size:14px;font-weight:700;color:#f39c12;min-height:22px;margin-bottom:18px;"></div>
-            <button class="review-submit-btn" id="review-submit-btn" onclick="submitReview()">
-                ${current<total ? 'Sonraki Ürün →' : 'Gönder ✓'}
-            </button>
-            <button class="review-skip-btn" onclick="skipReview()">Bu ürünü atla</button>
+            <button onclick="document.getElementById('review-overlay').remove();sessionStorage.setItem('reviewed_${orderId}','1');"
+                style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;">Şimdi değil</button>
         </div>`;
     document.body.appendChild(ov);
 }
 
-const STAR_LABELS = {1:'😞 Kötü',2:'😕 İdare Eder',3:'😊 İyi',4:'😄 Çok İyi',5:'🤩 Mükemmel!'};
-
-window.setReviewStar = (val) => {
-    _reviewStar = val;
-    document.querySelectorAll('.star-btn').forEach(b => {
-        b.classList.toggle('active', Number(b.dataset.val) <= val);
-    });
-    const lbl = document.getElementById('review-star-label');
-    if(lbl) lbl.innerText = STAR_LABELS[val] || '';
-    const btn = document.getElementById('review-submit-btn');
-    if(btn) btn.classList.add('ready');
+window.showProblemBox = (orderId) => {
+    const sheet = document.querySelector('#review-overlay .review-sheet');
+    if(!sheet) return;
+    sheet.innerHTML = `
+        <div class="review-handle"></div>
+        <div style="font-size:42px;margin-bottom:10px;text-align:center;">😞</div>
+        <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:6px;text-align:center;">Ne gibi bir sorun yaşadınız?</div>
+        <div style="font-size:12px;color:#aaa;margin-bottom:16px;text-align:center;">Kısa bir açıklama yazın, sizi arayalım.</div>
+        <textarea id="problem-text" placeholder="Örn: Siparişim eksik geldi, yemek soğuktu..." maxlength="300"
+            style="width:100%;box-sizing:border-box;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:14px;font-family:inherit;resize:none;height:90px;outline:none;margin-bottom:14px;"></textarea>
+        <button onclick="submitProblem('${orderId}')"
+            style="width:100%;background:linear-gradient(135deg,var(--primary),#e67e22);color:white;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;">
+            📤 Gönder
+        </button>
+        <button onclick="document.getElementById('review-overlay').remove();sessionStorage.setItem('reviewed_${orderId}','1');"
+            style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;margin-top:10px;display:block;width:100%;text-align:center;">Vazgeç</button>`;
 };
 
-window.skipReview = () => {
-    _reviewIdx++;
-    showReviewStep();
-};
-
-window.submitReview = async () => {
-    if(_reviewStar === 0) return;
-    const itemName = _reviewQueue[_reviewIdx];
-    const phone    = userData.phone || activePhone || 'anonim';
+window.submitSatisfaction = async (satisfied, orderId) => {
+    sessionStorage.setItem('reviewed_'+orderId, '1');
+    document.getElementById('review-overlay')?.remove();
     try {
-        // item_ratings/{itemName} — running average güncelle
-        const ref = doc(db, 'item_ratings', itemName);
-        await runTransaction(db, async tx => {
-            const snap = await tx.get(ref);
-            if(!snap.exists()) {
-                tx.set(ref, { avg: _reviewStar, count: 1, total: _reviewStar });
-            } else {
-                const d = snap.data();
-                const newCount = (d.count||0) + 1;
-                const newTotal = (d.total||0) + _reviewStar;
-                tx.update(ref, { count: newCount, total: newTotal, avg: newTotal/newCount });
-            }
-        });
-        // reviews koleksiyonuna da kaydet (admin panel için)
         await addDoc(collection(db,'reviews'), {
-            item: itemName,
-            star: _reviewStar,
-            phone,
+            orderId, satisfied,
+            phone: userData.phone || activePhone || '',
             date: serverTimestamp(),
-            orderId: window._currentReviewOrderId || ''
+            type: 'satisfaction'
         });
-        // Yerel cache güncelle
-        const cur = window._itemRatings[itemName] || { avg:0, count:0, total:0 };
-        const nc  = (cur.count||0)+1;
-        const nt  = (cur.total||0)+_reviewStar;
-        window._itemRatings[itemName] = { avg: nt/nc, count: nc, total: nt };
-    } catch(e) { console.log('Review kayıt hatası:', e); }
-
-    _reviewIdx++;
-    showReviewStep();
+    } catch(e) {}
+    showToast('⭐ Değerlendirmeniz için teşekkürler!');
 };
+
+window.submitProblem = async (orderId) => {
+    const text = document.getElementById('problem-text')?.value?.trim();
+    if(!text) { showToast('Lütfen bir açıklama yazın','warn'); return; }
+    const btn = document.querySelector('#review-overlay button[onclick*="submitProblem"]');
+    if(btn) { btn.disabled=true; btn.innerHTML='Gönderiliyor...'; }
+    const phone = userData.phone || activePhone || '';
+    const name  = userData.name || '';
+    try {
+        // Firestore'a kaydet
+        await addDoc(collection(db,'complaints'), {
+            orderId, phone, name, text,
+            date: serverTimestamp(),
+            status: 'new'
+        });
+        // Email gönder
+        try {
+            await fetch('https://netgsm-otp.donerciismal.workers.dev/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, name, orderId, text })
+            });
+        } catch(e) { console.log('Email gönderilemedi ama Firestore kaydedildi'); }
+    } catch(e) { console.log('Şikayet kaydedilemedi:', e); }
+    sessionStorage.setItem('reviewed_'+orderId, '1');
+    document.getElementById('review-overlay')?.remove();
+    showToast('📨 Bildiriminiz alındı, en kısa sürede dönüş yapacağız!');
+};
+
 
 // ── İPTAL SAYACI ──
 let _cancelTimerInterval = null;
