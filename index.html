@@ -2172,11 +2172,14 @@ function startStatusListener(phone){
             }
         });
 
-        // Teslim edildi konfeti
-        const fiveMinsAgo=Date.now()-5*60*1000;
+        // Teslim edildi konfeti — 2 saat içinde uygulamayı açarsa göster
+        const twoHoursAgo=Date.now()-2*60*60*1000;
         docs.filter(o=>o.status==='Teslim Edildi').forEach(o=>{
-            const oDate=(o.date?.seconds||0)*1000;
-            if(oDate>fiveMinsAgo && o.id!==lastNotifiedOrderId){
+            // deliveredAt varsa onu kullan, yoksa date'e bak
+            const deliveredTime = o.deliveredAt?.seconds 
+                ? o.deliveredAt.seconds*1000 
+                : (o.date?.seconds||0)*1000;
+            if(deliveredTime>twoHoursAgo && o.id!==lastNotifiedOrderId){
                 lastNotifiedOrderId=o.id;
                 showDeliveryNotification();
             }
@@ -2221,24 +2224,90 @@ function showForegroundNotif(title, body){
 }
 
 function showDeliveryNotification(){
-    // Konfeti elementi oluştur
+    const orderId = lastNotifiedOrderId || '';
     const overlay=document.createElement('div');
     overlay.id='delivery-overlay';
     overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);';
     overlay.innerHTML=`
-        <div style="background:white;border-radius:24px;padding:36px 28px;text-align:center;max-width:320px;width:90%;box-shadow:0 30px 80px rgba(0,0,0,0.4);animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);">
-            <div style="font-size:70px;margin-bottom:8px;">🎉</div>
-            <h2 style="margin:0 0 8px;color:#27ae60;font-size:22px;">Afiyet Olsun!</h2>
-            <p style="color:#666;font-size:14px;margin:0 0 20px;">Siparişiniz teslim edildi. Tekrar bekleriz!</p>
-            <button onclick="document.getElementById('delivery-overlay').remove();setTimeout(()=>startAutoReview(),600);" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;padding:14px 32px;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;width:100%;">Teşekkürler 😊</button>
-            <button onclick="document.getElementById('delivery-overlay').remove();" style="background:none;border:none;color:#bbb;font-size:13px;cursor:pointer;margin-top:10px;display:block;width:100%;">Daha sonra değerlendiririm</button>
+        <div id="delivery-card" style="background:white;border-radius:24px;padding:32px 24px;text-align:center;max-width:320px;width:90%;box-shadow:0 30px 80px rgba(0,0,0,0.4);animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);">
+            <div style="font-size:64px;margin-bottom:8px;">🎉</div>
+            <h2 style="margin:0 0 6px;color:#27ae60;font-size:21px;">Afiyet Olsun!</h2>
+            <p style="color:#666;font-size:14px;margin:0 0 22px;">Siparişiniz teslim edildi. Tekrar bekleriz!</p>
+            <p style="font-size:15px;font-weight:700;color:#333;margin:0 0 14px;">Siparişinizden memnun kaldınız mı?</p>
+            <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <button onclick="deliveryFeedback(true,'${orderId}')"
+                    style="flex:1;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;padding:14px 8px;border-radius:14px;font-size:20px;font-weight:800;cursor:pointer;">
+                    😊<br><span style="font-size:12px;">Memnunum</span>
+                </button>
+                <button onclick="deliveryFeedback(false,'${orderId}')"
+                    style="flex:1;background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;border:none;padding:14px 8px;border-radius:14px;font-size:20px;font-weight:800;cursor:pointer;">
+                    😞<br><span style="font-size:12px;">Memnun değilim</span>
+                </button>
+            </div>
+            <button onclick="document.getElementById('delivery-overlay').remove();"
+                style="background:none;border:none;color:#ccc;font-size:12px;cursor:pointer;">Daha sonra</button>
         </div>
         <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:10000;"></canvas>`;
     document.body.appendChild(overlay);
-    // Konfeti animasyonu
     setTimeout(()=>launchConfetti(),100);
     updateStoreUI();
 }
+
+window.deliveryFeedback = async (satisfied, orderId) => {
+    if(satisfied) {
+        // Memnun → popup kapat, Firestore'a kaydet
+        document.getElementById('delivery-overlay')?.remove();
+        showToast('⭐ Değerlendirmeniz için teşekkürler!');
+        try {
+            await addDoc(collection(db,'reviews'), {
+                orderId, satisfied: true,
+                phone: userData.phone || activePhone || '',
+                date: serverTimestamp(), type: 'satisfaction'
+            });
+        } catch(e) {}
+        if(orderId) sessionStorage.setItem('reviewed_'+orderId, '1');
+    } else {
+        // Memnun değil → şikayet kutusu göster
+        const card = document.getElementById('delivery-card');
+        if(!card) return;
+        card.innerHTML = `
+            <div style="font-size:42px;margin-bottom:10px;">😞</div>
+            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:6px;">Ne gibi bir sorun yaşadınız?</div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:14px;">Kısa bir açıklama yazın, sizi arayalım.</div>
+            <textarea id="delivery-problem-text" placeholder="Örn: Siparişim eksik geldi, yemek soğuktu..." maxlength="300"
+                style="width:100%;box-sizing:border-box;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:14px;font-family:inherit;resize:none;height:90px;outline:none;margin-bottom:12px;"></textarea>
+            <button onclick="submitDeliveryProblem('${orderId}')"
+                style="width:100%;background:linear-gradient(135deg,var(--primary),#e67e22);color:white;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;">
+                📤 Gönder
+            </button>
+            <button onclick="document.getElementById('delivery-overlay').remove();"
+                style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;margin-top:10px;display:block;width:100%;text-align:center;">Vazgeç</button>`;
+    }
+};
+
+window.submitDeliveryProblem = async (orderId) => {
+    const text = document.getElementById('delivery-problem-text')?.value?.trim();
+    if(!text) { showToast('Lütfen bir açıklama yazın', 'warn'); return; }
+    const btn = document.querySelector('#delivery-card button[onclick*="submitDeliveryProblem"]');
+    if(btn) { btn.disabled=true; btn.innerText='Gönderiliyor...'; }
+    const phone = userData.phone || activePhone || '';
+    const name  = userData.name || '';
+    try {
+        await addDoc(collection(db,'complaints'), {
+            orderId, phone, name, text,
+            date: serverTimestamp(), status: 'new'
+        });
+        try {
+            await fetch('https://netgsm-otp.donerciismal.workers.dev/report', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ phone, name, orderId, text })
+            });
+        } catch(e) {}
+    } catch(e) { console.log('Şikayet kaydedilemedi:', e); }
+    if(orderId) sessionStorage.setItem('reviewed_'+orderId, '1');
+    document.getElementById('delivery-overlay')?.remove();
+    showToast('📨 Bildiriminiz alındı, en kısa sürede dönüş yapacağız!');
+};
 
 function launchConfetti(){
     const canvas=document.getElementById('confetti-canvas');
@@ -2906,6 +2975,16 @@ async function validateCouponCode(couponCode, basketTotal, customerPhone) {
     // Kullanım limiti
     if (coupon.useLimit && (coupon.usedCount || 0) >= coupon.useLimit) {
       return { valid: false, error: "Kupon kullanım limiti dolmuş." };
+    }
+
+    // Kişi başı 1 kez kontrolü — müşteri bu kuponu daha önce kullandı mı?
+    const usedBySnap = await getDocs(query(
+      collection(db, 'orders'),
+      where('phone', '==', customerPhone),
+      where('discountCode', '==', coupon.code)
+    ));
+    if (!usedBySnap.empty) {
+      return { valid: false, error: "Bu kuponu daha önce kullandınız." };
     }
     
     // Son kullanma tarihi
