@@ -2460,13 +2460,25 @@ async function loadMyCoupons(){
         const all=snap.docs.map(d=>({id:d.id,...d.data()}));
         if(!all.length){ list.innerHTML='<div style="text-align:center;padding:30px;color:#bbb;">Aktif kupon bulunmuyor.</div>'; return; }
         const phone=userData.phone||activePhone||''; let orderCount=0,lastDate=null;
+        let usedCodes=new Set();
         if(phone){
             const os=await getDocs(query(collection(db,"orders"),where("phone","==",phone))); orderCount=os.size;
-            if(!os.empty){ const sorted=os.docs.map(d=>d.data()).sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0)); lastDate=sorted[0].date?new Date(sorted[0].date.seconds*1000):null; }
+            if(!os.empty){ 
+                const sorted=os.docs.map(d=>d.data()).sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0)); 
+                lastDate=sorted[0].date?new Date(sorted[0].date.seconds*1000):null;
+                // Daha önce kullanılan kupon kodlarını topla
+                os.docs.forEach(d=>{ if(d.data().discountCode) usedCodes.add(d.data().discountCode); });
+            }
         }
         const daysSince=lastDate?Math.floor((Date.now()-lastDate.getTime())/(86400000)):9999;
         const elig=[],inelig=[];
         all.forEach(c=>{
+            // Kullanılmış kuponu listeden tamamen çıkar
+            if(usedCodes.has(c.code)) return;
+            // Kullanım limiti dolmuşsa çıkar
+            if(c.useLimit && (c.usedCount||0) >= c.useLimit) return;
+            // Süresi dolmuşsa çıkar
+            if(c.expiry && new Date() > new Date(c.expiry)) return;
             let ok=false,reason='';
             if(c.condition==='all'){ ok=true; reason='Herkese açık'; }
             else if(c.condition==='first_order'){ ok=orderCount===0; reason=ok?'🆕 İlk sipariş':'Sadece ilk sipariş'; }
@@ -3219,9 +3231,12 @@ async function showAvailableCouponsInCart() {
     // Kullanıcının sipariş geçmişini kontrol et
     const userPhone = userData.phone || activePhone;
     let hasCompletedOrders = false;
+    let usedCodesInCart = new Set();
     if (userPhone) {
       const ordersSnap = await getDocs(query(collection(db,"orders"),where("phone","==",userPhone),where("status","==","Teslim Edildi")));
       hasCompletedOrders = !ordersSnap.empty;
+      // Kullanılmış kupon kodlarını topla
+      ordersSnap.docs.forEach(d=>{ if(d.data().discountCode) usedCodesInCart.add(d.data().discountCode); });
     }
 
     const now = new Date();
@@ -3235,6 +3250,8 @@ async function showAvailableCouponsInCart() {
       // Süresi dolmuş veya limiti dolmuş → tamamen gizle
       if (c.expiry && new Date(c.expiry) < now) return;
       if (c.useLimit && (c.usedCount||0) >= c.useLimit) return;
+      // Müşteri daha önce kullanmışsa gizle
+      if (usedCodesInCart.has(c.code)) return;
       // Kullanıcı koşulu uygun değil → gizle
       if ((c.condition==='new_member'||c.condition==='first_order') && hasCompletedOrders) return;
       const minB = c.minBasket || 0;
