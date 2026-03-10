@@ -2247,9 +2247,8 @@ function showDeliveryNotification(){
             <button onclick="document.getElementById('delivery-overlay').remove();"
                 style="background:none;border:none;color:#ccc;font-size:12px;cursor:pointer;">Daha sonra</button>
         </div>
-        <canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:10000;"></canvas>`;
+        <canvas id="confetti-canvas" style="display:none;"></canvas>`;
     document.body.appendChild(overlay);
-    setTimeout(()=>launchConfetti(),100);
     updateStoreUI();
 }
 
@@ -2265,7 +2264,7 @@ window.deliveryFeedback = async (satisfied, orderId) => {
                 date: serverTimestamp(), type: 'satisfaction'
             });
         } catch(e) {}
-        if(orderId) sessionStorage.setItem('reviewed_'+orderId, '1');
+        if(orderId) localStorage.setItem('reviewed_'+orderId, '1');
     } else {
         // Memnun değil → şikayet kutusu göster
         const card = document.getElementById('delivery-card');
@@ -2304,7 +2303,7 @@ window.submitDeliveryProblem = async (orderId) => {
             });
         } catch(e) {}
     } catch(e) { console.log('Şikayet kaydedilemedi:', e); }
-    if(orderId) sessionStorage.setItem('reviewed_'+orderId, '1');
+    if(orderId) localStorage.setItem('reviewed_'+orderId, '1');
     document.getElementById('delivery-overlay')?.remove();
     showToast('📨 Bildiriminiz alındı, en kısa sürede dönüş yapacağız!');
 };
@@ -3685,7 +3684,7 @@ async function startAutoReview() {
         const orders = snap.docs.map(d=>({id:d.id,...d.data()}))
             .sort((a,b)=>(b.date?.seconds||0)-(a.date?.seconds||0));
         const last = orders[0];
-        if(sessionStorage.getItem('reviewed_'+last.id)) return;
+        if(localStorage.getItem('reviewed_'+last.id)) return;
         window._currentReviewOrderId = last.id;
         showSatisfactionModal(last.id);
     } catch(e) { console.log('Auto review hatası:', e); }
@@ -3701,7 +3700,7 @@ function showReviewStep() {
 function showSatisfactionModal(orderId) {
     const old = document.getElementById('review-overlay');
     if(old) old.remove();
-    if(sessionStorage.getItem('reviewed_'+orderId)) return;
+    if(localStorage.getItem('reviewed_'+orderId)) return;
 
     const ov = document.createElement('div');
     ov.id = 'review-overlay';
@@ -3721,7 +3720,7 @@ function showSatisfactionModal(orderId) {
                     😞<br><span style="font-size:13px;">Sorun yaşadım</span>
                 </button>
             </div>
-            <button onclick="document.getElementById('review-overlay').remove();sessionStorage.setItem('reviewed_${orderId}','1');"
+            <button onclick="document.getElementById('review-overlay').remove();localStorage.setItem('reviewed_${orderId}','1');"
                 style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;">Şimdi değil</button>
         </div>`;
     document.body.appendChild(ov);
@@ -3741,12 +3740,12 @@ window.showProblemBox = (orderId) => {
             style="width:100%;background:linear-gradient(135deg,var(--primary),#e67e22);color:white;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;">
             📤 Gönder
         </button>
-        <button onclick="document.getElementById('review-overlay').remove();sessionStorage.setItem('reviewed_${orderId}','1');"
+        <button onclick="document.getElementById('review-overlay').remove();localStorage.setItem('reviewed_${orderId}','1');"
             style="background:none;border:none;color:#ccc;font-size:13px;cursor:pointer;margin-top:10px;display:block;width:100%;text-align:center;">Vazgeç</button>`;
 };
 
 window.submitSatisfaction = async (satisfied, orderId) => {
-    sessionStorage.setItem('reviewed_'+orderId, '1');
+    localStorage.setItem('reviewed_'+orderId, '1');
     document.getElementById('review-overlay')?.remove();
     try {
         await addDoc(collection(db,'reviews'), {
@@ -3782,7 +3781,7 @@ window.submitProblem = async (orderId) => {
             });
         } catch(e) { console.log('Email gönderilemedi ama Firestore kaydedildi'); }
     } catch(e) { console.log('Şikayet kaydedilemedi:', e); }
-    sessionStorage.setItem('reviewed_'+orderId, '1');
+    localStorage.setItem('reviewed_'+orderId, '1');
     document.getElementById('review-overlay')?.remove();
     showToast('📨 Bildiriminiz alındı, en kısa sürede dönüş yapacağız!');
 };
