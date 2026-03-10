@@ -2172,14 +2172,17 @@ function startStatusListener(phone){
             }
         });
 
-        // Teslim edildi konfeti — 2 saat içinde uygulamayı açarsa göster
+        // Teslim edildi — 2 saat içinde uygulamayı açarsa göster
         const twoHoursAgo=Date.now()-2*60*60*1000;
         docs.filter(o=>o.status==='Teslim Edildi').forEach(o=>{
             // deliveredAt varsa onu kullan, yoksa date'e bak
             const deliveredTime = o.deliveredAt?.seconds 
                 ? o.deliveredAt.seconds*1000 
                 : (o.date?.seconds||0)*1000;
-            if(deliveredTime>twoHoursAgo && o.id!==lastNotifiedOrderId){
+            // localStorage'dan kontrol et — sayfa yenilenince de hatırlasın
+            const alreadyShown = localStorage.getItem('reviewed_'+o.id) || localStorage.getItem('delivery_shown_'+o.id);
+            if(deliveredTime>twoHoursAgo && !alreadyShown){
+                localStorage.setItem('delivery_shown_'+o.id, '1');
                 lastNotifiedOrderId=o.id;
                 showDeliveryNotification();
             }
@@ -3020,6 +3023,41 @@ async function validateCouponCode(couponCode, basketTotal, customerPhone) {
       );
       if (!ordersSnap.empty) {
         return { valid: false, error: "Bu kupon sadece ilk siparişte geçerlidir." };
+      }
+    }
+
+    // Pasif müşteri kuponu (inactive_30) — son 30 gün sipariş vermemiş olmalı
+    if (coupon.condition === "inactive_30") {
+      const recentSnap = await getDocs(
+        query(collection(db, "orders"),
+              where("phone", "==", customerPhone),
+              where("status", "==", "Teslim Edildi"))
+      );
+      if (!recentSnap.empty) {
+        const sorted = recentSnap.docs
+          .map(d => d.data())
+          .sort((a,b) => (b.date?.seconds||0) - (a.date?.seconds||0));
+        const lastDate = sorted[0].date?.seconds 
+          ? new Date(sorted[0].date.seconds * 1000) 
+          : null;
+        if (lastDate) {
+          const daysSince = Math.floor((Date.now() - lastDate.getTime()) / 86400000);
+          if (daysSince < 30) {
+            return { valid: false, error: "Bu kupon 30 gün sipariş vermeyen müşterilere özeldir." };
+          }
+        }
+      }
+    }
+
+    // Sadakat kuponu (loyalty_order) — belirli sipariş sayısına ulaşmış olmalı
+    if (coupon.condition === "loyalty_order" && coupon.minOrderCount) {
+      const allSnap = await getDocs(
+        query(collection(db, "orders"),
+              where("phone", "==", customerPhone),
+              where("status", "==", "Teslim Edildi"))
+      );
+      if (allSnap.size < coupon.minOrderCount) {
+        return { valid: false, error: `Bu kupon en az ${coupon.minOrderCount} sipariş sonrası geçerlidir. Şu an: ${allSnap.size} sipariş.` };
       }
     }
     
