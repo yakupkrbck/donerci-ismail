@@ -2485,6 +2485,7 @@ async function loadMyCoupons(){
             if(c.condition==='all'){ ok=true; reason='Herkese açık'; }
             else if(c.condition==='first_order'){ ok=orderCount===0; reason=ok?'🆕 İlk sipariş':'Sadece ilk sipariş'; }
             else if(c.condition==='inactive_30'){ ok=daysSince>=30; reason=ok?`😴 ${daysSince} gündür sipariş yok`:`Son siparişten ${daysSince} gün geçti`; }
+            else if(c.condition==='personal'){ ok=c.forPhone===phone; reason=ok?'🎁 Size özel':'Başka bir müşteriye özel'; }
             else reason=c.condition||'';
             (ok?elig:inelig).push({...c,ok,reason});
         });
@@ -3014,6 +3015,13 @@ async function validateCouponCode(couponCode, basketTotal, customerPhone) {
       return { valid: false, error: `Bu kupon minimum ${coupon.minBasket} TL sepet için geçerlidir.` };
     }
     
+    // Kişiye özel kupon — sadece belirli telefon kullanabilir
+    if (coupon.condition === 'personal') {
+      if (coupon.forPhone && coupon.forPhone !== customerPhone) {
+        return { valid: false, error: "Bu kupon size özel değil." };
+      }
+    }
+
     // İlk sipariş kontrolü
     if (coupon.condition === "first_order") {
       const ordersSnap = await getDocs(
@@ -3291,6 +3299,8 @@ async function showAvailableCouponsInCart() {
       if (usedCodesInCart.has(c.code)) return;
       // Kullanıcı koşulu uygun değil → gizle
       if ((c.condition==='new_member'||c.condition==='first_order') && hasCompletedOrders) return;
+      // Kişiye özel ama bu müşteri değilse gizle
+      if (c.condition==='personal' && c.forPhone !== userPhone) return;
       const minB = c.minBasket || 0;
       const unlocked = sub >= minB || minB === 0;
       const rem = minB - sub; // ne kadar eksik
