@@ -997,7 +997,7 @@
       <div style="font-size:12px;color:#666;line-height:1.8;">
        🛒 Her <b>10 TL</b> = <b style="color:var(--primary);">1 puan</b>
        <br>
-       🎁 <b>50 puan</b> = <b style="color:var(--primary);">15 TL indirim</b>
+       🎁 <b>50 puan</b> = <b style="color:var(--primary);">20 TL indirim</b>
       </div>
      </div>
      <div style="font-size:13px;font-weight:700;color:#777;margin-bottom:10px;">Son İşlemler</div>
@@ -1142,7 +1142,7 @@ let appliedCoupon=null, loyaltyPoints=0, pointsHistory=[], userOrderCount=0;
 window.selectedAddressIndex=0;
 let curMinLimit={limit:DEF_MIN,label:"Bölgeniz"};
 
-const PTS_GOAL=50, REWARD_TL=15;
+const PTS_GOAL=50, REWARD_TL=20;
 let usingPoints=false; // puan kullanım durumu
 
 function getVipBonus(orderCount) {
@@ -1158,7 +1158,7 @@ function calcPtsWithBonus(total, orderCount) {
     return { base: pts, extra: 0, total: pts };
 }
 
-// Puan indirimi: her tam 50 puan için 15 TL
+// Puan indirimi: her tam 50 puan için 20 TL
 function calcPointsDiscount(){
     if(!usingPoints||loyaltyPoints<PTS_GOAL) return 0;
     const rewards=Math.floor(loyaltyPoints/PTS_GOAL);
@@ -1657,7 +1657,8 @@ window.finalizeOrder=async()=>{
             }
         }
     } catch(e) { console.log('Aktif sipariş kontrolü yapılamadı:', e); }
-    
+
+    openModal('waiting');
     try{
         // Sipariş numarası al
         const orderNumber = await getNextOrderNumber();
@@ -2736,6 +2737,7 @@ function updateUserDisplay(){
 // ── OTURUMU KAPAT — siyah ekran yok, sadece state sıfırla ──
 window.handleLogout=()=>{
     localStorage.removeItem("savedUserPhone");
+    try { localStorage.removeItem('basketDraft'); } catch(e) {}
     // State sıfırla
     activePhone=null; userData={name:"",phone:""}; userAddresses=[]; basket=[];
     appliedCoupon=null; loyaltyPoints=0; pointsHistory=[]; usingPoints=false; userOrderCount=0;
