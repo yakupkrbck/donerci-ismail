@@ -810,15 +810,7 @@
       <button class="action-btn" style="background:var(--primary);" onclick="sendOtp()">
        <span id="otp-send-txt">Devam Et</span>
       </button>
-      <div style="display:flex;align-items:center;margin:18px 0 14px;">
-       <div style="flex:1;height:1px;background:#eee;"></div>
-       <span style="padding:0 10px;color:#bbb;font-size:12px;">veya</span>
-       <div style="flex:1;height:1px;background:#eee;"></div>
-      </div>
-      <button class="action-btn" style="background:#fff;color:#333;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;" onclick="handleGoogleLogin()">
-       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-       Google ile Giriş Yap
-      </button>
+
      </div>
 
      <!-- ADIM 2: OTP Doğrulama -->
@@ -1015,7 +1007,7 @@
   </div>
   <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc,
          query, where, getDocs, onSnapshot, arrayUnion, updateDoc,
          runTransaction, increment, serverTimestamp }
@@ -1144,7 +1136,7 @@ function getMinLimit(addr) {
 // ── STATE ──
 let basket=[], activePhone=localStorage.getItem("savedUserPhone");
 let userAddresses=[], userData={name:"",phone:""};
-let tempPhone="", tempUserData=null, tempGoogleUser=null;
+let tempPhone="", tempUserData=null;
 let currentItemToAdd=null, currentOrderListener=null, historicalOrders=[];
 let appliedCoupon=null, loyaltyPoints=0, pointsHistory=[], userOrderCount=0;
 window.selectedAddressIndex=0;
@@ -1409,6 +1401,8 @@ window.openItemDetail = n => {
 
 // ── SEPET ──
 function updateCart() {
+    // Sepeti localStorage'a kaydet (offline/yenileme koruması)
+    try { localStorage.setItem('basketDraft', JSON.stringify(basket)); } catch(e) {}
     const count=basket.length,{sub,discount,ptsDis,total}=calcTotal();
     const topBar=document.getElementById('cart-bar-top'),mainC=document.getElementById('main-content'),warnB=document.getElementById('min-order-bar');
     if(count>0){
@@ -1648,16 +1642,67 @@ window.finalizeOrder=async()=>{
     if (!storeStatus.open) {
       return alert(`⚠️ MAĞAZA KAPALI\n\n${storeStatus.message}`);
     }
+
+    // Aktif sipariş kontrolü — çift sipariş engeli
+    try {
+        const ph2 = userData.phone||activePhone;
+        if(ph2) {
+            const activeSnap = await getDocs(query(
+                collection(db,'orders'),
+                where('phone','==',ph2),
+                where('status','in',['Onay Bekliyor','Hazırlanıyor','Yola Çıktı'])
+            ));
+            if(!activeSnap.empty) {
+                return alert('⚠️ Aktif bir siparişiniz bulunuyor.\n\nSiparişiniz teslim edildikten sonra yeni sipariş verebilirsiniz.');
+            }
+        }
+    } catch(e) { console.log('Aktif sipariş kontrolü yapılamadı:', e); }
     
-    openModal('waiting');
     try{
         // Sipariş numarası al
         const orderNumber = await getNextOrderNumber();
         console.log(`📋 Sipariş numarası: #${orderNumber}`);
         
+        const ph=userData.phone||activePhone; // telefon numarası
+        if(usingPoints && ph) {
+            const freshSnap = await getDoc(doc(db,"phone_customers",ph));
+            const freshPts = freshSnap.exists() ? (freshSnap.data().loyaltyPoints||0) : 0;
+            if(freshPts < PTS_GOAL) {
+                closeModal();
+                showToast('⚠️ Puan bakiyeniz yetersiz, puansız devam edildi.');
+                usingPoints = false;
+                renderBasket();
+                return;
+            }
+            loyaltyPoints = freshPts;
+        }
+        
         const usedPtsRewards=usingPoints?Math.floor(loyaltyPoints/PTS_GOAL):0;
         const vipPts = calcPtsWithBonus(total, userOrderCount);
         const vipLvl = getVipLevel(userOrderCount);
+
+        // Fiyat doğrulaması — menüdeki gerçek fiyatlarla karşılaştır
+        try {
+            const menuSnap = await getDocs(collection(db,'menu'));
+            const menuPrices = {};
+            menuSnap.forEach(d => { menuPrices[d.data().name] = d.data().price; });
+            let calculatedSub = 0;
+            for(const item of basket) {
+                const realPrice = menuPrices[item.n];
+                if(realPrice !== undefined) {
+                    calculatedSub += realPrice * (item.qty||1);
+                } else {
+                    calculatedSub += (item.p||0) * (item.qty||1);
+                }
+            }
+            // %5 tolerans (ek malzeme fiyatları vs.)
+            if(Math.abs(calculatedSub - sub) > sub * 0.05 + 5) {
+                closeModal();
+                console.warn('Fiyat uyuşmazlığı tespit edildi', { hesaplanan: calculatedSub, gönderilen: sub });
+                return alert('⚠️ Fiyat bilgisi güncellendi. Lütfen sepetinizi kontrol edip tekrar deneyin.');
+            }
+        } catch(e) { console.log('Fiyat doğrulama atlandı:', e); }
+
 
         // Sipariş oluştur
         const orderData = {
@@ -1693,7 +1738,6 @@ window.finalizeOrder=async()=>{
           console.log(`✅ Kupon ${appliedCoupon.code} usedCount güncellendi`);
         }
         
-        const ph=userData.phone||activePhone;
         if(ph){
             // Sadece kullanılan puanları düş (kazanım panel'den teslim edilince olacak)
             if(usingPoints&&usedPtsRewards>0){
@@ -1740,6 +1784,7 @@ function listenApproval(orderId, orderNum){
               document.getElementById('success-order-num-display').style.display = 'block';
             }
             openModal('success');
+            try { localStorage.removeItem('basketDraft'); } catch(e) {}
             currentOrderListener(); currentOrderListener=null;
         } else if(s==='İptal'||s==='Reddedildi'){
             openModal('rejected');
@@ -1939,19 +1984,6 @@ function showLoginStep(step) {
 // ── GİRİŞ ──
 window.processPhoneEntry = window.sendOtp; // eski çağrılar için alias
 
-window.handleGoogleLogin=async()=>{
-    try{
-        const r=await signInWithPopup(auth,new GoogleAuthProvider());
-        tempGoogleUser=r.user;
-        const q=query(collection(db,"phone_customers"),where("googleUid","==",tempGoogleUser.uid));
-        const snap=await getDocs(q);
-        if(!snap.empty) processLoginSuccess(snap.docs[0].id);
-        else {
-            showLoginStep('register');
-            document.getElementById('reg-name').value=tempGoogleUser.displayName||'';
-        }
-    } catch(e){ alert("Giriş hatası."); }
-};
 
 window.completeRegistration=async()=>{
     const name=document.getElementById('reg-name').value.trim();
@@ -1975,8 +2007,7 @@ window.completeRegistration=async()=>{
         loyaltyPoints:0, pointsHistory:[], points:0,
         orderCount:0, lastOrderDate:null
     };
-    if(tempGoogleUser) data.googleUid=tempGoogleUser.uid;
-    const id=tempPhone||tempGoogleUser?.uid;
+    const id=tempPhone;
     await setDoc(doc(db,"phone_customers",id),data);
     await checkAndShowWelcomeCoupon(data.name);
 
@@ -2000,7 +2031,7 @@ window.verifyPinAndLogin = () => {
 };
 
 window.closeSuccessAndContinue = () => {
-    processLoginSuccess(tempPhone||tempGoogleUser?.uid);
+    processLoginSuccess(tempPhone);
 };
 
 let _loyaltyUnsubscribe = null; // puan dinleyici referansı
@@ -2043,12 +2074,17 @@ async function processLoginSuccess(id, isAuto=false){
             userOrderCount = s.size;
             updateVipDisplay(userOrderCount);
         }).catch(() => {
-            // index yoksa tüm siparişleri filtrele
-            getDocs(query(collection(db,'orders'), where('phone','==', userData.phone||id))).then(s => {
-                const cutoff = thirtyDaysAgo.getTime()/1000;
-                userOrderCount = s.docs.filter(d => (d.data().date?.seconds||0) >= cutoff).length;
-                updateVipDisplay(userOrderCount);
-            });
+            // Composite index yoksa tüm siparişleri çekip filtrele
+            getDocs(query(collection(db,'orders'), where('phone','==', userData.phone||id)))
+                .then(s => {
+                    const cutoff = thirtyDaysAgo.getTime()/1000;
+                    userOrderCount = s.docs.filter(d => (d.data().date?.seconds||0) >= cutoff).length;
+                    updateVipDisplay(userOrderCount);
+                })
+                .catch(e => {
+                    console.log('VIP sipariş sayısı alınamadı:', e);
+                    updateVipDisplay(0);
+                });
         });
         document.getElementById('logout-menu-item').style.display='flex';
         document.getElementById('sb-stats').style.display='flex';
@@ -2703,7 +2739,7 @@ window.handleLogout=()=>{
     // State sıfırla
     activePhone=null; userData={name:"",phone:""}; userAddresses=[]; basket=[];
     appliedCoupon=null; loyaltyPoints=0; pointsHistory=[]; usingPoints=false; userOrderCount=0;
-    tempPhone=""; tempUserData=null; tempGoogleUser=null;
+    tempPhone=""; tempUserData=null;
     window.selectedAddressIndex=0; curMinLimit={limit:DEF_MIN,label:"Bölgeniz"};
     if(currentOrderListener){ currentOrderListener(); currentOrderListener=null; }
     if(_statusUnsubscribe){ _statusUnsubscribe(); _statusUnsubscribe=null; }
@@ -3732,6 +3768,18 @@ window.onload=()=>{
     }
 
     checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay(); loadDeliveryZones();
+    // Sepet draft'ını geri yükle (sayfa yenileme / offline koruması)
+    try {
+        const draft = localStorage.getItem('basketDraft');
+        if(draft && !basket.length) {
+            const parsed = JSON.parse(draft);
+            if(Array.isArray(parsed) && parsed.length > 0) {
+                basket = parsed;
+                updateCart();
+                showToast('🛒 Önceki sepetiniz geri yüklendi');
+            }
+        }
+    } catch(e) {}
     if(activePhone) processLoginSuccess(activePhone,true);
     else loadFirstOrderBanner();
     setTimeout(startClosingCountdown, 1500);
