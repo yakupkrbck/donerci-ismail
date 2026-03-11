@@ -1746,7 +1746,7 @@ window.finalizeOrder=async()=>{
                 
                 // Firestore'da puanları düş
                 await updateDoc(doc(db,"phone_customers",ph), {
-                  points: increment(-spentPts)
+                  loyaltyPoints: increment(-spentPts)
                 });
                 
                 console.log(`✅ ${spentPts} puan kullanıldı`);
@@ -3193,7 +3193,14 @@ async function checkUserCoupons(userName) {
     const hasCompletedOrders = !ordersSnap.empty;
     
     console.log(`📊 Kullanıcı durumu: ${hasCompletedOrders ? 'Eski müşteri' : 'Yeni müşteri'} (${ordersSnap.size} teslim edilmiş sipariş)`);
-    
+
+    // Kullanıcının daha önce kullandığı kupon kodlarını bul
+    const usedCodes = new Set();
+    ordersSnap.forEach(d => { if(d.data().discountCode) usedCodes.add(d.data().discountCode); });
+    // Tüm siparişlerden de kontrol et (teslim edilmemiş olanlar dahil)
+    const allOrdersSnap = await getDocs(query(collection(db,"orders"), where("phone","==",userPhone)));
+    allOrdersSnap.forEach(d => { if(d.data().discountCode) usedCodes.add(d.data().discountCode); });
+
     const now = new Date();
     const q = query(collection(db, "coupons"));
     const snap = await getDocs(q);
@@ -3219,14 +3226,38 @@ async function checkUserCoupons(userName) {
         console.log(`❌ ${coupon.code} - Limit dolmuş`);
         isValid = false;
       }
+
+      // Bu müşteri daha önce kullandı mı?
+      if (usedCodes.has(coupon.code)) {
+        console.log(`❌ ${coupon.code} - Müşteri daha önce kullandı`);
+        isValid = false;
+      }
       
-      // YENİ: Koşul kontrolü - sadece yeni üyelere göster
+      // Koşul kontrolü
       if (coupon.condition === 'new_member' || coupon.condition === 'first_order') {
         if (hasCompletedOrders) {
           console.log(`❌ ${coupon.code} - Sadece yeni üyeler için (kullanıcı eski müşteri)`);
           isValid = false;
         } else {
           console.log(`✅ ${coupon.code} - Yeni üye kuponu (kullanıcı yeni)`);
+        }
+      } else if (coupon.condition === 'personal') {
+        // Sadece o müşteriye özel — başkasına gösterme
+        if (coupon.forPhone !== userPhone) {
+          console.log(`❌ ${coupon.code} - Başka müşteriye özel`);
+          isValid = false;
+        } else {
+          console.log(`✅ ${coupon.code} - Kişiye özel kupon (bu müşteri)`);
+        }
+      } else if (coupon.condition === 'inactive_30') {
+        // Sadece 30 gün sipariş vermemişse göster
+        if (hasCompletedOrders) {
+          // Son sipariş 30 günden yeni mi?
+          const lastOrder = ordersSnap.docs.sort((a,b) => b.data().date?.toMillis?.() - a.data().date?.toMillis?.())[0];
+          if (lastOrder) {
+            const daysSince = (now - (lastOrder.data().date?.toDate?.() || now)) / 86400000;
+            if (daysSince < 30) { isValid = false; console.log(`❌ ${coupon.code} - Son sipariş ${Math.round(daysSince)} gün önce`); }
+          }
         }
       } else {
         console.log(`✅ ${coupon.code} - Herkes için aktif`);
