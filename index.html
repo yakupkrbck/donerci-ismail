@@ -948,6 +948,7 @@
      <h3 style="color:var(--primary);">Onay Bekleniyor</h3>
      <p>Siparişiniz mutfağa iletildi.</p>
      <p style="font-size:12px;color:#777;">Lütfen bu ekranı kapatmayın.</p>
+     <button id="waiting-cancel-btn" onclick="cancelPendingOrder()" style="margin-top:16px;background:none;border:1.5px solid #e74c3c;color:#e74c3c;padding:8px 22px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">✕ Siparişi İptal Et</button>
     </div>
     <!-- SEÇENEKLER -->
     <div id="sec-options" class="section modal-padded">
@@ -1758,12 +1759,16 @@ window.finalizeOrder=async()=>{
             // Sadece kullanılan puanları düş (kazanım panel'den teslim edilince olacak)
             if(usingPoints&&usedPtsRewards>0){
                 const spentPts=usedPtsRewards*PTS_GOAL;
-                
-                // Firestore'da puanları düş
+                // Harcama geçmişi kaydı
+                const spentEntry={spent:spentPts, earned:0, total:loyaltyPoints-spentPts, date:new Date().toLocaleDateString('tr-TR'), orderTotal: orderData.total};
+                const updatedHistory=[spentEntry,...(pointsHistory||[])].slice(0,20);
+                // Firestore'da puanları düş + geçmişe ekle
                 await updateDoc(doc(db,"phone_customers",ph), {
-                  loyaltyPoints: increment(-spentPts)
+                  loyaltyPoints: increment(-spentPts),
+                  pointsHistory: updatedHistory
                 });
-                
+                loyaltyPoints -= spentPts;
+                pointsHistory = updatedHistory;
                 console.log(`✅ ${spentPts} puan kullanıldı`);
             }
         }
@@ -1787,11 +1792,17 @@ function listenApproval(orderId, orderNum){
       sessionStorage.setItem('lastOrderNumber', orderNum);
     }
     
+    _cancelOrderId = orderId; // iptal için sakla
     currentOrderListener=onSnapshot(doc(db,"orders",orderId),snap=>{
         if(!snap.exists()) return;
         const s=snap.data().status;
         const orderNumber = snap.data().orderNumber || sessionStorage.getItem('lastOrderNumber');
         
+        // Onay Bekliyor → iptal butonu görünür
+        if(s==='Onay Bekliyor') {
+            const btn = document.getElementById('waiting-cancel-btn');
+            if(btn) btn.style.display='inline-block';
+        }
         // Onay modalını aç
         if(s==='Hazırlanıyor'){
             // Sipariş numarasını success modal'a ekle
@@ -2575,7 +2586,16 @@ function renderPoints(){
     const hist=document.getElementById('pts-history');
     hist.innerHTML=!pointsHistory.length
         ?'<div style="text-align:center;color:rgba(255,255,255,0.3);font-size:13px;padding:10px;">Henüz işlem yok</div>'
-        :pointsHistory.slice(0,8).map(e=>`<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — ${e.orderTotal} TL sipariş</span><span class="ph-plus">+${e.earned} puan</span></div>`).join('');
+        :pointsHistory.slice(0,10).map(e=>{
+            const isSpent = e.spent && e.spent > 0;
+            const val = isSpent ? e.spent : e.earned;
+            const sign = isSpent ? '−' : '+';
+            const color = isSpent ? '#ff6b6b' : '#2ecc71';
+            const label = isSpent
+                ? `${e.orderTotal ? e.orderTotal+' TL sipariş' : 'Puan harcandı'}`
+                : `${e.orderTotal ? e.orderTotal+' TL sipariş' : 'Puan eklendi'}`;
+            return `<div class="ph-row"><span style="color:rgba(255,255,255,0.55);">${e.date} — ${label}</span><span style="font-weight:800;color:${color};">${sign}${val} puan</span></div>`;
+        }).join('');
 }
 
 // ── GEÇMİŞ ──
@@ -3934,6 +3954,23 @@ window.showCancelConfirm = () => {
     if(remaining <= 0){ showToast('⏱ İptal süresi doldu!'); return; }
     if(!confirm('Siparişinizi iptal etmek istediğinizden emin misiniz?')) return;
     cancelActiveOrder();
+};
+
+// Onay beklerken iptal (henüz mutfağa girmemiş)
+window.cancelPendingOrder = async () => {
+    if(!_cancelOrderId){ showToast('❌ Sipariş bilgisi bulunamadı.'); return; }
+    if(!confirm('Siparişinizi iptal etmek istediğinizden emin misiniz?')) return;
+    try {
+        await updateDoc(doc(db,'orders',_cancelOrderId), { status:'İptal', cancelledBy:'customer', cancelledAt: serverTimestamp() });
+        _cancelOrderId = null;
+        closeModal();
+        showToast('✅ Siparişiniz iptal edildi.');
+        // Puanlar kullanıldıysa iade et
+        if(activePhone) {
+            // sipariş datasını çekip pointsUsed'a bak
+            // (onSnapshot zaten İptal durumunu yakalayacak, yeterli)
+        }
+    } catch(e) { showToast('❌ İptal işlemi başarısız: '+e.message); }
 };
 
 async function cancelActiveOrder() {
