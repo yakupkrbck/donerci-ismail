@@ -1221,6 +1221,9 @@ function isOpen() {
     
     // Manuel kapatma kontrolü
     if (storeHours.isOpen === false) return false;
+
+    // Kapalı gün kontrolü
+    if (storeHours.closedDays && storeHours.closedDays.includes(now.getDay())) return false;
     
     // Saat kontrolü
     if (storeHours.openTime && storeHours.closeTime) {
@@ -1235,17 +1238,28 @@ function isOpen() {
 function updateStoreUI() {
     const h = document.getElementById('main-header');
     const l = document.getElementById('header-logo');
-    
+    const dayNames = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+    const dayShort = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+    const closedDays = storeHours.closedDays || [];
+    const todayName = dayNames[new Date().getDay()];
+
     if (!isOpen()) {
         h.classList.add('kapali');
         if (storeHours.isOpen === false) {
             l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">Geçici Kapalı</span>`;
+        } else if (closedDays.includes(new Date().getDay())) {
+            const closedTxt = closedDays.map(d => dayShort[d]).join(', ');
+            l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">📅 ${todayName} kapalı</span>`;
         } else {
-            l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">${storeHours.openTime} - ${storeHours.closeTime}</span>`;
+            l.innerHTML = `ŞU AN <span>KAPALIYIZ</span><span class="work-hours-badge">⏰ ${storeHours.openTime} - ${storeHours.closeTime}</span>`;
         }
     } else {
         h.classList.remove('kapali');
-        l.innerHTML = `SADECE KAPIDA <span>ÖDEME</span><small>💳 Kart &nbsp;|&nbsp; 💵 Nakit</small>`;
+        // Kapalı günleri küçük bilgi olarak göster
+        const closedInfo = closedDays.length
+            ? `<small>⏰ ${storeHours.openTime}-${storeHours.closeTime} &nbsp;|&nbsp; 🚫 ${closedDays.map(d=>dayShort[d]).join('/')}</small>`
+            : `<small>💳 Kart &nbsp;|&nbsp; 💵 Nakit</small>`;
+        l.innerHTML = `SADECE KAPIDA <span>ÖDEME</span>${closedInfo}`;
     }
 }
 
@@ -1258,7 +1272,8 @@ function checkStore() {
             storeHours = {
                 isOpen: data.isOpen !== false,
                 openTime: data.openTime || "10:30",
-                closeTime: data.closeTime || "22:00"
+                closeTime: data.closeTime || "22:00",
+                closedDays: data.closedDays || []
             };
             
             // UI'ı güncelle
