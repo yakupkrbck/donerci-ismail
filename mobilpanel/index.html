@@ -1,1 +1,776 @@
 
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dönerci İsmail - Mobil Panel</title>
+    <meta name="theme-color" content="#d35400">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DI Panel">
+    <link rel="manifest" href="/panel-manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #d35400;
+            --dark: #1a1a2e;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --warning: #f39c12;
+            --nav-height: 64px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* HEADER */
+        header {
+            background: var(--dark);
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 100;
+        }
+        .brand { font-size: 16px; font-weight: 900; color: var(--primary); letter-spacing: 1px; }
+        .brand span { color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 300; display: block; margin-top: 1px; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .hbtn { width: 36px; height: 36px; border-radius: 10px; border: none; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .hbtn:active { background: rgba(255,255,255,0.15); }
+
+        /* CONNECTION STATUS */
+        #conn-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: rgba(39,174,96,0.2); color: #2ecc71; border: 1px solid rgba(39,174,96,0.3); }
+        #conn-status.offline { background: rgba(192,57,43,0.2); color: #e74c3c; border-color: rgba(192,57,43,0.3); }
+
+        /* MAIN CONTENT */
+        main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 12px 80px; }
+
+        /* KANBAN */
+        .section-title {
+            font-size: 11px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #888; margin: 16px 0 8px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .section-title .cnt {
+            background: var(--danger); color: white;
+            font-size: 10px; padding: 2px 7px; border-radius: 20px;
+        }
+        .section-title .cnt.prep { background: var(--warning); }
+        .section-title .cnt.courier { background: var(--success); }
+
+        /* ORDER CARD */
+        .order-card {
+            background: white; border-radius: 16px; padding: 14px;
+            margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #ddd; position: relative;
+            animation: cardIn 0.3s cubic-bezier(0.34,1.2,0.64,1);
+        }
+        @keyframes cardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .order-card.pending { border-left-color: var(--danger); }
+        .order-card.prep { border-left-color: var(--warning); }
+        .order-card.courier { border-left-color: var(--success); }
+        .order-card.new-pulse { animation: newPulse 0.6s ease 3; }
+        @keyframes newPulse { 0%,100%{box-shadow:0 2px 8px rgba(0,0,0,0.06)} 50%{box-shadow:0 0 20px rgba(192,57,43,0.4)} }
+
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .c-name { font-weight: 800; font-size: 15px; color: #1a1a1a; }
+        .c-price { font-weight: 900; color: var(--primary); font-size: 16px; }
+        .c-time { font-size: 10px; color: #aaa; margin-bottom: 4px; }
+        .c-address { font-size: 12px; color: #888; display: flex; gap: 5px; align-items: flex-start; margin-bottom: 8px; line-height: 1.4; }
+        .c-items { font-size: 13px; color: #444; margin: 8px 0; border-top: 1px dashed #f0f0f0; padding-top: 8px; line-height: 1.6; }
+        .c-note { font-size: 12px; color: var(--danger); background: #fff5f5; padding: 6px 10px; border-radius: 8px; margin-bottom: 8px; }
+        .c-order-num { font-size: 10px; color: #bbb; font-weight: 700; margin-bottom: 2px; }
+
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        .btn { flex: 1; border: none; padding: 12px 8px; border-radius: 12px; cursor: pointer; font-weight: 700; color: white; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.96); }
+
+        /* BOTTOM NAV */
+        nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            height: var(--nav-height); background: white;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
+            display: flex; z-index: 200;
+            border-top: 1px solid #f0f0f0;
+        }
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 3px; cursor: pointer; color: #bbb;
+            font-size: 10px; font-weight: 700; position: relative;
+            border: none; background: none;
+        }
+        .nav-item i { font-size: 20px; transition: transform 0.2s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: scale(1.1); }
+        .nav-badge {
+            position: absolute; top: 8px; right: calc(50% - 18px);
+            background: var(--danger); color: white;
+            font-size: 9px; font-weight: 900; min-width: 16px; height: 16px;
+            border-radius: 8px; display: none; align-items: center; justify-content: center;
+            padding: 0 4px; border: 2px solid white;
+        }
+
+        /* TAB PAGES */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* TOAST */
+        #toast-c { position: fixed; top: 64px; left: 0; right: 0; z-index: 9999; padding: 8px 12px; pointer-events: none; }
+        .toast { background: #1a1a1a; color: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); animation: toastIn 0.3s cubic-bezier(0.34,1.2,0.64,1); }
+        @keyframes toastIn { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.warn { border-left: 4px solid var(--warning); }
+
+        /* ALARM OVERLAY */
+        #alarm-overlay {
+            display: none; position: fixed; inset: 0; z-index: 9998;
+            background: rgba(192,57,43,0.95); backdrop-filter: blur(4px);
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 30px;
+        }
+        #alarm-overlay.show { display: flex; animation: alarmPulse 0.5s ease infinite alternate; }
+        @keyframes alarmPulse { from{background:rgba(192,57,43,0.95)} to{background:rgba(150,30,20,0.98)} }
+        .alarm-icon { font-size: 80px; animation: bellRing 0.4s ease infinite alternate; }
+        @keyframes bellRing { from{transform:rotate(-15deg)} to{transform:rotate(15deg)} }
+        .alarm-title { font-size: 28px; font-weight: 900; color: white; margin: 16px 0 8px; }
+        .alarm-subtitle { font-size: 16px; color: rgba(255,255,255,0.8); margin-bottom: 30px; }
+        .alarm-dismiss { background: white; color: var(--danger); border: none; padding: 16px 40px; border-radius: 50px; font-size: 16px; font-weight: 900; cursor: pointer; }
+
+        /* EMPTY STATE */
+        .empty { text-align: center; padding: 40px 20px; color: #bbb; }
+        .empty i { font-size: 48px; display: block; margin-bottom: 12px; }
+        .empty p { font-size: 14px; }
+
+        /* LOGIN */
+        #login-screen { position: fixed; inset: 0; background: var(--dark); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+        .login-logo { font-size: 48px; margin-bottom: 8px; }
+        .login-title { font-size: 24px; font-weight: 900; color: white; margin-bottom: 4px; }
+        .login-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 40px; }
+        .login-input { width: 100%; padding: 16px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; font-size: 16px; margin-bottom: 12px; outline: none; }
+        .login-input:focus { border-color: var(--primary); }
+        .login-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--primary); color: white; font-size: 16px; font-weight: 800; cursor: pointer; }
+        .login-err { color: #e74c3c; font-size: 13px; margin-bottom: 12px; display: none; }
+    </style>
+</head>
+<body>
+
+<!-- GİRİŞ EKRANI -->
+<div id="login-screen">
+    <div class="login-logo">🌯</div>
+    <div class="login-title">Dönerci İsmail</div>
+    <div class="login-sub">Mutfak Paneli</div>
+    <input type="email" id="login-email" class="login-input" placeholder="E-posta">
+    <input type="password" id="login-pass" class="login-input" placeholder="Şifre" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Giriş Yap</button>
+</div>
+
+<!-- ALARM OVERLAY -->
+<div id="alarm-overlay">
+    <div class="alarm-icon">🔔</div>
+    <div class="alarm-title">YENİ SİPARİŞ!</div>
+    <div class="alarm-subtitle" id="alarm-subtitle">Sipariş geldi</div>
+    <button class="alarm-dismiss" onclick="dismissAlarm()">TAMAM</button>
+</div>
+
+<!-- HEADER -->
+<header>
+    <div class="brand">DÖNERCİ <span>MUTFAK PANELİ</span></div>
+    <div class="header-actions">
+        <span id="conn-status">● CANLI</span>
+        <button class="hbtn" onclick="testAlarm()" title="Ses Testi"><i class="fas fa-volume-up"></i></button>
+        <button class="hbtn" onclick="doLogout()" title="Çıkış"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main>
+    <!-- SİPARİŞLER SAYFASI -->
+    <div id="page-orders" class="page active">
+        <div class="section-title">
+            Onay Bekliyor
+            <span class="cnt" id="cnt-wait">0</span>
+        </div>
+        <div id="col-wait"><div class="empty"><i class="fas fa-check-circle"></i><p>Bekleyen sipariş yok</p></div></div>
+
+        <div class="section-title" style="margin-top:20px;">
+            Hazırlanıyor
+            <span class="cnt prep" id="cnt-prep">0</span>
+        </div>
+        <div id="col-prep"><div class="empty"><i class="fas fa-fire"></i><p>Hazırlanan sipariş yok</p></div></div>
+
+        <div class="section-title" style="margin-top:20px;">
+            Kuryede
+            <span class="cnt courier" id="cnt-courier">0</span>
+        </div>
+        <div id="col-courier"><div class="empty"><i class="fas fa-motorcycle"></i><p>Kuryede sipariş yok</p></div></div>
+    </div>
+
+    <!-- MÜŞTERİLER SAYFASI -->
+    <div id="page-customers" class="page">
+        <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#f8f9fa;">
+                    <th style="padding:12px;text-align:left;font-weight:700;color:#555;">Ad</th>
+                    <th style="padding:12px;text-align:left;font-weight:700;color:#555;">Telefon</th>
+                </tr></thead>
+                <tbody id="customer-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MENÜ SAYFASI -->
+    <div id="page-menu" class="page">
+        <!-- Mağaza Aç/Kapat -->
+        <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <div style="font-weight:800;font-size:15px;color:#1a1a1a;">Mağaza Durumu</div>
+                <div id="store-status-txt" style="font-size:12px;color:#888;margin-top:2px;">Yükleniyor...</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:56px;height:30px;">
+                <input type="checkbox" id="store-toggle" onchange="toggleStore(this.checked)" style="opacity:0;width:0;height:0;">
+                <span id="store-slider" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:30px;transition:.3s;">
+                    <span style="position:absolute;height:22px;width:22px;left:4px;bottom:4px;background:white;border-radius:50%;transition:.3s;display:block;" id="store-knob"></span>
+                </span>
+            </label>
+        </div>
+
+        <!-- Çalışma Saatleri -->
+        <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+            <div style="font-weight:800;font-size:14px;color:#1a1a1a;margin-bottom:12px;">⏰ Çalışma Saatleri</div>
+            <div style="display:flex;gap:10px;margin-bottom:10px;">
+                <div style="flex:1;">
+                    <div style="font-size:11px;color:#888;font-weight:700;margin-bottom:4px;">AÇILIŞ</div>
+                    <input type="time" id="open-time" style="width:100%;padding:10px;border:1.5px solid #eee;border-radius:10px;font-size:15px;font-weight:700;outline:none;font-family:inherit;">
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:11px;color:#888;font-weight:700;margin-bottom:4px;">KAPANIŞ</div>
+                    <input type="time" id="close-time" style="width:100%;padding:10px;border:1.5px solid #eee;border-radius:10px;font-size:15px;font-weight:700;outline:none;font-family:inherit;">
+                </div>
+            </div>
+            <div style="margin-bottom:10px;">
+                <div style="font-size:11px;color:#888;font-weight:700;margin-bottom:6px;">KAPALI GÜNLER</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;" id="closed-days-wrap">
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="1" onchange="updateClosedDayStyleM(1)"> Pzt</label>
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="2" onchange="updateClosedDayStyleM(2)"> Sal</label>
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="3" onchange="updateClosedDayStyleM(3)"> Çar</label>
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="4" onchange="updateClosedDayStyleM(4)"> Per</label>
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="5" onchange="updateClosedDayStyleM(5)"> Cum</label>
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="6" onchange="updateClosedDayStyleM(6)"> Cmt</label>
+                    <label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1.5px solid #eee;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;"><input type="checkbox" value="0" onchange="updateClosedDayStyleM(0)"> Paz</label>
+                </div>
+            </div>
+            <button onclick="saveWorkingHours()" style="width:100%;padding:12px;background:var(--success);color:white;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💾 Kaydet</button>
+        </div>
+
+        <!-- Ürün Ekle -->
+        <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+            <div style="font-weight:800;font-size:14px;color:#1a1a1a;margin-bottom:12px;">➕ Yeni Ürün Ekle</div>
+            <input type="text" id="p-name" placeholder="Ürün Adı" style="width:100%;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:14px;margin-bottom:8px;outline:none;font-family:inherit;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <input type="number" id="p-price" placeholder="Fiyat (TL)" style="flex:1;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:14px;outline:none;font-family:inherit;">
+                <select id="p-cat" style="flex:1;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:13px;outline:none;font-family:inherit;background:white;">
+                    <option>Dönerler</option>
+                    <option>Cantıklar & Lahmacun</option>
+                    <option>Pideler</option>
+                    <option>İçecekler</option>
+                    <option>Tatlılar</option>
+                    <option>Diğer</option>
+                </select>
+            </div>
+            <button onclick="addProduct()" style="width:100%;padding:13px;background:var(--primary);color:white;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">EKLE</button>
+        </div>
+
+        <!-- Ürün Listesi -->
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#888;margin-bottom:8px;">Ürünler</div>
+        <div id="product-list"></div>
+    </div>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav>
+    <button class="nav-item active" id="nav-orders" onclick="switchPage('orders',this)">
+        <i class="fas fa-th-large"></i>
+        <span>Siparişler</span>
+        <div class="nav-badge" id="nav-badge">0</div>
+    </button>
+    <button class="nav-item" id="nav-customers" onclick="switchPage('customers',this)">
+        <i class="fas fa-users"></i>
+        <span>Müşteriler</span>
+    </button>
+    <button class="nav-item" id="nav-menu" onclick="switchPage('menu',this)">
+        <i class="fas fa-hamburger"></i>
+        <span>Menü</span>
+    </button>
+</nav>
+
+<!-- TOAST -->
+<div id="toast-c"></div>
+
+<!-- SES - Web Audio API ile üretilir, CDN gerekmez -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDocs, setDoc, deleteDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBNpz1_e4eqKCsdTQJSOxBg4O9gF9qOWX8",
+    authDomain: "donerci-ismail-siparis.firebaseapp.com",
+    projectId: "donerci-ismail-siparis",
+    storageBucket: "donerci-ismail-siparis.firebasestorage.app",
+    messagingSenderId: "641245277881",
+    appId: "1:641245277881:web:1faaac95dbb2fcd1abb568"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let isFirstLoad = true;
+let activeOrders = [];
+let alarmPlaying = false;
+let orderUnsub = null;
+
+// ── GİRİŞ ──────────────────────────────────────────────────
+(async () => {
+await setPersistence(auth, browserLocalPersistence);
+
+onAuthStateChanged(auth, user => {
+    if(user) {
+        document.getElementById('login-screen').style.display = 'none';
+        startApp();
+    } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        if(orderUnsub) { orderUnsub(); orderUnsub = null; }
+    }
+});
+
+window.doLogin = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-pass').value;
+    const err   = document.getElementById('login-err');
+    err.style.display = 'none';
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+    } catch(e) {
+        err.style.display = 'block';
+        err.innerText = e.code === 'auth/invalid-credential' ? '❌ E-posta veya şifre hatalı' : '❌ Giriş başarısız';
+    }
+};
+
+window.doLogout = async () => {
+    if(!confirm('Çıkış yapmak istiyor musunuz?')) return;
+    await signOut(auth);
+};
+
+// ── UYGULAMA BAŞLAT ─────────────────────────────────────────
+function startApp() {
+    if('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    if('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/panel-sw.js').catch(()=>{});
+    }
+    listenOrders();
+    fetchCustomers();
+    loadStoreStatus();
+    loadWorkingHours();
+    fetchProducts();
+    updateConnStatus(true);
+    window.addEventListener('online',  () => updateConnStatus(true));
+    window.addEventListener('offline', () => updateConnStatus(false));
+}
+
+function updateConnStatus(online) {
+    const el = document.getElementById('conn-status');
+    el.textContent = online ? '● CANLI' : '● KESİK';
+    el.className = online ? '' : 'offline';
+}
+
+// ── SİPARİŞ DİNLE ──────────────────────────────────────────
+function listenOrders() {
+    const q = query(collection(db, "orders"), orderBy("date", "desc"));
+    orderUnsub = onSnapshot(q, (snapshot) => {
+        // Kolonları temizle
+        ['col-wait','col-prep','col-courier'].forEach(id => {
+            document.getElementById(id).innerHTML = '';
+        });
+
+        let waitCnt = 0, prepCnt = 0, courierCnt = 0;
+        activeOrders = [];
+        const now = new Date();
+
+        snapshot.docs.forEach(d => {
+            const order = { id: d.id, ...d.data() };
+            if(['İptal','Teslim Edildi'].includes(order.status)) return;
+            if(order.date) {
+                const od = order.date.toDate ? order.date.toDate() : new Date(order.date.seconds*1000);
+                if((now - od) / 36e5 > 24) return;
+            }
+            activeOrders.push(order);
+            renderCard(order);
+            if(order.status === 'Onay Bekliyor') waitCnt++;
+            if(order.status === 'Hazırlanıyor') prepCnt++;
+            if(order.status === 'Yola Çıktı') courierCnt++;
+        });
+
+        // Sayaçlar
+        document.getElementById('cnt-wait').innerText = waitCnt;
+        document.getElementById('cnt-prep').innerText = prepCnt;
+        document.getElementById('cnt-courier').innerText = courierCnt;
+        const badge = document.getElementById('nav-badge');
+        badge.innerText = waitCnt;
+        badge.style.display = waitCnt > 0 ? 'flex' : 'none';
+
+        // Boş durum
+        ['col-wait','col-prep','col-courier'].forEach((id, i) => {
+            const el = document.getElementById(id);
+            if(!el.children.length) {
+                const icons = ['fa-check-circle','fa-fire','fa-motorcycle'];
+                const texts = ['Bekleyen sipariş yok','Hazırlanan sipariş yok','Kuryede sipariş yok'];
+                el.innerHTML = `<div class="empty"><i class="fas ${icons[i]}"></i><p>${texts[i]}</p></div>`;
+            }
+        });
+
+        // Yeni sipariş alarmı
+        snapshot.docChanges().forEach(change => {
+            if(change.type === "added" && !isFirstLoad) {
+                const data = change.doc.data();
+                if(data.status === 'Onay Bekliyor') {
+                    triggerAlarm(data.customer || 'Yeni Müşteri', data.total);
+                }
+            }
+        });
+        isFirstLoad = false;
+    }, err => {
+        showToast('Bağlantı hatası: ' + err.message, 'error');
+        updateConnStatus(false);
+    });
+}
+
+// ── ALARM SİSTEMİ ───────────────────────────────────────────
+let audioCtx = null;
+let alarmInterval = null;
+
+function playDingDong() {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    const ctx = audioCtx;
+    if(ctx.state === 'suspended') ctx.resume();
+
+    // Restoran tarzı melodik bildirim: Do-Mi-Sol-Do (majör akor arpeji)
+    function playNote(freq, startTime, duration, gain=0.5, type='sine') {
+        const osc  = ctx.createOscillator();
+        const vol  = ctx.createGain();
+        const comp = ctx.createDynamicsCompressor();
+        osc.connect(vol); vol.connect(comp); comp.connect(ctx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+        vol.gain.setValueAtTime(0, ctx.currentTime + startTime);
+        vol.gain.linearRampToValueAtTime(gain, ctx.currentTime + startTime + 0.015);
+        vol.gain.setValueAtTime(gain, ctx.currentTime + startTime + duration * 0.6);
+        vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+        osc.start(ctx.currentTime + startTime);
+        osc.stop(ctx.currentTime + startTime + duration + 0.05);
+    }
+
+    // Majör arpeji: Do(523) → Mi(659) → Sol(784) → Do(1047)
+    // + hafif reverb etkisi için ikinci oscilator
+    playNote(523,  0,    0.35, 0.55, 'sine');      // Do
+    playNote(523,  0,    0.35, 0.15, 'triangle');   // Do harmonik
+    playNote(659,  0.2,  0.35, 0.50, 'sine');       // Mi
+    playNote(784,  0.4,  0.35, 0.45, 'sine');       // Sol
+    playNote(1047, 0.6,  0.55, 0.55, 'sine');       // Do (oktav)
+    playNote(1047, 0.6,  0.55, 0.12, 'triangle');   // harmonik
+    // Kısa sessizlik sonra tekrar yüksek nota
+    playNote(784,  1.25, 0.25, 0.30, 'sine');       // Sol (vurgu)
+    playNote(1047, 1.5,  0.45, 0.40, 'sine');       // Do (bitiş)
+}
+
+function triggerAlarm(customerName, total) {
+    alarmPlaying = true;
+    
+    // İlk melodi çal
+    playDingDong();
+    // Her 2.5 saniyede tekrarla (melodi ~2s sürdüğü için)
+    alarmInterval = setInterval(playDingDong, 2500);
+
+    // Tam ekran alarm
+    document.getElementById('alarm-subtitle').innerText = `${customerName} — ${total} TL`;
+    document.getElementById('alarm-overlay').classList.add('show');
+
+    // OS bildirimi
+    if(Notification.permission === 'granted') {
+        new Notification('🔔 YENİ SİPARİŞ!', {
+            body: `${customerName} — ${total} TL`,
+            icon: '/icons/icon-192.png',
+            vibrate: [300, 100, 300, 100, 300],
+            tag: 'new-order',
+            renotify: true
+        });
+    }
+
+    if(navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+}
+
+window.dismissAlarm = () => {
+    alarmPlaying = false;
+    if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+    document.getElementById('alarm-overlay').classList.remove('show');
+};
+
+window.testAlarm = () => {
+    triggerAlarm('Test Siparişi', '150 TL');
+    showToast('🔔 Alarm testi', 'warn');
+};
+
+// ── KART RENDER ─────────────────────────────────────────────
+function renderCard(order) {
+    const card = document.createElement('div');
+    const orderDate = order.date?.toDate ? order.date.toDate() : new Date(order.date?.seconds*1000 || Date.now());
+    const timeStr = orderDate.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+
+    // Ürünleri gruplandır
+    const grouped = {};
+    (order.items || []).forEach(i => {
+        const k = i.n; grouped[k] = (grouped[k]||0) + 1;
+    });
+    const itemsHtml = Object.entries(grouped).map(([n,q]) => `<div>${q > 1 ? `<b>${q}×</b> ` : ''}${n}</div>`).join('');
+
+    let statusClass, targetCol, btns;
+    if(order.status === 'Onay Bekliyor') {
+        statusClass = 'pending'; targetCol = 'col-wait';
+        btns = `
+            <button class="btn" style="background:#e74c3c" onclick="rejectOrder('${order.id}')"><i class="fas fa-times"></i> Reddet</button>
+            <button class="btn" style="background:#27ae60" onclick="approveOrder('${order.id}')"><i class="fas fa-check"></i> Onayla</button>
+        `;
+    } else if(order.status === 'Hazırlanıyor') {
+        statusClass = 'prep'; targetCol = 'col-prep';
+        btns = `<button class="btn" style="background:#e67e22" onclick="updateStatus('${order.id}','Yola Çıktı')"><i class="fas fa-motorcycle"></i> Kuryeye Ver</button>`;
+    } else if(order.status === 'Yola Çıktı') {
+        statusClass = 'courier'; targetCol = 'col-courier';
+        btns = `<button class="btn" style="background:#27ae60" onclick="updateStatus('${order.id}','Teslim Edildi')"><i class="fas fa-check-double"></i> Teslim Edildi</button>`;
+    } else return;
+
+    card.className = `order-card ${statusClass}`;
+    if(statusClass === 'pending') card.classList.add('new-pulse');
+    card.innerHTML = `
+        ${order.orderNumber ? `<div class="c-order-num">#${order.orderNumber}</div>` : ''}
+        <div class="card-top">
+            <span class="c-name">${order.customer || '—'}</span>
+            <span class="c-price">${order.total} ₺</span>
+        </div>
+        <div class="c-time">⏰ ${timeStr}</div>
+        <div class="c-address"><i class="fas fa-map-marker-alt" style="margin-top:2px;color:var(--primary);"></i><span>${order.addressDetails || 'Adres belirtilmemiş'}</span></div>
+        <div class="c-items">${itemsHtml}</div>
+        ${order.orderNote ? `<div class="c-note">📝 ${order.orderNote}</div>` : ''}
+        <div class="btn-group">${btns}</div>
+    `;
+
+    const col = document.getElementById(targetCol);
+    // Boş durumu temizle
+    const empty = col.querySelector('.empty');
+    if(empty) empty.remove();
+    col.appendChild(card);
+}
+
+// ── AKSİYONLAR ──────────────────────────────────────────────
+window.updateStatus = async (id, status) => {
+    dismissAlarm();
+    try {
+        await updateDoc(doc(db, "orders", id), { status });
+        showToast(`✅ Sipariş: ${status}`, 'success');
+    } catch(e) { showToast('❌ Güncelleme hatası', 'error'); }
+};
+
+window.approveOrder = async (id) => {
+    await window.updateStatus(id, 'Hazırlanıyor');
+};
+
+window.rejectOrder = async (id) => {
+    if(!confirm('Siparişi reddetmek istiyor musunuz?')) return;
+    await window.updateStatus(id, 'İptal');
+};
+
+// ── MÜŞTERİLER ──────────────────────────────────────────────
+async function fetchCustomers() {
+    try {
+        const snap = await getDocs(collection(db, "phone_customers"));
+        let html = '';
+        snap.forEach(d => {
+            const u = d.data();
+            html += `<tr style="border-bottom:1px solid #f5f5f5;">
+                <td style="padding:12px;font-weight:600;">${u.name||'—'}</td>
+                <td style="padding:12px;color:#888;">${u.phone||d.id}</td>
+            </tr>`;
+        });
+        document.getElementById('customer-list').innerHTML = html || '<tr><td colspan="2" style="padding:20px;text-align:center;color:#bbb;">Müşteri bulunamadı</td></tr>';
+    } catch(e) { console.log('Müşteri yükleme hatası:', e); }
+}
+
+// ── NAVİGASYON ──────────────────────────────────────────────
+window.switchPage = (page, el) => {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    el.classList.add('active');
+};
+
+// ── MAĞAZA AÇ/KAPAT ─────────────────────────────────────────
+async function loadStoreStatus() {
+    try {
+        const snap = await getDoc(doc(db, 'ayarlar', 'genel'));
+        const isOpen = snap.exists() ? snap.data().isOpen !== false : true;
+        applyStoreUI(isOpen);
+    } catch(e) {}
+}
+
+function applyStoreUI(isOpen) {
+    const toggle = document.getElementById('store-toggle');
+    const slider = document.getElementById('store-slider');
+    const knob   = document.getElementById('store-knob');
+    const txt    = document.getElementById('store-status-txt');
+    if(!toggle) return;
+    toggle.checked = isOpen;
+    slider.style.background = isOpen ? 'var(--success)' : '#ccc';
+    knob.style.transform = isOpen ? 'translateX(26px)' : 'translateX(0)';
+    txt.textContent = isOpen ? '✅ Mağaza açık — müşteriler sipariş verebilir' : '🔴 Mağaza kapalı — sipariş alınmıyor';
+    txt.style.color = isOpen ? 'var(--success)' : 'var(--danger)';
+}
+
+window.toggleStore = async (isOpen) => {
+    try {
+        await setDoc(doc(db, 'ayarlar', 'genel'), { isOpen }, { merge: true });
+        applyStoreUI(isOpen);
+        showToast(isOpen ? '✅ Mağaza açıldı' : '🔴 Mağaza kapatıldı', isOpen ? 'success' : 'warn');
+    } catch(e) { showToast('❌ Güncelleme hatası', 'error'); }
+};
+
+// ── MENÜ / ÜRÜNLER ───────────────────────────────────────────
+async function fetchProducts() {
+    try {
+        const snap = await getDocs(collection(db, 'products'));
+        const list = document.getElementById('product-list');
+        if(!list) return;
+        if(snap.empty) { list.innerHTML = '<div class="empty"><i class="fas fa-box-open"></i><p>Ürün bulunamadı</p></div>'; return; }
+        list.innerHTML = '';
+        snap.docs.forEach(d => {
+            const p = d.data();
+            const card = document.createElement('div');
+            const inStock = p.inStock !== false;
+            card.style.cssText = `background:white;border-radius:14px;padding:14px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;opacity:${inStock?1:0.6};`;
+            card.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700;font-size:14px;${inStock?'':'text-decoration:line-through;color:#aaa;'}">${p.name||p.n||'—'}</div>
+                    <div style="font-size:12px;color:#888;">${p.category||p.c||'—'}</div>
+                    ${!inStock?'<div style="font-size:10px;color:#e74c3c;font-weight:700;margin-top:2px;">● STOK YOK</div>':''}
+                </div>
+                <div style="font-weight:900;color:var(--primary);font-size:15px;">${p.price||p.p||0} ₺</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <button onclick="editProductPrice('${d.id}','${(p.name||p.n||'').replace(/'/g,"\\'")}',${p.price||p.p||0})" style="background:#3498db;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Fiyat</button>
+                    <button onclick="toggleStock('${d.id}',${inStock})" style="background:${inStock?'#e74c3c':'#27ae60'};color:white;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">${inStock?'Kapat':'Aç'}</button>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    } catch(e) { showToast('❌ Ürünler yüklenemedi', 'error'); }
+}
+
+window.addProduct = async () => {
+    const name  = document.getElementById('p-name').value.trim();
+    const price = parseFloat(document.getElementById('p-price').value);
+    const cat   = document.getElementById('p-cat').value;
+    if(!name || !price) { showToast('❌ İsim ve fiyat zorunlu', 'error'); return; }
+    try {
+        await addDoc(collection(db, 'products'), { name, n: name, price, p: price, category: cat, c: cat, inStock: true });
+        document.getElementById('p-name').value = '';
+        document.getElementById('p-price').value = '';
+        fetchProducts();
+        showToast('✅ Ürün eklendi', 'success');
+    } catch(e) { showToast('❌ Eklenemedi: ' + e.message, 'error'); }
+};
+
+window.editProductPrice = async (id, name, currentPrice) => {
+    const newPrice = prompt(`"${name}" yeni fiyatı (TL):`, currentPrice);
+    if(!newPrice || isNaN(newPrice)) return;
+    try {
+        await updateDoc(doc(db, 'products', id), { price: parseFloat(newPrice), p: parseFloat(newPrice) });
+        fetchProducts();
+        showToast('✅ Fiyat güncellendi', 'success');
+    } catch(e) { showToast('❌ Güncelleme hatası', 'error'); }
+};
+
+window.toggleStock = async (id, currentStock) => {
+    try {
+        const newStock = !currentStock;
+        await updateDoc(doc(db, 'products', id), { inStock: newStock });
+        fetchProducts();
+        showToast(newStock ? '✅ Ürün açıldı' : '🔴 Ürün kapatıldı', newStock ? 'success' : 'warn');
+    } catch(e) { showToast('❌ Güncelleme hatası', 'error'); }
+};
+
+// ── ÇALIŞMA SAATLERİ ─────────────────────────────────────────
+window.updateClosedDayStyleM = (day) => {
+    const labels = document.querySelectorAll('#closed-days-wrap label');
+    labels.forEach(lbl => {
+        const cb = lbl.querySelector('input');
+        if(parseInt(cb.value) === day) {
+            lbl.style.borderColor = cb.checked ? '#e74c3c' : '#eee';
+            lbl.style.background  = cb.checked ? '#fdedec' : 'white';
+            lbl.style.color       = cb.checked ? '#c0392b' : '#333';
+        }
+    });
+};
+
+async function loadWorkingHours() {
+    try {
+        const snap = await getDoc(doc(db, 'ayarlar', 'genel'));
+        if(!snap.exists()) return;
+        const data = snap.data();
+        if(data.openTime)  document.getElementById('open-time').value  = data.openTime;
+        if(data.closeTime) document.getElementById('close-time').value = data.closeTime;
+        const closed = data.closedDays || [];
+        document.querySelectorAll('#closed-days-wrap input').forEach(cb => {
+            cb.checked = closed.includes(parseInt(cb.value));
+            updateClosedDayStyleM(parseInt(cb.value));
+        });
+    } catch(e) {}
+}
+
+window.saveWorkingHours = async () => {
+    const openTime  = document.getElementById('open-time').value;
+    const closeTime = document.getElementById('close-time').value;
+    if(!openTime || !closeTime) { showToast('❌ Saatleri girin', 'error'); return; }
+    const closedDays = [];
+    document.querySelectorAll('#closed-days-wrap input:checked').forEach(cb => closedDays.push(parseInt(cb.value)));
+    try {
+        await setDoc(doc(db, 'ayarlar', 'genel'), { openTime, closeTime, closedDays }, { merge: true });
+        showToast('✅ Çalışma saatleri kaydedildi', 'success');
+    } catch(e) { showToast('❌ Kaydetme hatası', 'error'); }
+};
+
+// ── TOAST ────────────────────────────────────────────────────
+window.showToast = (msg, type='success') => {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = msg;
+    document.getElementById('toast-c').appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+};
+
+})(); // async IIFE kapanışı
+
+</script>
+</body>
+</html>
