@@ -1391,7 +1391,76 @@ function renderMenu(products) {
     // Eğer countdown zaten çalışıyorsa yeniden başlatma
     if(!_cdInterval) startClosingCountdown();
     // Değerlendirme puanlarını yükle, sonra popüler ürünleri render et
-    loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); });
+    loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); setTimeout(renderMenuFooter, 500); });
+}
+
+function renderMenuFooter() {
+    if(document.getElementById('menu-footer')) return;
+    const mc = document.getElementById('main-content');
+    if(!mc) return;
+    const footer = document.createElement('div');
+    footer.id = 'menu-footer';
+    footer.innerHTML = `
+    <div style="margin:24px 0 8px;border-radius:20px;overflow:hidden;background:#f4f4f4;border:1px solid #ebebeb;">
+        <!-- Üst kısım: açık arka plan -->
+        <div style="padding:24px 20px 16px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:6px;">🌯</div>
+            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:2px;">Dönerci İsmail</div>
+            <div style="font-size:12px;color:#aaa;">Mahalle Lezzetleri</div>
+        </div>
+        <!-- Çalışma saatleri -->
+        <div style="background:white;margin:0 16px;border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">⏰ Çalışma Saatleri</div>
+            <div id="footer-hours-list" style="font-size:13px;color:#444;line-height:2;">Yükleniyor...</div>
+        </div>
+        <!-- Butonlar -->
+        <div style="display:flex;gap:10px;padding:0 16px 16px;">
+            <button onclick="window.open('tel:02242466120')" style="flex:1;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                📞 Telefon Et
+            </button>
+            <button onclick="window.open('https://maps.google.com/?q=Dönerci+İsmail+Karacabey')" style="flex:1;padding:14px;background:linear-gradient(135deg,#3498db,#2980b9);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                🗺️ Yol Tarifi
+            </button>
+        </div>
+        <!-- Sosyal medya -->
+        <div style="display:flex;justify-content:center;gap:14px;padding-bottom:20px;">
+            <a href="https://instagram.com/donercismail" target="_blank" style="width:44px;height:44px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#555;font-size:18px;text-decoration:none;">
+                <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://facebook.com/donercismail" target="_blank" style="width:44px;height:44px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#555;font-size:18px;text-decoration:none;">
+                <i class="fab fa-facebook-f"></i>
+            </a>
+            <a href="https://wa.me/902242466120" target="_blank" style="width:44px;height:44px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#555;font-size:18px;text-decoration:none;">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+        </div>
+    </div>`;
+    mc.appendChild(footer);
+    loadFooterHours();
+}
+
+async function loadFooterHours() {
+    try {
+        const snap = await getDoc(doc(db,'ayarlar','genel'));
+        const data = snap.exists() ? snap.data() : {};
+        const openTime  = data.openTime  || '10:30';
+        const closeTime = data.closeTime || '22:00';
+        const closedDays = data.closedDays || [];
+        const dayNames = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+        const today = new Date().getDay();
+        let html = '';
+        for(let i=1; i<=7; i++) {
+            const dayIdx = i % 7;
+            const isClosed = closedDays.includes(dayIdx);
+            const isToday = dayIdx === today;
+            html += `<div style="display:flex;justify-content:space-between;${isToday?'color:var(--primary);font-weight:700;':''}">
+                <span>${dayNames[dayIdx]}${isToday?' <span style="font-size:10px;opacity:0.7;">(Bugün)</span>':''}</span>
+                <span>${isClosed?'<span style="color:#e74c3c;">Kapalı</span>':`${openTime} - ${closeTime}`}</span>
+            </div>`;
+        }
+        const el = document.getElementById('footer-hours-list');
+        if(el) el.innerHTML = html;
+    } catch(e) {}
 }
 
 window.openItemDetail = n => {
@@ -2110,6 +2179,24 @@ let _loyaltyUnsubscribe = null; // puan dinleyici referansı
 async function processLoginSuccess(id, isAuto=false){
     activePhone = id;
     localStorage.setItem("savedUserPhone", activePhone);
+    // Online varlık kaydı — panelde görünsün
+    try {
+        await setDoc(doc(db,"phone_customers",id), {
+            onlineAt: serverTimestamp(),
+            onlinePage: 'menu'
+        }, {merge:true});
+        // Her 30 saniyede bir ping at
+        if(window._onlinePingInterval) clearInterval(window._onlinePingInterval);
+        window._onlinePingInterval = setInterval(async()=>{
+            if(!activePhone) return;
+            try { await setDoc(doc(db,"phone_customers",activePhone),{onlineAt:serverTimestamp()},{merge:true}); } catch(e){}
+        }, 30000);
+    } catch(e) {}
+    // Sayfa kapanınca offline yap
+    window.addEventListener('beforeunload', ()=>{
+        if(window._onlinePingInterval) clearInterval(window._onlinePingInterval);
+        setDoc(doc(db,"phone_customers",id), {onlineAt: null}, {merge:true}).catch(()=>{});
+    });
     // tempUserData zaten varsa tekrar Firestore'a gitme
     let d = tempUserData;
     if(!d) {
