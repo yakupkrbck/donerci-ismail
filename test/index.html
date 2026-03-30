@@ -632,6 +632,8 @@
     DÖNERCİ <span>İSMAİL</span>
    </div>
    <div class="nav-icons">
+    <!-- Dil seçici -->
+    <button id="lang-btn" onclick="cycleLang()" style="background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);color:white;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">🇹🇷 TR</button>
     <!-- Modern kullanıcı butonu -->
     <div class="user-panel" id="user-panel-btn" onclick="handleUserPanelClick()">
      <div style="position:relative;display:inline-flex;">
@@ -1341,7 +1343,7 @@ async function loadMenu() {
 }
 function renderMenu(products) {
     const shopOpen=isOpen(), bakeryOpen=new Date().getHours()>=12;
-    const norm=products.map(p=>({id:p.id,c:normCat(p.category||p.c),n:p.name||p.n,p:p.price||p.p||0,i:p.image||p.i||"",desc:p.description||p.desc||"",inStock:p.inStock!==false,variants:p.variants||p.options||p.subOptions||p.choices||null,order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999}));
+    const norm=products.map(p=>({id:p.id,c:normCat(p.category||p.c),n:p.name||p.n,p:p.price||p.p||0,i:p.image||p.i||"",desc:p.description||p.desc||"",inStock:p.inStock!==false,variants:p.variants||p.options||p.subOptions||p.choices||null,order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999,nameEn:p.nameEn||null,nameAr:p.nameAr||null,campaignPrice:p.campaignPrice||null,campaignType:p.campaignType||null,campaignDate:p.campaignDate||null,campaignActive:p.campaignActive||false}));
     // Normalize edilmiş ürünleri detay için global'e kaydet
     window._menuProducts = norm;
     const cats={}; norm.forEach(x=>{ if(!cats[x.c]) cats[x.c]=[]; cats[x.c].push(x); });
@@ -1364,19 +1366,30 @@ function renderMenu(products) {
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
             if(shopOpen&&item.inStock&&(cat==='Pideler'||cat==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm')&&!bakeryOpen){btnTxt="12:00'DA";disabled=true;}
             const safeN=item.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+            const displayName = getProductName(item);
             const imgHtml=cat!=='İçecekler'?(item.i?`<img src="${item.i}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;flex-shrink:0;cursor:pointer;" onclick="openItemDetail('${safeN}')" onerror="this.style.display='none'">`:`<div class="item-img" style="cursor:pointer;" onclick="openItemDetail('${safeN}')">${catEmojis[cat]||'🍽'}</div>`):'';
             const rev=window._itemRatings?.[item.n]; const revHtml=rev&&rev.count>0?`<div class="item-rating"><span class="item-rating-stars">${'★'.repeat(Math.round(rev.avg))}${'☆'.repeat(5-Math.round(rev.avg))}</span><span class="item-rating-count">${rev.avg.toFixed(1)} (${rev.count})</span></div>`:'';
+            // Kampanya fiyatı
+            const campPrice = getActiveCampaign(item);
+            const effectivePrice = campPrice || item.p;
+            const priceHtml = campPrice
+                ? `<div style="text-align:right;">
+                     <div style="font-size:11px;color:#aaa;text-decoration:line-through;line-height:1;">${item.p} TL</div>
+                     <div style="font-size:15px;color:#e65100;font-weight:900;line-height:1.2;">${campPrice} TL</div>
+                     <div style="font-size:9px;background:#e65100;color:white;padding:2px 5px;border-radius:8px;margin-top:2px;white-space:nowrap;">${getCampaignLabel(item)}</div>
+                   </div>`
+                : `<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>`;
             return `<div class="item-card${!item.inStock?' out-of-stock':''}">
                 <div class="item-left">${imgHtml}
                 <div>
-                    <div style="font-size:14px;font-weight:700;cursor:pointer;" onclick="openItemDetail('${safeN}')">${item.n}</div>
+                    <div style="font-size:14px;font-weight:700;cursor:pointer;" onclick="openItemDetail('${safeN}')">${displayName}</div>
                     ${item.desc?`<div style="font-size:11px;color:#999;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.desc}</div>`:''}
                     ${revHtml}
                     ${!item.inStock?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-top:2px;">Şu an mevcut değil</div>':''}
                 </div></div>
                 <div style="text-align:right;">
-                    <div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>
-                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.p},'${cat}')">${btnTxt}</button>
+                    ${priceHtml}
+                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${effectivePrice},'${cat}')">${btnTxt}</button>
                 </div>
             </div>`;
         }).join('')}`).join('');
@@ -1419,7 +1432,7 @@ function renderMenuFooter() {
             <button onclick="window.open('tel:02242466120')" style="flex:1;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
                 📞 Telefon Et
             </button>
-            <button onclick="window.open('https://maps.google.com/?q=Dönerci+İsmail+Karacabey')" style="flex:1;padding:14px;background:linear-gradient(135deg,#3498db,#2980b9);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <button onclick="window.open('https://maps.app.goo.gl/o673pM96gZQEQGQq6')" style="flex:1;padding:14px;background:linear-gradient(135deg,#3498db,#2980b9);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
                 🗺️ Yol Tarifi
             </button>
         </div>
@@ -2791,15 +2804,15 @@ function showCropModal(file, callback) {
         modal.id = 'crop-modal';
         modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
         modal.innerHTML = `
-            <div style="background:white;border-radius:20px;width:100%;max-width:360px;overflow:hidden;">
-                <div style="padding:14px 16px;font-weight:800;font-size:15px;border-bottom:1px solid #eee;">✂️ Fotoğrafı Kırp</div>
-                <div style="position:relative;background:#000;overflow:hidden;" id="crop-container">
-                    <canvas id="crop-canvas" style="display:block;max-width:100%;touch-action:none;"></canvas>
+            <div style="background:white;border-radius:20px;width:100%;max-width:360px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+                <div style="padding:14px 16px;font-weight:800;font-size:15px;border-bottom:1px solid #eee;flex-shrink:0;">✂️ Fotoğrafı Kırp</div>
+                <div style="flex:1;overflow:hidden;position:relative;background:#000;" id="crop-container">
+                    <canvas id="crop-canvas" style="display:block;max-width:100%;max-height:calc(90vh - 130px);touch-action:none;"></canvas>
                     <canvas id="crop-overlay" style="position:absolute;inset:0;pointer-events:none;"></canvas>
                 </div>
-                <div style="padding:14px;display:flex;gap:10px;">
+                <div style="padding:12px 14px;display:flex;gap:10px;flex-shrink:0;background:white;border-top:1px solid #eee;">
                     <button onclick="closeCropModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #eee;background:white;font-size:14px;font-weight:700;cursor:pointer;">İptal</button>
-                    <button onclick="applyCrop()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--primary);color:white;font-size:14px;font-weight:700;cursor:pointer;">Kaydet</button>
+                    <button onclick="applyCrop()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--primary);color:white;font-size:14px;font-weight:800;cursor:pointer;">✅ Kaydet</button>
                 </div>
             </div>`;
         document.body.appendChild(modal);
@@ -2818,13 +2831,20 @@ function initCrop() {
     const canvas = document.getElementById('crop-canvas');
     const overlay = document.getElementById('crop-overlay');
     const maxW = Math.min(360, window.innerWidth - 40);
-    const scale = maxW / _cropImg.width;
+    const maxH = window.innerHeight * 0.6; // max %60 ekran yüksekliği
+    let dispW = maxW;
+    let dispH = _cropImg.height * (maxW / _cropImg.width);
+    // Çok uzun görsel için yüksekliği sınırla
+    if(dispH > maxH) {
+        dispH = maxH;
+        dispW = _cropImg.width * (maxH / _cropImg.height);
+    }
     canvas.width = _cropImg.width;
     canvas.height = _cropImg.height;
-    canvas.style.width = maxW + 'px';
-    canvas.style.height = (_cropImg.height * scale) + 'px';
-    overlay.width = maxW;
-    overlay.height = _cropImg.height * scale;
+    canvas.style.width = dispW + 'px';
+    canvas.style.height = dispH + 'px';
+    overlay.width = dispW;
+    overlay.height = dispH;
 
     // Başlangıç: ortalanmış kare
     const size = Math.min(_cropImg.width, _cropImg.height);
@@ -4247,13 +4267,138 @@ window.requireLogin = (sec) => {
     openModal(sec);
 };
 
+// ── DİL SİSTEMİ ──────────────────────────────────────────────
+const LANGS = ['tr','en','ar'];
+const LANG_FLAGS = {tr:'🇹🇷 TR', en:'🇬🇧 EN', ar:'🇸🇦 AR'};
+let _lang = localStorage.getItem('lang') || (navigator.language||'').slice(0,2).toLowerCase();
+if(!LANGS.includes(_lang)) _lang = 'tr';
+
+const I18N = {
+  tr: {
+    login_title:'Giriş Yap', login_sub:'Lütfen geçerli bir telefon numarası girin',
+    login_btn:'Giriş Yap', continue_btn:'Devam Et →',
+    cart_title:'Sepetim', checkout_btn:'Siparişi Tamamla',
+    add_btn:'EKLE', closed_btn:'KAPALI', sold_out:'TÜKENDI',
+    delivery:'Teslimat', free:'Ücretsiz', total:'Toplam',
+    my_points:'Puanlarım', my_orders:'Siparişlerim', my_coupons:'Kuponlarım', wa_support:'WA Destek',
+    call_us:'Telefon Et', directions:'Yol Tarifi',
+    today_special:'Bugüne Özel', until_date:'tarihine kadar',
+    campaign_badge:'KAMPANYA',
+    greeting_new:'İlk defa giriş yapıyorsunuz!', greeting_info:'Lütfen bir seferlik bilgilerinizi girin',
+  },
+  en: {
+    login_title:'Sign In', login_sub:'Please enter a valid phone number',
+    login_btn:'Sign In', continue_btn:'Continue →',
+    cart_title:'My Cart', checkout_btn:'Place Order',
+    add_btn:'ADD', closed_btn:'CLOSED', sold_out:'SOLD OUT',
+    delivery:'Delivery', free:'Free', total:'Total',
+    my_points:'My Points', my_orders:'My Orders', my_coupons:'My Coupons', wa_support:'WA Support',
+    call_us:'Call Us', directions:'Directions',
+    today_special:'Today Only', until_date:'until',
+    campaign_badge:'SALE',
+    greeting_new:"It's your first time!", greeting_info:'Please fill in your details once',
+  },
+  ar: {
+    login_title:'تسجيل الدخول', login_sub:'الرجاء إدخال رقم هاتف صحيح',
+    login_btn:'دخول', continue_btn:'استمرار ←',
+    cart_title:'سلة التسوق', checkout_btn:'تأكيد الطلب',
+    add_btn:'أضف', closed_btn:'مغلق', sold_out:'نفد',
+    delivery:'توصيل', free:'مجاني', total:'المجموع',
+    my_points:'نقاطي', my_orders:'طلباتي', my_coupons:'كوبوناتي', wa_support:'واتساب',
+    call_us:'اتصل بنا', directions:'الاتجاهات',
+    today_special:'اليوم فقط', until_date:'حتى',
+    campaign_badge:'عرض',
+    greeting_new:'!مرحباً بك', greeting_info:'يرجى ملء بياناتك مرة واحدة',
+  }
+};
+
+function t(key) { return (I18N[_lang]||I18N.tr)[key] || (I18N.tr)[key] || key; }
+
+function applyLang() {
+  const isAr = _lang === 'ar';
+  document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+  document.documentElement.lang = _lang;
+  const btn = document.getElementById('lang-btn');
+  if(btn) btn.textContent = LANG_FLAGS[_lang];
+
+  // Giriş ekranı
+  const loginTitle = document.querySelector('#login-step-phone h3');
+  if(loginTitle) loginTitle.textContent = t('login_title');
+  const loginSub = document.querySelector('#login-step-phone p');
+  if(loginSub) loginSub.textContent = t('login_sub');
+  const otpSendTxt = document.getElementById('otp-send-txt');
+  if(otpSendTxt) otpSendTxt.textContent = t('login_btn');
+
+  // Alt nav
+  const bnLabels = {
+    'bn-points': 'my_points',
+    'bn-history': 'my_orders',
+    'bn-coupons': 'my_coupons',
+    'bn-wa': 'wa_support'
+  };
+  Object.entries(bnLabels).forEach(([id, key]) => {
+    const el = document.querySelector(`#${id} .bn-label`);
+    if(el) el.textContent = t(key);
+  });
+
+  // Footer butonları
+  const footerCall = document.querySelector('#menu-footer button:first-of-type');
+  if(footerCall) footerCall.innerHTML = `📞 ${t('call_us')}`;
+  const footerDir = document.querySelector('#menu-footer button:last-of-type');
+  if(footerDir) footerDir.innerHTML = `🗺️ ${t('directions')}`;
+
+  // Kullanıcı paneli giriş metni
+  const nameEl = document.getElementById('user-panel-name');
+  const subEl = document.getElementById('user-panel-sub');
+  if(nameEl && nameEl.textContent === 'Giriş Yap') {
+    nameEl.textContent = t('login_title');
+    if(subEl) subEl.textContent = isAr ? 'ادخل →' : (t('login_btn') + ' →');
+  }
+
+  // Menüyü yeniden render et (ürün isimlerini güncelle)
+  if(window._menuCache) renderMenu(window._menuCache);
+}
+
+window.cycleLang = () => {
+  const idx = LANGS.indexOf(_lang);
+  _lang = LANGS[(idx+1) % LANGS.length];
+  localStorage.setItem('lang', _lang);
+  applyLang();
+};
+
+// Ürün ismi dile göre döndür
+function getProductName(p) {
+  if(_lang==='en' && p.nameEn) return p.nameEn;
+  if(_lang==='ar' && p.nameAr) return p.nameAr;
+  return p.n || p.name || '';
+}
+
+// Kampanya fiyatı aktif mi?
+function getActiveCampaign(p) {
+  if(!p.campaignActive || !p.campaignPrice) return null;
+  const today = new Date().toISOString().split('T')[0];
+  if(p.campaignType === 'today') return p.campaignPrice;
+  if(p.campaignType === 'unlimited') return p.campaignPrice;
+  if(p.campaignType === 'date' && p.campaignDate >= today) return p.campaignPrice;
+  return null;
+}
+
+function getCampaignLabel(p) {
+  if(p.campaignType === 'today') return t('today_special');
+  if(p.campaignType === 'unlimited') return t('campaign_badge');
+  if(p.campaignType === 'date' && p.campaignDate) {
+    return `${new Date(p.campaignDate).toLocaleDateString(_lang==='ar'?'ar-SA':_lang==='en'?'en-GB':'tr-TR')} ${t('until_date')}`;
+  }
+  return t('campaign_badge');
+}
+
 window.onload=()=>{
     // PWA Service Worker kaydı
     if('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
 
-    checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay(); loadDeliveryZones();
+    checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay(); loadDeliveryZones(); applyLang();
     // Sepet draft'ını geri yükle (sayfa yenileme / offline koruması)
     try {
         const draft = localStorage.getItem('basketDraft');
