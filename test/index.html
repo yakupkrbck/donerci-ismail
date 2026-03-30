@@ -14,7 +14,6 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
         :root {
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
@@ -476,11 +475,6 @@
         .gumus-fill { background:linear-gradient(90deg,#888,#ccc); }
         .altin-fill { background:linear-gradient(90deg,#f5c518,#ffe066); }
         #campaigns-section { margin-bottom:20px; }
-        /* KATEGORİ FİLTRE */
-        .cat-filter-btn { flex-shrink:0; padding:7px 14px; border-radius:20px; border:1.5px solid #e0e0e0; background:white; font-size:12px; font-weight:700; color:#555; cursor:pointer; font-family:'Poppins',sans-serif; transition:all .2s; white-space:nowrap; }
-        .cat-filter-btn.active { background:var(--primary); border-color:var(--primary); color:white; }
-        #cat-filter-bar::-webkit-scrollbar { display:none; }
-
         .camp-title { font-size:15px; font-weight:800; color:var(--dark); display:flex; align-items:center; gap:7px; margin-bottom:12px; }
         .camp-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; -ms-overflow-style:none; }
         .camp-scroll::-webkit-scrollbar { display:none; }
@@ -686,7 +680,7 @@
   <div id="sidebar" class="sidebar">
    <div class="sb-header">
     <button class="sb-close" onclick="closeSidebar()">×</button>
-    <div class="sb-img" id="sb-img-el">👤</div>
+    <div class="sb-img">👤</div>
     <div id="sb-name" style="font-weight:700;font-size:16px;">Giriş Yap</div>
     <div id="sb-phone" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px;"></div>
     <div class="sb-stats" id="sb-stats" style="display:none;">
@@ -849,17 +843,6 @@
        <div style="font-size:14px;font-weight:700;color:#cc5200;">İlk defa giriş yapıyorsunuz!</div>
        <div style="font-size:12px;color:#aa4400;margin-top:4px;">Lütfen bir seferlik bilgilerinizi girin</div>
       </div>
-
-      <!-- Opsiyonel profil fotoğrafı -->
-      <div style="text-align:center;margin-bottom:16px;">
-        <div style="position:relative;display:inline-block;">
-          <div id="reg-photo-wrap" onclick="document.getElementById('reg-photo-input').click()" style="width:72px;height:72px;border-radius:50%;background:#f0f0f0;border:2.5px dashed #ddd;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;overflow:hidden;transition:.2s;">👤</div>
-          <div onclick="document.getElementById('reg-photo-input').click()" style="position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:var(--primary);border:2px solid white;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;">📷</div>
-        </div>
-        <input type="file" id="reg-photo-input" accept="image/*" style="display:none" onchange="previewRegPhoto(this)">
-        <div style="font-size:10px;color:#bbb;margin-top:6px;">Profil fotoğrafı (opsiyonel)</div>
-      </div>
-
       <input type="text" id="reg-name" placeholder="Ad Soyad">
       <select id="reg-hood"><option value="" disabled selected>Mahalle Seçin</option><option>Mehmet Akif Mah.</option><option>Çeltik Mah.</option><option>Çukurca Mah.</option></select>
       <input type="text" id="reg-street" placeholder="Sokak / Cadde">
@@ -971,20 +954,8 @@
     </div>
     <!-- PROFİL -->
     <div id="sec-profile" class="section modal-padded">
-     <h3 style="margin-top:0;">👤 Profilim</h3>
-     <!-- Profil fotoğrafı -->
-     <div style="text-align:center;margin-bottom:20px;">
-       <div style="position:relative;display:inline-block;">
-         <div id="profile-photo-wrap" style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#FF6600,#CC5200);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:36px;border:3px solid #ffe0cc;overflow:hidden;cursor:pointer;" onclick="document.getElementById('photo-file-input').click()">
-           <span id="profile-photo-icon">👤</span>
-         </div>
-         <div onclick="document.getElementById('photo-file-input').click()" style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--primary);border:2px solid white;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;">📷</div>
-       </div>
-       <input type="file" id="photo-file-input" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
-       <div style="font-size:11px;color:#aaa;margin-top:8px;">Fotoğraf yüklemek için dokunun</div>
-     </div>
-     <input type="text" id="f-name" placeholder="Ad Soyad">
-     <input type="tel" id="f-phone" disabled style="background:#eee;">
+     <h3 style="margin-top:0;">Profil</h3>
+     <input type="text" id="f-name" placeholder="Ad Soyad"> <input type="tel" id="f-phone" disabled style="background:#eee;">
      <button class="action-btn" onclick="savePersonalInfo()">GÜNCELLE</button>
     </div>
     <!-- KUPONLARIM -->
@@ -1341,7 +1312,7 @@ async function loadMenu() {
 }
 function renderMenu(products) {
     const shopOpen=isOpen(), bakeryOpen=new Date().getHours()>=12;
-    const norm=products.map(p=>({id:p.id,c:normCat(p.category||p.c),n:p.name||p.n,p:p.price||p.p||0,i:p.image||p.i||"",desc:p.description||p.desc||"",inStock:p.inStock!==false,variants:p.variants||p.options||p.subOptions||p.choices||null,order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999,nameEn:p.nameEn||null,nameAr:p.nameAr||null,campaignPrice:p.campaignPrice||null,campaignType:p.campaignType||null,campaignDate:p.campaignDate||null,campaignActive:p.campaignActive||false}));
+    const norm=products.map(p=>({id:p.id,c:normCat(p.category||p.c),n:p.name||p.n,p:p.price||p.p||0,i:p.image||p.i||"",desc:p.description||p.desc||"",inStock:p.inStock!==false,variants:p.variants||p.options||p.subOptions||p.choices||null,order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999}));
     // Normalize edilmiş ürünleri detay için global'e kaydet
     window._menuProducts = norm;
     const cats={}; norm.forEach(x=>{ if(!cats[x.c]) cats[x.c]=[]; cats[x.c].push(x); });
@@ -1352,31 +1323,14 @@ function renderMenu(products) {
     const sorted=[...CAT_ORDER.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CAT_ORDER.includes(c)).sort((a,b)=>(catOrderMap[a]||999)-(catOrderMap[b]||999))];
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
-    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div>
-        <div id="cat-filter-bar" style="display:flex;gap:8px;overflow-x:auto;padding:0 0 8px;margin-bottom:4px;scrollbar-width:none;">
-          <button class="cat-filter-btn active" onclick="filterCat(null,this)">🍽 Tümü</button>
-          ${sorted.map(c=>`<button class="cat-filter-btn" onclick="filterCat('${c.replace(/'/g,"\\'")}',this)">${catEmojis[c]||'🍽'} ${c}</button>`).join('')}
-        </div>
-        <div id="popular-section" style="display:none;"></div>
-        <div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
+    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
         <div class="cat-title">${catEmojis[cat]||'🍽'} ${cat}</div>
         ${cats[cat].map(item=>{
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
             if(shopOpen&&item.inStock&&(cat==='Pideler'||cat==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm')&&!bakeryOpen){btnTxt="12:00'DA";disabled=true;}
             const safeN=item.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-            
             const imgHtml=cat!=='İçecekler'?(item.i?`<img src="${item.i}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;flex-shrink:0;cursor:pointer;" onclick="openItemDetail('${safeN}')" onerror="this.style.display='none'">`:`<div class="item-img" style="cursor:pointer;" onclick="openItemDetail('${safeN}')">${catEmojis[cat]||'🍽'}</div>`):'';
             const rev=window._itemRatings?.[item.n]; const revHtml=rev&&rev.count>0?`<div class="item-rating"><span class="item-rating-stars">${'★'.repeat(Math.round(rev.avg))}${'☆'.repeat(5-Math.round(rev.avg))}</span><span class="item-rating-count">${rev.avg.toFixed(1)} (${rev.count})</span></div>`:'';
-            // Kampanya fiyatı
-            const campPrice = getActiveCampaign(item);
-            const effectivePrice = campPrice || item.p;
-            const priceHtml = campPrice
-                ? `<div style="text-align:right;">
-                     <div style="font-size:11px;color:#aaa;text-decoration:line-through;line-height:1;">${item.p} TL</div>
-                     <div style="font-size:15px;color:#e65100;font-weight:900;line-height:1.2;">${campPrice} TL</div>
-                     <div style="font-size:9px;background:#e65100;color:white;padding:2px 5px;border-radius:8px;margin-top:2px;white-space:nowrap;">${item.campaignType==="today"?"Bugüne Özel":item.campaignType==="unlimited"?"Kampanya":item.campaignDate?new Date(item.campaignDate).toLocaleDateString("tr-TR")+" kadar":"Kampanya"}</div>
-                   </div>`
-                : `<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>`;
             return `<div class="item-card${!item.inStock?' out-of-stock':''}">
                 <div class="item-left">${imgHtml}
                 <div>
@@ -1386,8 +1340,8 @@ function renderMenu(products) {
                     ${!item.inStock?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-top:2px;">Şu an mevcut değil</div>':''}
                 </div></div>
                 <div style="text-align:right;">
-                    ${priceHtml}
-                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${effectivePrice},'${cat}')">${btnTxt}</button>
+                    <div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>
+                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.p},'${cat}')">${btnTxt}</button>
                 </div>
             </div>`;
         }).join('')}`).join('');
@@ -1403,76 +1357,7 @@ function renderMenu(products) {
     // Eğer countdown zaten çalışıyorsa yeniden başlatma
     if(!_cdInterval) startClosingCountdown();
     // Değerlendirme puanlarını yükle, sonra popüler ürünleri render et
-    loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); setTimeout(renderMenuFooter, 500); });
-}
-
-function renderMenuFooter() {
-    if(document.getElementById('menu-footer')) return;
-    const mc = document.getElementById('main-content');
-    if(!mc) return;
-    const footer = document.createElement('div');
-    footer.id = 'menu-footer';
-    footer.innerHTML = `
-    <div style="margin:24px 0 8px;border-radius:20px;overflow:hidden;background:#f4f4f4;border:1px solid #ebebeb;">
-        <!-- Üst kısım: açık arka plan -->
-        <div style="padding:24px 20px 16px;text-align:center;">
-            <div style="font-size:28px;margin-bottom:6px;">🌯</div>
-            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:2px;">Dönerci İsmail</div>
-            <div style="font-size:12px;color:#aaa;">Mahalle Lezzetleri</div>
-        </div>
-        <!-- Çalışma saatleri -->
-        <div style="background:white;margin:0 16px;border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-            <div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">⏰ Çalışma Saatleri</div>
-            <div id="footer-hours-list" style="font-size:13px;color:#444;line-height:2;">Yükleniyor...</div>
-        </div>
-        <!-- Butonlar -->
-        <div style="display:flex;gap:10px;padding:0 16px 16px;">
-            <button onclick="window.open('tel:02242466120')" style="flex:1;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                📞 Telefon Et
-            </button>
-            <button onclick="window.open('https://maps.app.goo.gl/o673pM96gZQEQGQq6')" style="flex:1;padding:14px;background:linear-gradient(135deg,#3498db,#2980b9);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                🗺️ Yol Tarifi
-            </button>
-        </div>
-        <!-- Sosyal medya -->
-        <div style="display:flex;justify-content:center;gap:14px;padding-bottom:20px;">
-            <a href="https://instagram.com/donercismail" target="_blank" style="width:44px;height:44px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#555;font-size:18px;text-decoration:none;">
-                <i class="fab fa-instagram"></i>
-            </a>
-            <a href="https://facebook.com/donercismail" target="_blank" style="width:44px;height:44px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#555;font-size:18px;text-decoration:none;">
-                <i class="fab fa-facebook-f"></i>
-            </a>
-            <a href="https://wa.me/902242466120" target="_blank" style="width:44px;height:44px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#555;font-size:18px;text-decoration:none;">
-                <i class="fab fa-whatsapp"></i>
-            </a>
-        </div>
-    </div>`;
-    mc.appendChild(footer);
-    loadFooterHours();
-}
-
-async function loadFooterHours() {
-    try {
-        const snap = await getDoc(doc(db,'ayarlar','genel'));
-        const data = snap.exists() ? snap.data() : {};
-        const openTime  = data.openTime  || '10:30';
-        const closeTime = data.closeTime || '22:00';
-        const closedDays = data.closedDays || [];
-        const dayNames = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-        const today = new Date().getDay();
-        let html = '';
-        for(let i=1; i<=7; i++) {
-            const dayIdx = i % 7;
-            const isClosed = closedDays.includes(dayIdx);
-            const isToday = dayIdx === today;
-            html += `<div style="display:flex;justify-content:space-between;${isToday?'color:var(--primary);font-weight:700;':''}">
-                <span>${dayNames[dayIdx]}${isToday?' <span style="font-size:10px;opacity:0.7;">(Bugün)</span>':''}</span>
-                <span>${isClosed?'<span style="color:#e74c3c;">Kapalı</span>':`${openTime} - ${closeTime}`}</span>
-            </div>`;
-        }
-        const el = document.getElementById('footer-hours-list');
-        if(el) el.innerHTML = html;
-    } catch(e) {}
+    loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); });
 }
 
 window.openItemDetail = n => {
@@ -2109,18 +1994,6 @@ function showLoginStep(step) {
 window.processPhoneEntry = window.sendOtp; // eski çağrılar için alias
 
 
-// Kayıt sırasında fotoğraf önizleme
-let _regPhotoBase64 = null;
-window.previewRegPhoto = (input) => {
-    const file = input.files[0];
-    if(!file) return;
-    showCropModal(file, (base64) => {
-        _regPhotoBase64 = base64;
-        const wrap = document.getElementById('reg-photo-wrap');
-        if(wrap) wrap.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-    });
-};
-
 window.completeRegistration=async()=>{
     const name=document.getElementById('reg-name').value.trim();
     const hood=document.getElementById('reg-hood').value;
@@ -2141,13 +2014,10 @@ window.completeRegistration=async()=>{
         name, phone:tempPhone||"", pin,
         addresses:[addr],
         loyaltyPoints:0, pointsHistory:[], points:0,
-        orderCount:0, lastOrderDate:null,
-        ..._regPhotoBase64 ? {photoURL: _regPhotoBase64} : {}
+        orderCount:0, lastOrderDate:null
     };
     const id=tempPhone;
     await setDoc(doc(db,"phone_customers",id),data);
-    if(_regPhotoBase64) { userData.photoURL = _regPhotoBase64; applyProfilePhoto(_regPhotoBase64); }
-    _regPhotoBase64 = null;
     await checkAndShowWelcomeCoupon(data.name);
 
     // Tebrikler ekranı
@@ -2178,24 +2048,6 @@ let _loyaltyUnsubscribe = null; // puan dinleyici referansı
 async function processLoginSuccess(id, isAuto=false){
     activePhone = id;
     localStorage.setItem("savedUserPhone", activePhone);
-    // Online varlık kaydı — panelde görünsün
-    try {
-        await setDoc(doc(db,"phone_customers",id), {
-            onlineAt: serverTimestamp(),
-            onlinePage: 'menu'
-        }, {merge:true});
-        // Her 30 saniyede bir ping at
-        if(window._onlinePingInterval) clearInterval(window._onlinePingInterval);
-        window._onlinePingInterval = setInterval(async()=>{
-            if(!activePhone) return;
-            try { await setDoc(doc(db,"phone_customers",activePhone),{onlineAt:serverTimestamp()},{merge:true}); } catch(e){}
-        }, 30000);
-    } catch(e) {}
-    // Sayfa kapanınca offline yap
-    window.addEventListener('beforeunload', ()=>{
-        if(window._onlinePingInterval) clearInterval(window._onlinePingInterval);
-        setDoc(doc(db,"phone_customers",id), {onlineAt: null}, {merge:true}).catch(()=>{});
-    });
     // tempUserData zaten varsa tekrar Firestore'a gitme
     let d = tempUserData;
     if(!d) {
@@ -2203,7 +2055,7 @@ async function processLoginSuccess(id, isAuto=false){
         if(snap.exists()) d = snap.data();
     }
     if(d) {
-        userData = {name:d.name, phone:d.phone||id, photoURL:d.photoURL||null};
+        userData = {name:d.name, phone:d.phone||id};
         userAddresses = d.addresses||[];
         loyaltyPoints = d.loyaltyPoints||0;
         pointsHistory = d.pointsHistory||[];
@@ -2762,195 +2614,6 @@ window.reorder=idx=>{
 };
 
 
-// ── KATEGORİ FİLTRE ──────────────────────────────────────────
-window.filterCat = (cat, btn) => {
-    document.querySelectorAll('.cat-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.cat-title').forEach(el => {
-        const show = !cat || el.textContent.includes(cat);
-        el.style.display = show ? '' : 'none';
-        let next = el.nextElementSibling;
-        while(next && !next.classList.contains('cat-title')) {
-            next.style.display = show ? '' : 'none';
-            next = next.nextElementSibling;
-        }
-    });
-    if(cat) {
-        // Seçilen kategoriye scroll
-        const catEl = [...document.querySelectorAll('.cat-title')].find(el => el.textContent.includes(cat));
-        if(catEl) catEl.scrollIntoView({behavior:'smooth', block:'start'});
-    }
-};
-
-// ── PROFİL FOTOĞRAFI ─────────────────────────────────────────
-// ── FOTOĞRAF KIRPMA SİSTEMİ ──────────────────────────────────
-let _cropFile = null;
-let _cropCallback = null;
-let _cropImg = null;
-let _cropDragging = false;
-let _cropX = 0, _cropY = 0, _cropSize = 0;
-let _dragStart = null;
-
-function showCropModal(file, callback) {
-    _cropFile = file;
-    _cropCallback = callback;
-
-    // Modal oluştur
-    let modal = document.getElementById('crop-modal');
-    if(!modal) {
-        modal = document.createElement('div');
-        modal.id = 'crop-modal';
-        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
-        modal.innerHTML = `
-            <div style="background:white;border-radius:20px;width:100%;max-width:360px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
-                <div style="padding:14px 16px;font-weight:800;font-size:15px;border-bottom:1px solid #eee;flex-shrink:0;">✂️ Fotoğrafı Kırp</div>
-                <div style="flex:1;overflow:hidden;position:relative;background:#000;" id="crop-container">
-                    <canvas id="crop-canvas" style="display:block;max-width:100%;max-height:calc(90vh - 130px);touch-action:none;"></canvas>
-                    <canvas id="crop-overlay" style="position:absolute;inset:0;pointer-events:none;"></canvas>
-                </div>
-                <div style="padding:12px 14px;display:flex;gap:10px;flex-shrink:0;background:white;border-top:1px solid #eee;">
-                    <button onclick="closeCropModal()" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid #eee;background:white;font-size:14px;font-weight:700;cursor:pointer;">İptal</button>
-                    <button onclick="applyCrop()" style="flex:1;padding:12px;border-radius:12px;border:none;background:var(--primary);color:white;font-size:14px;font-weight:800;cursor:pointer;">✅ Kaydet</button>
-                </div>
-            </div>`;
-        document.body.appendChild(modal);
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        _cropImg = new Image();
-        _cropImg.onload = () => initCrop();
-        _cropImg.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function initCrop() {
-    const canvas = document.getElementById('crop-canvas');
-    const overlay = document.getElementById('crop-overlay');
-    const maxW = Math.min(360, window.innerWidth - 40);
-    const maxH = window.innerHeight * 0.6; // max %60 ekran yüksekliği
-    let dispW = maxW;
-    let dispH = _cropImg.height * (maxW / _cropImg.width);
-    // Çok uzun görsel için yüksekliği sınırla
-    if(dispH > maxH) {
-        dispH = maxH;
-        dispW = _cropImg.width * (maxH / _cropImg.height);
-    }
-    canvas.width = _cropImg.width;
-    canvas.height = _cropImg.height;
-    canvas.style.width = dispW + 'px';
-    canvas.style.height = dispH + 'px';
-    overlay.width = dispW;
-    overlay.height = dispH;
-
-    // Başlangıç: ortalanmış kare
-    const size = Math.min(_cropImg.width, _cropImg.height);
-    _cropX = (_cropImg.width - size) / 2;
-    _cropY = (_cropImg.height - size) / 2;
-    _cropSize = size;
-
-    canvas.getContext('2d').drawImage(_cropImg, 0, 0);
-    drawOverlay();
-
-    // Dokunma/mouse olayları
-    overlay.style.pointerEvents = 'all';
-    overlay.addEventListener('mousedown',  startDrag);
-    overlay.addEventListener('mousemove',  moveDrag);
-    overlay.addEventListener('mouseup',    endDrag);
-    overlay.addEventListener('touchstart', startDrag, {passive:true});
-    overlay.addEventListener('touchmove',  moveDrag,  {passive:false});
-    overlay.addEventListener('touchend',   endDrag);
-}
-
-function drawOverlay() {
-    const overlay = document.getElementById('crop-overlay');
-    if(!overlay) return;
-    const ctx = overlay.getContext('2d');
-    const scale = overlay.width / _cropImg.width;
-    ctx.clearRect(0, 0, overlay.width, overlay.height);
-    // Koyu maske
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(0, 0, overlay.width, overlay.height);
-    // Kare alanı temizle
-    const x = _cropX * scale, y = _cropY * scale, s = _cropSize * scale;
-    ctx.clearRect(x, y, s, s);
-    // Kare çerçevesi
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, s, s);
-    // Grid çizgileri
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x+s/3, y, 0, s);
-    ctx.strokeRect(x+2*s/3, y, 0, s);
-    ctx.strokeRect(x, y+s/3, s, 0);
-    ctx.strokeRect(x, y+2*s/3, s, 0);
-}
-
-function getPos(e) {
-    const overlay = document.getElementById('crop-overlay');
-    const rect = overlay.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const scale = _cropImg.width / overlay.width;
-    return { x: (clientX - rect.left) * scale, y: (clientY - rect.top) * scale };
-}
-
-function startDrag(e) { _cropDragging = true; _dragStart = getPos(e); }
-function endDrag() { _cropDragging = false; }
-function moveDrag(e) {
-    if(!_cropDragging) return;
-    if(e.cancelable) e.preventDefault();
-    const pos = getPos(e);
-    const dx = pos.x - _dragStart.x;
-    const dy = pos.y - _dragStart.y;
-    _cropX = Math.max(0, Math.min(_cropImg.width - _cropSize, _cropX + dx));
-    _cropY = Math.max(0, Math.min(_cropImg.height - _cropSize, _cropY + dy));
-    _dragStart = pos;
-    drawOverlay();
-}
-
-window.applyCrop = async () => {
-    const out = document.createElement('canvas');
-    out.width = 200; out.height = 200;
-    out.getContext('2d').drawImage(_cropImg, _cropX, _cropY, _cropSize, _cropSize, 0, 0, 200, 200);
-    const base64 = out.toDataURL('image/jpeg', 0.8);
-    closeCropModal();
-    if(_cropCallback) _cropCallback(base64);
-};
-
-window.closeCropModal = () => {
-    const m = document.getElementById('crop-modal');
-    if(m) m.remove();
-};
-
-window.uploadProfilePhoto = async (input) => {
-    const file = input.files[0];
-    if(!file || !activePhone) return;
-    showCropModal(file, async (base64) => {
-        try {
-            await updateDoc(doc(db,'phone_customers',activePhone), { photoURL: base64 });
-            userData.photoURL = base64;
-            applyProfilePhoto(base64);
-            showToast('✅ Fotoğraf güncellendi');
-        } catch(err) { showToast('❌ Fotoğraf kaydedilemedi'); }
-    });
-};
-
-function applyProfilePhoto(url) {
-    if(!url) return;
-    // Header avatar
-    const icon = document.getElementById('user-avatar');
-    if(icon) { icon.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-    // Sidebar avatar
-    const sbImg = document.getElementById('sb-img-el');
-    if(sbImg) { sbImg.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-    // Profil ekranı
-    const wrap = document.getElementById('profile-photo-wrap');
-    if(wrap) { wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-}
-
 window.savePersonalInfo=async()=>{
     const name=document.getElementById('f-name').value; if(!name||!activePhone) return alert("Bilgi eksik.");
     try{ await setDoc(doc(db,"phone_customers",activePhone),{name},{merge:true}); userData.name=name; updateUserDisplay(); alert("Güncellendi."); }catch(e){ alert("Hata: "+e.message); }
@@ -3095,8 +2758,6 @@ function updateUserDisplay(){
         document.getElementById('f-name').value=userData.name;
         document.getElementById('f-phone').value=userData.phone||activePhone||"";
         updateVipDisplay(oc);
-        // Profil fotoğrafı varsa uygula
-        if(userData.photoURL) applyProfilePhoto(userData.photoURL);
     }
 }
 
@@ -3105,7 +2766,7 @@ window.handleLogout=()=>{
     localStorage.removeItem("savedUserPhone");
     try { localStorage.removeItem('basketDraft'); } catch(e) {}
     // State sıfırla
-    activePhone=null; userData={name:"",phone:"",photoURL:null}; userAddresses=[]; basket=[];
+    activePhone=null; userData={name:"",phone:""}; userAddresses=[]; basket=[];
     appliedCoupon=null; loyaltyPoints=0; pointsHistory=[]; usingPoints=false; userOrderCount=0;
     tempPhone=""; tempUserData=null;
     window.selectedAddressIndex=0; curMinLimit={limit:DEF_MIN,label:"Bölgeniz"};
@@ -3122,11 +2783,6 @@ window.handleLogout=()=>{
     document.getElementById('sb-stats').style.display='none';
     document.getElementById('sb-name').innerText='Giriş Yap';
     document.getElementById('sb-phone').innerText='';
-    // Avatar'ları sıfırla
-    const sbImg = document.getElementById('sb-img-el');
-    if(sbImg) sbImg.innerHTML='👤';
-    const profileWrap = document.getElementById('profile-photo-wrap');
-    if(profileWrap) profileWrap.innerHTML='<span id="profile-photo-icon">👤</span>';
     document.getElementById('order-status-bar').className='';
     document.getElementById('order-status-bar').style.display='none';
     document.getElementById('main-header').classList.remove('hazirlaniyor','yolacikti');
@@ -3174,7 +2830,6 @@ window.openModal=sec=>{
     if(sec==='cart')      updateCart();
     if(sec==='mycoupons') loadMyCoupons();
     if(sec==='points')    renderPoints();
-    if(sec==='profile' && userData.photoURL) applyProfilePhoto(userData.photoURL);
 };
 window.handleUserPanelClick=()=>{ if(!activePhone) openModal('login'); else toggleSidebar(); };
 window.handleCheckout=()=>{
@@ -4344,4 +3999,4 @@ window.onload=()=>{
  </style>
 
  </body>
-</html>
+ </html>
