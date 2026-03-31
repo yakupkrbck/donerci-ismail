@@ -1,74 +1,86 @@
-// Dönerci İsmail - PWA Service Worker
-const CACHE_NAME = 'donerci-ismail-v2';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
+// Dönerci İsmail - Service Worker
+const CACHE = 'di-v2';
+const OFFLINE_URLS = ['/siparis-1.html', '/manifest.json', '/icons/icon-192.png'];
 
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(STATIC_ASSETS)));
-  self.skipWaiting();
+self.addEventListener('install', e => {
+    e.waitUntil(
+        caches.open(CACHE).then(c => c.addAll(OFFLINE_URLS)).catch(() => {})
+    );
+    self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));
-  self.clients.claim();
+self.addEventListener('activate', e => {
+    e.waitUntil(
+        caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+        )
+    );
+    self.clients.claim();
 });
 
-self.addEventListener('fetch', event => {
-  // Firebase / Google isteklerini SW'den geçirme
-  const url = event.request.url;
-  if (
-    url.includes('firestore') ||
-    url.includes('googleapis') ||
-    url.includes('firebase') ||
-    url.includes('gstatic') ||
-    url.includes('fonts.') ||
-    url.includes('cdnjs.')
-  ) return;
+self.addEventListener('fetch', e => {
+    // Sadece GET isteklerini önbellekle
+    if (e.request.method !== 'GET') return;
+    
+    // Firebase, Netgsm, dış API'leri atla
+    const url = e.request.url;
+    if (url.includes('firestore.googleapis.com') ||
+        url.includes('firebase') ||
+        url.includes('netgsm') ||
+        url.includes('workers.dev') ||
+        url.includes('googleapis.com') ||
+        url.includes('gstatic.com') ||
+        url.includes('fonts.') ||
+        url.includes('cdnjs.') ||
+        url.includes('mixkit.')) {
+        return; // SW'yi atla, direkt fetch
+    }
 
-  // Sadece GET isteklerini cache'le
-  if (event.request.method !== 'GET') return;
-
-  event.respondWith(
-    fetch(event.request)
-      .then(res => {
-        // Geçersiz response'u cache'leme
-        if (!res || res.status !== 200 || res.type !== 'basic') {
-          return res;
-        }
-        // Clone ÖNCE alınmalı — body sadece bir kez okunabilir
-        const resClone = res.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, resClone);
-        });
-        return res;
-      })
-      .catch(() => {
-        // Network yoksa cache'ten sun
-        return caches.match(event.request).then(cached => {
-          return cached || new Response('Offline', { status: 503 });
-        });
-      })
-  );
+    e.respondWith(
+        fetch(e.request)
+            .then(response => {
+                // Geçerli response'u önbelleğe al
+                if (response && response.status === 200 && response.type === 'basic') {
+                    const toCache = response.clone(); // önce clone, sonra kullan
+                    caches.open(CACHE).then(c => c.put(e.request, toCache));
+                }
+                return response;
+            })
+            .catch(() => {
+                // Ağ yoksa önbellekten sun
+                return caches.match(e.request)
+                    .then(cached => cached || caches.match('/siparis-1.html'));
+            })
+    );
 });
 
-self.addEventListener('push', event => {
-  if (!event.data) return;
-  let data = {};
-  try { data = event.data.json(); } catch(e) { return; }
-  event.waitUntil(
-    self.registration.showNotification(data.notification?.title || 'Dönerci İsmail', {
-      body: data.notification?.body || '',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-96.png',
-      tag: 'doner-order',
-      renotify: true
-    })
-  );
+// Push bildirimi
+self.addEventListener('push', e => {
+    let data = { title: '🔔 Yeni bildirim', body: '' };
+    try { data = { ...data, ...e.data.json() }; } catch (err) {}
+
+    e.waitUntil(
+        self.registration.showNotification(data.title, {
+            body: data.body,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: 'order-update',
+            renotify: true,
+            data: { url: data.url || '/siparis-1.html' }
+        })
+    );
 });
 
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(list => list.length > 0 ? list[0].focus() : clients.openWindow('/'))
-  );
+// Bildirime tıklanınca
+self.addEventListener('notificationclick', e => {
+    e.notification.close();
+    const url = e.notification.data?.url || '/siparis-1.html';
+    e.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+            for (const client of list) {
+                if (client.url.includes('siparis') && 'focus' in client) return client.focus();
+            }
+            return clients.openWindow(url);
+        })
+    );
 });
