@@ -917,6 +917,27 @@
     <div id="sec-checkout" class="section modal-padded">
      <h3 style="color:var(--primary);margin-top:0;">Teslimat Adresi</h3>
      <div id="checkout-address-list"></div>
+
+     <!-- KONUM İZİN KARTI -->
+     <div id="location-permission-card" style="display:none;background:linear-gradient(135deg,#f0f8ff,#e8f4fd);border:1.5px solid rgba(52,152,219,0.25);border-radius:14px;padding:14px 16px;margin:16px 0 4px;display:flex;align-items:flex-start;gap:12px;">
+       <div style="font-size:26px;flex-shrink:0;margin-top:2px;">📍</div>
+       <div style="flex:1;">
+         <div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:4px;">Konumunu paylaş</div>
+         <div style="font-size:12px;color:#555;line-height:1.5;margin-bottom:10px;">Kurye seni daha kolay bulsun. Konum sadece teslimat için kullanılır.</div>
+         <div id="location-card-btns" style="display:flex;gap:8px;">
+           <button onclick="requestLocationPermission()" id="loc-allow-btn"
+             style="background:#3498db;color:white;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+             📍 İzin Ver
+           </button>
+           <button onclick="dismissLocationCard()"
+             style="background:white;color:#aaa;border:1.5px solid #ddd;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">
+             Şimdi Değil
+           </button>
+         </div>
+         <div id="location-card-status" style="font-size:12px;margin-top:8px;display:none;"></div>
+       </div>
+     </div>
+
      <h4 style="margin:20px 0 5px;color:#333;">Sipariş Notu</h4>
      <textarea id="order-note-input" rows="2" placeholder="Zile basma vb..."></textarea>
      <button class="action-btn" style="margin-top:15px;" onclick="finalizeOrder()">SİPARİŞİ ONAYLA</button>
@@ -1715,12 +1736,24 @@ window.finalizeOrder=async()=>{
         } catch(e) { console.log('Fiyat doğrulama atlandı:', e); }
 
 
+        // Konum — önce karttan alınan cache'e bak, yoksa son bir kez dene
+        let customerLocation = _cachedLocation || null;
+        if(!customerLocation && 'geolocation' in navigator) {
+            try {
+                const pos = await new Promise((res, rej) =>
+                    navigator.geolocation.getCurrentPosition(res, rej, {timeout:4000, maximumAge:120000})
+                );
+                customerLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+            } catch(_) { /* izin yok veya timeout — konum olmadan devam */ }
+        }
+
         // Sipariş oluştur
         const orderData = {
           orderNumber: orderNumber,
           customer: userData.name,
           phone: userData.phone||activePhone,
           addressDetails: addrTxt,
+          customerLocation: customerLocation,
           items: basket,
           subtotal: sub,
           discountRate: discount>0 ? appliedCoupon.discount : 0,
@@ -2870,10 +2903,75 @@ window.handleCheckout=()=>{
     }
 
     openModal('checkout');
+    // Ödeme ekranı açılınca konum kartını göster (daha önce reddedilmediyse ve henüz verilmediyse)
+    setTimeout(showLocationCard, 300);
 };
 window.toggleSidebar=()=>{ document.getElementById('sidebar').classList.add('active'); document.getElementById('sidebar-overlay').style.display='block'; };
 window.closeSidebar=()=>{ document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').style.display='none'; };
 window.toggleAddressForm=()=>{ const f=document.getElementById('new-address-form'); f.style.display=f.style.display==='none'?'block':'none'; };
+
+// ── KONUM İZNİ ────────────────────────────────────────────────────────────────
+let _cachedLocation = null; // sipariş anında kullanmak için cache
+
+function showLocationCard() {
+    const card = document.getElementById('location-permission-card');
+    if(!card) return;
+    // Zaten verilmişse veya kalıcı reddedildiyse kartı gösterme
+    if(localStorage.getItem('loc_dismissed')) { card.style.display = 'none'; return; }
+    if(!('geolocation' in navigator)) { card.style.display = 'none'; return; }
+    // Daha önce izin verilmişse sessizce al, kartı gösterme
+    navigator.permissions?.query({name:'geolocation'}).then(p => {
+        if(p.state === 'granted') {
+            card.style.display = 'none';
+            navigator.geolocation.getCurrentPosition(pos => {
+                _cachedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+            }, () => {});
+        } else if(p.state === 'denied') {
+            card.style.display = 'none';
+        } else {
+            card.style.display = 'flex';
+        }
+    }).catch(() => {
+        // permissions API yoksa (bazı tarayıcılar) — kartı göster
+        card.style.display = 'flex';
+    });
+}
+
+window.requestLocationPermission = () => {
+    const btn    = document.getElementById('loc-allow-btn');
+    const status = document.getElementById('location-card-status');
+    const btns   = document.getElementById('location-card-btns');
+    if(btn) { btn.disabled = true; btn.textContent = '⏳ Alınıyor...'; }
+
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            _cachedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+            if(btns)   btns.style.display   = 'none';
+            if(status) {
+                status.style.display = 'block';
+                status.style.color   = '#27ae60';
+                status.innerHTML     = `✅ Konum alındı (±${_cachedLocation.acc}m doğruluk)`;
+            }
+        },
+        err => {
+            if(btn) { btn.disabled = false; btn.textContent = '📍 Tekrar Dene'; }
+            if(status) {
+                status.style.display = 'block';
+                status.style.color   = '#e67e22';
+                status.textContent   = err.code === 1
+                    ? '⚠️ İzin reddedildi. Tarayıcı ayarlarından konum iznini açabilirsiniz.'
+                    : '⚠️ Konum alınamadı, siparişe devam edebilirsiniz.';
+            }
+        },
+        { timeout: 8000, maximumAge: 60000, enableHighAccuracy: true }
+    );
+};
+
+window.dismissLocationCard = () => {
+    const card = document.getElementById('location-permission-card');
+    if(card) card.style.display = 'none';
+    localStorage.setItem('loc_dismissed', '1');
+};
 
 // FCM token al ve Firestore'a kaydet
 function showNotifPermissionPopup(phone) {
