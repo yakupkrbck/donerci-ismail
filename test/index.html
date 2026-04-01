@@ -873,6 +873,16 @@
        <div style="font-size:13px;font-weight:700;color:#1a6b3c;">✅ Hesabınız aktif</div>
        <div id="success-phone" style="font-size:13px;color:#2ecc71;margin-top:4px;font-weight:600;"></div>
       </div>
+      <!-- BİLDİRİM İZİN KARTI (kayıt sonrası) -->
+      <div id="notif-inline-card" style="background:linear-gradient(135deg,#fff8f2,#fff3e8);border:1.5px solid rgba(255,102,0,0.2);border-radius:14px;padding:16px;margin:0 0 14px;display:flex;align-items:flex-start;gap:12px;">
+       <div style="font-size:28px;flex-shrink:0;">🔔</div>
+       <div style="flex:1;">
+        <div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:4px;">Bildirim izni ver</div>
+        <div style="font-size:12px;color:#666;line-height:1.5;">Siparişin hazır olduğunda ve yola çıktığında anında haber al.</div>
+        <div id="notif-inline-status" style="font-size:11px;margin-top:6px;color:#aaa;"></div>
+       </div>
+       <button id="notif-inline-btn" onclick="requestNotifInline()" style="flex-shrink:0;background:var(--primary);color:white;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">İzin Ver</button>
+      </div>
       <button class="action-btn" style="background:var(--primary);" onclick="closeSuccessAndContinue()">Siparişe Devam Et 🛒</button>
      </div>
 
@@ -2100,8 +2110,22 @@ async function processLoginSuccess(id, isAuto=false){
         refreshMinFromAddr();
         startStatusListener(userData.phone||id);
         // FCM token al (bildirimler için)
-        if(!isAuto) showNotifPermissionPopup(userData.phone||id);
-        else if('Notification' in window && Notification.permission==='granted') initFcmToken(userData.phone||id);
+        // Her girişte: izin verilmişse taze token al; verilmemişse popup göster
+        const _fcmPhone = userData.phone||id;
+        if('Notification' in window && Notification.permission === 'granted') {
+            // Zaten izinli — taze token al (cihaz değişmiş olabilir)
+            initFcmToken(_fcmPhone);
+        } else if('Notification' in window && Notification.permission !== 'denied') {
+            if(isAuto) {
+                // Otomatik giriş: tokensiz mi diye kontrol et, öyleyse 4 sn sonra banner göster
+                checkAndPromptTokenIfMissing(_fcmPhone);
+            } else {
+                // Manuel giriş + henüz sorulmamış → popup göster
+                // Ama yeni kayıt ise inline kart zaten gösterdi, popup'ı atlayalım
+                const isNewReg = document.getElementById('login-step-success')?.style.display !== 'none';
+                if(!isNewReg) showNotifPermissionPopup(_fcmPhone);
+            }
+        }
         
         // Login modalını kapat
         if(!isAuto) closeModal();
@@ -2853,10 +2877,12 @@ window.toggleAddressForm=()=>{ const f=document.getElementById('new-address-form
 
 // FCM token al ve Firestore'a kaydet
 function showNotifPermissionPopup(phone) {
-    // Daha önce reddettiyse veya zaten izin varsa gösterme
-    if(localStorage.getItem('notif_dismissed')) return;
+    // Zaten izin verilmişse direkt token al
     if(Notification.permission === 'granted') { initFcmToken(phone); return; }
+    // Tarayıcı tarafından kalıcı reddedildiyse gösterme
     if(Notification.permission === 'denied') return;
+    // Daha önce popup'tan "Daha Sonra" dediyse gösterme (ama kayıt sonrası inline kart ayrı çalışır)
+    if(localStorage.getItem('notif_dismissed')) return;
     const popup = document.getElementById('notif-permission-popup');
     popup._phone = phone;
     popup.style.display = 'flex';
@@ -2872,6 +2898,112 @@ window.allowNotifPopup = async () => {
 window.dismissNotifPopup = () => {
     document.getElementById('notif-permission-popup').style.display = 'none';
     localStorage.setItem('notif_dismissed', '1');
+};
+
+// Kayıt sonrası tebrikler ekranındaki inline bildirim butonu
+window.requestNotifInline = async () => {
+    const btn  = document.getElementById('notif-inline-btn');
+    const stat = document.getElementById('notif-inline-status');
+    const card = document.getElementById('notif-inline-card');
+    if(!btn || !stat) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳';
+    stat.textContent = 'İzin isteniyor...';
+
+    try {
+        const perm = await Notification.requestPermission();
+        if(perm === 'granted') {
+            stat.style.color = '#27ae60';
+            stat.textContent = '✅ İzin verildi, bildirimler aktif!';
+            btn.style.background = '#27ae60';
+            btn.textContent = '✓';
+            // Token al ve Firestore'a kaydet
+            await initFcmToken(tempPhone || activePhone);
+        } else if(perm === 'denied') {
+            stat.style.color = '#c0392b';
+            stat.textContent = '❌ Tarayıcı tarafından reddedildi. Ayarlardan izin verebilirsiniz.';
+            btn.style.background = '#ccc';
+            btn.textContent = 'Reddedildi';
+        } else {
+            stat.style.color = '#e67e22';
+            stat.textContent = 'İzin verilmedi.';
+            btn.disabled = false;
+            btn.textContent = 'Tekrar Dene';
+        }
+    } catch(e) {
+        stat.style.color = '#c0392b';
+        stat.textContent = 'Hata: ' + e.message;
+        btn.disabled = false;
+        btn.textContent = 'Tekrar Dene';
+    }
+};
+
+
+// Tokensiz müşteri tespiti (auto-login sonrası sessiz kontrol)
+async function checkAndPromptTokenIfMissing(phone) {
+    if(!phone) return;
+    // Tarayıcı kalıcı olarak reddetmişse hiçbir şey yapma
+    if('Notification' in window && Notification.permission === 'denied') return;
+    try {
+        const snap = await getDoc(doc(db,"phone_customers", phone));
+        if(!snap.exists()) return;
+        const data = snap.data();
+        const hasToken = (data.fcmTokenlar||[]).length > 0;
+        // İzin zaten verilmişse — token yoksa sessizce al, varsa yenile
+        if('Notification' in window && Notification.permission === 'granted') {
+            initFcmToken(phone);
+            return;
+        }
+        if(hasToken) return; // token var, izin de olmalı, bir şey yapma
+        // Token yok + izin sorulmamış — Firestore'da notifDismissed varsa max 7 günde bir sor
+        const dismissedAt = data.notifDismissedAt;
+        if(dismissedAt) {
+            const dt = dismissedAt.toDate ? dismissedAt.toDate() : new Date(dismissedAt.seconds*1000);
+            const daysSince = (Date.now() - dt.getTime()) / 86400000;
+            if(daysSince < 7) return; // 7 günden az geçmişse tekrar sorma
+        }
+        // 4 sn sonra banner göster
+        setTimeout(() => showTokenBanner(phone), 4000);
+    } catch(e) { console.warn('[FCM] Token kontrol hatası:', e.message); }
+}
+
+function showTokenBanner(phone) {
+    if(document.getElementById('token-missing-banner')) return;
+    if(Notification.permission === 'granted') { initFcmToken(phone); return; }
+    if(Notification.permission === 'denied') return;
+    const banner = document.createElement('div');
+    banner.id = 'token-missing-banner';
+    banner.style.cssText = 'position:fixed;bottom:70px;left:12px;right:12px;max-width:420px;margin:0 auto;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);display:flex;align-items:center;gap:12px;z-index:8500;border-left:4px solid #FF6600;animation:slideUpBanner 0.4s cubic-bezier(.34,1.56,.64,1);';
+    banner.innerHTML = `
+        <div style="font-size:26px;flex-shrink:0;">🔔</div>
+        <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;color:#1a1a1a;">Bildirim almak ister misiniz?</div>
+            <div style="font-size:11px;color:#888;margin-top:2px;">Siparişiniz hazır olunca haber alalım.</div>
+        </div>
+        <button onclick="handleTokenBannerAllow('${phone}')" style="background:#FF6600;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Evet</button>
+        <button onclick="handleTokenBannerDismiss()" style="background:#f0f0f0;color:#666;border:none;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Hayır</button>
+    `;
+    document.body.appendChild(banner);
+    // 12 sn sonra otomatik kapat
+    setTimeout(() => { if(banner.parentNode) banner.remove(); }, 12000);
+}
+window.handleTokenBannerAllow = async (phone) => {
+    const banner = document.getElementById('token-missing-banner');
+    if(banner) banner.remove();
+    await initFcmToken(phone);
+};
+window.handleTokenBannerDismiss = async () => {
+    const banner = document.getElementById('token-missing-banner');
+    if(banner) banner.remove();
+    // Firestore'a "7 gün sonra tekrar sor" şeklinde kaydet
+    const phone = activePhone;
+    if(phone) {
+        try {
+            await setDoc(doc(db,"phone_customers",phone),
+                { notifDismissedAt: new Date() }, {merge:true});
+        } catch(e) {}
+    }
 };
 
 async function initFcmToken(phone){
@@ -2901,14 +3033,17 @@ async function initFcmToken(phone){
         });
 
         if(token && phone){
-            // Eski token'ları temizle, sadece güncel token'ı tut
+            // Token'ı ve izin durumunu Firestore'a kaydet
             await setDoc(doc(db,"phone_customers",phone),{
                 fcmTokenlar: [token],
-                fcmTokenUpdated: new Date().toISOString()
+                fcmTokenUpdated: new Date().toISOString(),
+                notifPermission: 'granted'
             },{merge:true});
-            console.log("[FCM] ✅ Token güncellendi");
-            // showToast kaldırıldı — gereksiz bildirim
+            // localStorage'dan eski "dismissed" işaretini temizle (yeni cihazda izin verdiyse sıfırla)
+            localStorage.removeItem('notif_dismissed');
+            console.log("[FCM] ✅ Token güncellendi:", token.substring(0,20)+"...");
         } else {
+            console.warn("[FCM] Token boş geldi");
             showToast("⚠️ Bildirim token alınamadı", "warn");
         }
     } catch(e){
@@ -3939,7 +4074,19 @@ window.onload=()=>{
             }
         }
     } catch(e) {}
-    if(activePhone) processLoginSuccess(activePhone,true);
+    if(activePhone) {
+        processLoginSuccess(activePhone,true);
+        // Giriş yapmış ama tokeni olmayan müşteri kontrolü
+        // processLoginSuccess isAuto=true geçer ve izin varsa initFcmToken çağırır
+        // İzin henüz verilmemişse: sayfa açılışından 3 sn sonra nazikçe sor
+        if('Notification' in window && Notification.permission === 'default') {
+            setTimeout(() => {
+                if(!localStorage.getItem('notif_dismissed')) {
+                    showNotifPermissionPopup(activePhone);
+                }
+            }, 3000);
+        }
+    }
     else loadFirstOrderBanner();
     setTimeout(startClosingCountdown, 1500);
 
@@ -3950,6 +4097,82 @@ window.onload=()=>{
     document.getElementById('bn-wa')?.addEventListener('click', () => window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank'));
 };
 </script>
+  <!-- TELEFON & YOL TARİFİ + ÇALIŞMA SAATLERİ + SOSYAL MEDYA -->
+  <div style="background:#f4f4f4; padding:24px 15px 20px; max-width:600px; margin:0 auto;">
+
+    <!-- 1. Telefon Et & Yol Tarifi Al -->
+    <div style="display:flex; gap:12px; margin-bottom:28px;">
+      <a href="tel:02242466120" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#1a1a1a; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.18);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012.77 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.74a16 16 0 006.35 6.35l1.1-1.1a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;">Telefon Et</span>
+      </a>
+      <a href="https://maps.app.goo.gl/dvcw2We1ZjZ3kJV7A?g_st=ac" target="_blank" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#FF6600; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(255,102,0,0.35);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;">Yol Tarifi Al</span>
+      </a>
+    </div>
+
+    <!-- 2. Çalışma Saatleri -->
+    <h3 style="text-align:center; font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin:0 0 14px; text-transform:uppercase; letter-spacing:0.5px;">Çalışma Saatleri</h3>
+    <div style="background:white; border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.06); margin-bottom:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Pazartesi</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0; background:#fff5f5;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#c0392b;">Salı</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#c0392b;">Kapalı</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Çarşamba</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Perşembe</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Cuma</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Cumartesi</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Pazar</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+    </div>
+
+    <!-- 3. Sosyal Medya -->
+    <h3 style="text-align:center; font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin:0 0 16px; text-transform:uppercase; letter-spacing:0.5px;">Bizi Takip Edin</h3>
+    <div style="display:flex; justify-content:center; gap:14px; padding-bottom:8px;">
+      <!-- WhatsApp -->
+      <a href="https://wa.me/902242466120?text=Merhaba%2C%20bilgi%20almak%20istiyorum." target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
+        <div style="width:54px; height:54px; border-radius:50%; background:#25D366; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(37,211,102,0.35);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </div>
+        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">WhatsApp</span>
+      </a>
+      <!-- Facebook -->
+      <a href="https://www.facebook.com/share/1LHRsGQr6P/" target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
+        <div style="width:54px; height:54px; border-radius:50%; background:#1877F2; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(24,119,242,0.35);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </div>
+        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">Facebook</span>
+      </a>
+      <!-- Instagram -->
+      <a href="https://www.instagram.com/donercismail?igsh=YWNnczdqNHUzYmJ1" target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
+        <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(220,39,67,0.35);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </div>
+        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">Instagram</span>
+      </a>
+    </div>
+
+  </div>
+
   <!-- ALT NAVİGASYON BAR -->
   <div id="bottom-nav">
     <div class="bn-item" id="bn-points">
@@ -3996,6 +4219,7 @@ window.onload=()=>{
  </div>
  <style>
  @keyframes slideUpNotif { from { transform:translateY(100px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+ @keyframes slideUpBanner { from { transform:translateY(80px); opacity:0; } to { transform:translateY(0); opacity:1; } }
  </style>
 
  </body>
