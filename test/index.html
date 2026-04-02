@@ -3043,26 +3043,27 @@ async function checkAndPromptTokenIfMissing(phone) {
     if(!phone) return;
     // Tarayıcı kalıcı olarak reddetmişse hiçbir şey yapma
     if('Notification' in window && Notification.permission === 'denied') return;
+    // İzin zaten verilmişse — token al/yenile, başka işlem yok
+    if('Notification' in window && Notification.permission === 'granted') {
+        initFcmToken(phone);
+        return;
+    }
     try {
         const snap = await getDoc(doc(db,"phone_customers", phone));
         if(!snap.exists()) return;
         const data = snap.data();
-        const hasToken = (data.fcmTokenlar||[]).length > 0;
-        // İzin zaten verilmişse — token yoksa sessizce al, varsa yenile
-        if('Notification' in window && Notification.permission === 'granted') {
-            initFcmToken(phone);
-            return;
-        }
-        if(hasToken) return; // token var, izin de olmalı, bir şey yapma
-        // Token yok + izin sorulmamış — Firestore'da notifDismissed varsa max 7 günde bir sor
+        const tokens = (data.fcmTokenlar || data.fcmTokens || []).filter(Boolean);
+        // Token zaten varsa bir şey yapma
+        if(tokens.length > 0) return;
+        // Daha önce "Hayır" demişse — 30 günde bir tekrar sor
         const dismissedAt = data.notifDismissedAt;
         if(dismissedAt) {
             const dt = dismissedAt.toDate ? dismissedAt.toDate() : new Date(dismissedAt.seconds*1000);
             const daysSince = (Date.now() - dt.getTime()) / 86400000;
-            if(daysSince < 7) return; // 7 günden az geçmişse tekrar sorma
+            if(daysSince < 30) return;
         }
-        // 4 sn sonra banner göster
-        setTimeout(() => showTokenBanner(phone), 4000);
+        // 3 sn sonra banner göster
+        setTimeout(() => showTokenBanner(phone), 3000);
     } catch(e) { console.warn('[FCM] Token kontrol hatası:', e.message); }
 }
 
@@ -3072,29 +3073,61 @@ function showTokenBanner(phone) {
     if(Notification.permission === 'denied') return;
     const banner = document.createElement('div');
     banner.id = 'token-missing-banner';
-    banner.style.cssText = 'position:fixed;bottom:70px;left:12px;right:12px;max-width:420px;margin:0 auto;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);display:flex;align-items:center;gap:12px;z-index:8500;border-left:4px solid #FF6600;animation:slideUpBanner 0.4s cubic-bezier(.34,1.56,.64,1);';
+    banner.style.cssText = `
+        position:fixed;bottom:0;left:0;right:0;
+        background:white;
+        padding:18px 16px 24px;
+        box-shadow:0 -4px 24px rgba(0,0,0,0.15);
+        z-index:8999;
+        animation:slideUpBanner 0.35s cubic-bezier(.34,1.56,.64,1);
+        border-top:3px solid #FF6600;
+    `;
     banner.innerHTML = `
-        <div style="font-size:26px;flex-shrink:0;">🔔</div>
-        <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13px;color:#1a1a1a;">Bildirim almak ister misiniz?</div>
-            <div style="font-size:11px;color:#888;margin-top:2px;">Siparişiniz hazır olunca haber alalım.</div>
+        <div style="max-width:480px;margin:0 auto;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#FF6600,#CC5200);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🔔</div>
+            <div>
+              <div style="font-weight:800;font-size:15px;color:#1a1a1a;">Bildirim izni ver</div>
+              <div style="font-size:12px;color:#666;margin-top:2px;">Siparişin hazır olunca ve yola çıkınca anında haber al.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="handleTokenBannerAllow('${phone}')"
+              style="flex:1.5;background:linear-gradient(135deg,#FF6600,#CC5200);color:white;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,102,0,0.35);">
+              🔔 İzin Ver
+            </button>
+            <button onclick="handleTokenBannerDismiss()"
+              style="flex:1;background:#f5f5f5;color:#888;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+              Daha Sonra
+            </button>
+          </div>
         </div>
-        <button onclick="handleTokenBannerAllow('${phone}')" style="background:#FF6600;color:white;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Evet</button>
-        <button onclick="handleTokenBannerDismiss()" style="background:#f0f0f0;color:#666;border:none;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Hayır</button>
     `;
     document.body.appendChild(banner);
-    // 12 sn sonra otomatik kapat
-    setTimeout(() => { if(banner.parentNode) banner.remove(); }, 12000);
+    // 20 sn sonra otomatik kapat
+    setTimeout(() => { if(banner.parentNode) banner.remove(); }, 20000);
 }
 window.handleTokenBannerAllow = async (phone) => {
     const banner = document.getElementById('token-missing-banner');
+    // Butonu devre dışı bırak, yüklenme göster
+    if(banner) {
+        const btn = banner.querySelector('button');
+        if(btn) { btn.disabled = true; btn.textContent = '⏳ İzin isteniyor...'; }
+    }
+    const perm = await Notification.requestPermission();
     if(banner) banner.remove();
-    await initFcmToken(phone);
+    if(perm === 'granted') {
+        await initFcmToken(phone);
+        // Başarı toast
+        showToast('🔔 Bildirimler aktif! Siparişlerini takip edebilirsin.', 'success');
+    } else if(perm === 'denied') {
+        showToast('Bildirim izni reddedildi. Tarayıcı ayarlarından açabilirsin.', 'warn');
+    }
 };
 window.handleTokenBannerDismiss = async () => {
     const banner = document.getElementById('token-missing-banner');
     if(banner) banner.remove();
-    // Firestore'a "7 gün sonra tekrar sor" şeklinde kaydet
+    // Firestore'a "30 gün sonra tekrar sor" şeklinde kaydet
     const phone = activePhone;
     if(phone) {
         try {
