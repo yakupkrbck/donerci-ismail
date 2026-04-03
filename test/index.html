@@ -1343,7 +1343,33 @@ async function loadMenu() {
 }
 function renderMenu(products) {
     const shopOpen=isOpen(), bakeryOpen=new Date().getHours()>=12;
-    const norm=products.map(p=>({id:p.id,c:normCat(p.category||p.c),n:p.name||p.n,p:p.price||p.p||0,i:p.image||p.i||"",desc:p.description||p.desc||"",inStock:p.inStock!==false,variants:p.variants||p.options||p.subOptions||p.choices||null,order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999}));
+    const today = new Date().toISOString().split('T')[0];
+    const norm=products.map(p=>{
+      // Kampanya geçerli mi?
+      let campPrice = null, campLabel = '';
+      const cp = p.campaignPrice; const ct = p.campaignType; const cd = p.campaignDate;
+      const ca = p.campaignActive;
+      if(cp && ct) {
+        let active = false;
+        if(ct === 'unlimited') { active = true; campLabel = '🏷️ Kampanya'; }
+        else if(ct === 'today') { active = true; campLabel = '🔥 Bugüne Özel'; }
+        else if(ct === 'date' && cd) {
+          active = cd >= today;
+          if(active) {
+            const d = new Date(cd); campLabel = `⏳ ${d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})}'e kadar`;
+          }
+        }
+        if(active && ca !== false) campPrice = cp;
+      }
+      return {
+        id:p.id, c:normCat(p.category||p.c), n:p.name||p.n,
+        p:p.price||p.p||0, i:p.image||p.i||"",
+        desc:p.description||p.desc||"", inStock:p.inStock!==false,
+        variants:p.variants||p.options||p.subOptions||p.choices||null,
+        order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999,
+        campPrice, campLabel
+      };
+    });
     // Normalize edilmiş ürünleri detay için global'e kaydet
     window._menuProducts = norm;
     const cats={}; norm.forEach(x=>{ if(!cats[x.c]) cats[x.c]=[]; cats[x.c].push(x); });
@@ -1370,9 +1396,16 @@ function renderMenu(products) {
                     ${revHtml}
                     ${!item.inStock?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-top:2px;">Şu an mevcut değil</div>':''}
                 </div></div>
-                <div style="text-align:right;">
-                    <div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>
-                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.p},'${cat}')">${btnTxt}</button>
+                <div style="text-align:right;min-width:72px;">
+                    ${item.campPrice
+                      ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;margin-bottom:4px;">
+                           <span style="background:#FF6600;color:white;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;">${item.campLabel}</span>
+                           <span style="font-size:11px;color:#aaa;text-decoration:line-through;font-weight:500;line-height:1.2;">${item.p} TL</span>
+                           <span style="font-size:15px;color:#FF6600;font-weight:900;line-height:1.2;">${item.campPrice} TL</span>
+                         </div>`
+                      : `<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>`
+                    }
+                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.campPrice||item.p},'${cat}')">${btnTxt}</button>
                 </div>
             </div>`;
         }).join('')}`).join('');
@@ -1418,10 +1451,17 @@ window.openItemDetail = n => {
         <div style="padding:20px 22px 22px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                 <h3 style="margin:0;font-size:18px;color:#1a1a1a;flex:1;">${item.n}</h3>
-                <span style="font-size:22px;font-weight:800;color:var(--primary);margin-left:12px;flex-shrink:0;">${item.p} TL</span>
+                <div style="text-align:right;margin-left:12px;flex-shrink:0;">
+                  ${item.campPrice
+                    ? `<div><span style="font-size:11px;background:#FF6600;color:white;padding:1px 7px;border-radius:6px;font-weight:700;">${item.campLabel}</span></div>
+                       <div style="font-size:13px;color:#bbb;text-decoration:line-through;font-weight:500;">${item.p} TL</div>
+                       <div style="font-size:22px;color:#FF6600;font-weight:900;line-height:1.1;">${item.campPrice} TL</div>`
+                    : `<span style="font-size:22px;font-weight:800;color:var(--primary);">${item.p} TL</span>`
+                  }
+                </div>
             </div>
             ${item.desc?`<p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.6;">${item.desc}</p>`:'<p style="font-size:13px;color:#bbb;margin:0 0 16px;">Taze malzemelerle hazırlanır.</p>'}
-            <button ${disabled?'disabled':''} onclick="document.getElementById('item-detail-overlay').remove(); checkAndAdd('${item.n.replace(/'/g,"\\'")}',${item.p},'${item.c}');"
+            <button ${disabled?'disabled':''} onclick="document.getElementById('item-detail-overlay').remove(); checkAndAdd('${item.n.replace(/'/g,"\\'")}',${item.campPrice||item.p},'${item.c}');"
                 style="width:100%;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;${disabled?'background:#ddd;color:#999;cursor:not-allowed;':'background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;box-shadow:0 8px 20px rgba(255,102,0,0.3);'}">
                 ${disabled?btnTxt:'🛒 '+btnTxt}
             </button>
