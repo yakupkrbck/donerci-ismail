@@ -873,6 +873,16 @@
        <div style="font-size:13px;font-weight:700;color:#1a6b3c;">✅ Hesabınız aktif</div>
        <div id="success-phone" style="font-size:13px;color:#2ecc71;margin-top:4px;font-weight:600;"></div>
       </div>
+      <!-- BİLDİRİM İZİN KARTI (kayıt sonrası) -->
+      <div id="notif-inline-card" style="background:linear-gradient(135deg,#fff8f2,#fff3e8);border:1.5px solid rgba(255,102,0,0.2);border-radius:14px;padding:16px;margin:0 0 14px;display:flex;align-items:flex-start;gap:12px;">
+       <div style="font-size:28px;flex-shrink:0;">🔔</div>
+       <div style="flex:1;">
+        <div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:4px;">Bildirim izni ver</div>
+        <div style="font-size:12px;color:#666;line-height:1.5;">Siparişin hazır olduğunda ve yola çıktığında anında haber al.</div>
+        <div id="notif-inline-status" style="font-size:11px;margin-top:6px;color:#aaa;"></div>
+       </div>
+       <button id="notif-inline-btn" onclick="requestNotifInline()" style="flex-shrink:0;background:var(--primary);color:white;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">İzin Ver</button>
+      </div>
       <button class="action-btn" style="background:var(--primary);" onclick="closeSuccessAndContinue()">Siparişe Devam Et 🛒</button>
      </div>
 
@@ -907,6 +917,27 @@
     <div id="sec-checkout" class="section modal-padded">
      <h3 style="color:var(--primary);margin-top:0;">Teslimat Adresi</h3>
      <div id="checkout-address-list"></div>
+
+     <!-- KONUM İZİN KARTI -->
+     <div id="location-permission-card" style="display:none;background:linear-gradient(135deg,#f0f8ff,#e8f4fd);border:1.5px solid rgba(52,152,219,0.25);border-radius:14px;padding:14px 16px;margin:16px 0 4px;align-items:flex-start;gap:12px;">
+       <div style="font-size:26px;flex-shrink:0;margin-top:2px;">📍</div>
+       <div style="flex:1;">
+         <div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:4px;">Konumunu paylaş</div>
+         <div style="font-size:12px;color:#555;line-height:1.5;margin-bottom:10px;">Kurye seni daha kolay bulsun. Konum sadece teslimat için kullanılır.</div>
+         <div id="location-card-btns" style="display:flex;gap:8px;">
+           <button onclick="requestLocationPermission()" id="loc-allow-btn"
+             style="background:#3498db;color:white;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+             📍 İzin Ver
+           </button>
+           <button onclick="dismissLocationCard()"
+             style="background:white;color:#aaa;border:1.5px solid #ddd;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">
+             Şimdi Değil
+           </button>
+         </div>
+         <div id="location-card-status" style="font-size:12px;margin-top:8px;display:none;"></div>
+       </div>
+     </div>
+
      <h4 style="margin:20px 0 5px;color:#333;">Sipariş Notu</h4>
      <textarea id="order-note-input" rows="2" placeholder="Zile basma vb..."></textarea>
      <button class="action-btn" style="margin-top:15px;" onclick="finalizeOrder()">SİPARİŞİ ONAYLA</button>
@@ -1011,6 +1042,122 @@ const fbCfg = {
 const app  = initializeApp(fbCfg);
 const auth = getAuth(app);
 const db   = getFirestore(app);
+
+// ── KAMPANYA / DUYURU POPUP ────────────────────────────────────────
+const KP_GRADIENTS = {
+  'gradient-fire':   'linear-gradient(135deg,#e63946,#f39c12)',
+  'gradient-purple': 'linear-gradient(135deg,#667eea,#764ba2)',
+  'gradient-green':  'linear-gradient(135deg,#11998e,#38ef7d)',
+};
+let kpAutoTimer = null;
+
+async function loadKampanyaPopup() {
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'popups'),
+      where('active', '==', true),
+      where('targets.siparis', '==', true)
+    ));
+    if (snap.empty) return;
+
+    const now = Date.now();
+    let secilenDoc = null;
+
+    snap.forEach(d => {
+      const data = d.data();
+      // until_date kontrolü
+      if (data.frequency === 'until_date' && data.untilDate) {
+        const bitis = new Date(data.untilDate).getTime();
+        if (now > bitis) return;
+      }
+      // Gösterim sıklığı kontrolü
+      const storageKey = 'kp_seen_' + d.id;
+      const freq = data.frequency || 'once_per_day';
+      if (freq === 'once_ever') {
+        if (localStorage.getItem(storageKey)) return;
+      } else if (freq === 'once_per_day' || freq === 'until_date') {
+        const lastSeen = localStorage.getItem(storageKey);
+        if (lastSeen) {
+          const diff = now - parseInt(lastSeen);
+          if (diff < 86400000) return; // 24 saat geçmemiş
+        }
+      } else if (freq === 'once_per_session') {
+        if (sessionStorage.getItem(storageKey)) return;
+      }
+      // first match
+      if (!secilenDoc) secilenDoc = { id: d.id, data };
+    });
+
+    if (!secilenDoc) return;
+
+    const delay = (secilenDoc.data.delaySeconds || 1) * 1000;
+    setTimeout(() => gosterKampanyaPopup(secilenDoc.id, secilenDoc.data), delay);
+  } catch(e) {
+    console.warn('Popup yüklenemedi:', e.message);
+  }
+}
+
+function gosterKampanyaPopup(id, data) {
+  const overlay = document.getElementById('kp-overlay');
+  if (!overlay) return;
+
+  // İçerikleri doldur
+  document.getElementById('kp-emoji').textContent   = data.emoji || '📢';
+  document.getElementById('kp-title').textContent   = data.title || '';
+  document.getElementById('kp-message').textContent = data.message || '';
+
+  // Görsel
+  const imgWrap = document.getElementById('kp-image-wrap');
+  if (data.imageUrl) {
+    document.getElementById('kp-image').src = data.imageUrl;
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+  }
+
+  // Buton
+  const mainBtn = document.getElementById('kp-main-btn');
+  mainBtn.textContent = data.buttonText || 'Harika!';
+  if (data.buttonLink) {
+    mainBtn.onclick = () => { window.open(data.buttonLink, '_blank'); closeKampanyaPopup(); };
+  } else {
+    mainBtn.onclick = closeKampanyaPopup;
+  }
+
+  // Arkaplan rengi
+  const bg = KP_GRADIENTS[data.bgColor] || data.bgColor || '#e63946';
+  document.getElementById('kp-header').style.background = bg;
+  mainBtn.style.background = bg;
+
+  // Göster
+  overlay.style.display = 'flex';
+
+  // Otomatik kapanma (8 saniye) + timer bar
+  const AUTO_CLOSE_MS = 8000;
+  const bar = document.getElementById('kp-timer-bar');
+  bar.style.width = '100%';
+  bar.style.transitionDuration = AUTO_CLOSE_MS + 'ms';
+  requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = '0%'; }));
+  kpAutoTimer = setTimeout(closeKampanyaPopup, AUTO_CLOSE_MS);
+
+  // Gösterim kaydı
+  const freq = data.frequency || 'once_per_day';
+  const storageKey = 'kp_seen_' + id;
+  if (freq === 'once_ever') {
+    localStorage.setItem(storageKey, '1');
+  } else if (freq === 'once_per_day' || freq === 'until_date') {
+    localStorage.setItem(storageKey, String(Date.now()));
+  } else if (freq === 'once_per_session') {
+    sessionStorage.setItem(storageKey, '1');
+  }
+}
+
+function closeKampanyaPopup() {
+  if (kpAutoTimer) { clearTimeout(kpAutoTimer); kpAutoTimer = null; }
+  const overlay = document.getElementById('kp-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+// ── KAMPANYA POPUP SONU ───────────────────────────────────────────
 
 // ── FCM PUSH BİLDİRİMLERİ ────────────────────────────────────────
 const VAPID_KEY = "BHMGM1tM7MeixLgJ10c53kzC9kyeH9sjWAVULWrkE8-wrj9eEFv9Rmii7-DZ6AdE8tnm7gas40ihdqpwKWnE9Fs";
@@ -1312,7 +1459,33 @@ async function loadMenu() {
 }
 function renderMenu(products) {
     const shopOpen=isOpen(), bakeryOpen=new Date().getHours()>=12;
-    const norm=products.map(p=>({id:p.id,c:normCat(p.category||p.c),n:p.name||p.n,p:p.price||p.p||0,i:p.image||p.i||"",desc:p.description||p.desc||"",inStock:p.inStock!==false,variants:p.variants||p.options||p.subOptions||p.choices||null,order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999}));
+    const today = new Date().toISOString().split('T')[0];
+    const norm=products.map(p=>{
+      // Kampanya geçerli mi?
+      let campPrice = null, campLabel = '';
+      const cp = p.campaignPrice; const ct = p.campaignType; const cd = p.campaignDate;
+      const ca = p.campaignActive;
+      if(cp && ct) {
+        let active = false;
+        if(ct === 'unlimited') { active = true; campLabel = '🏷️ Kampanya'; }
+        else if(ct === 'today') { active = true; campLabel = '🔥 Bugüne Özel'; }
+        else if(ct === 'date' && cd) {
+          active = cd >= today;
+          if(active) {
+            const d = new Date(cd); campLabel = `⏳ ${d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})}'e kadar`;
+          }
+        }
+        if(active && ca !== false) campPrice = cp;
+      }
+      return {
+        id:p.id, c:normCat(p.category||p.c), n:p.name||p.n,
+        p:p.price||p.p||0, i:p.image||p.i||"",
+        desc:p.description||p.desc||"", inStock:p.inStock!==false,
+        variants:p.variants||p.options||p.subOptions||p.choices||null,
+        order:p.order??p.sort??p.index??p.position??p.sira??p.sıra??999,
+        campPrice, campLabel
+      };
+    });
     // Normalize edilmiş ürünleri detay için global'e kaydet
     window._menuProducts = norm;
     const cats={}; norm.forEach(x=>{ if(!cats[x.c]) cats[x.c]=[]; cats[x.c].push(x); });
@@ -1339,9 +1512,16 @@ function renderMenu(products) {
                     ${revHtml}
                     ${!item.inStock?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-top:2px;">Şu an mevcut değil</div>':''}
                 </div></div>
-                <div style="text-align:right;">
-                    <div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>
-                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.p},'${cat}')">${btnTxt}</button>
+                <div style="text-align:right;min-width:72px;">
+                    ${item.campPrice
+                      ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;margin-bottom:4px;">
+                           <span style="background:#FF6600;color:white;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;">${item.campLabel}</span>
+                           <span style="font-size:11px;color:#aaa;text-decoration:line-through;font-weight:500;line-height:1.2;">${item.p} TL</span>
+                           <span style="font-size:15px;color:#FF6600;font-weight:900;line-height:1.2;">${item.campPrice} TL</span>
+                         </div>`
+                      : `<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>`
+                    }
+                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.campPrice||item.p},'${cat}')">${btnTxt}</button>
                 </div>
             </div>`;
         }).join('')}`).join('');
@@ -1387,10 +1567,17 @@ window.openItemDetail = n => {
         <div style="padding:20px 22px 22px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                 <h3 style="margin:0;font-size:18px;color:#1a1a1a;flex:1;">${item.n}</h3>
-                <span style="font-size:22px;font-weight:800;color:var(--primary);margin-left:12px;flex-shrink:0;">${item.p} TL</span>
+                <div style="text-align:right;margin-left:12px;flex-shrink:0;">
+                  ${item.campPrice
+                    ? `<div><span style="font-size:11px;background:#FF6600;color:white;padding:1px 7px;border-radius:6px;font-weight:700;">${item.campLabel}</span></div>
+                       <div style="font-size:13px;color:#bbb;text-decoration:line-through;font-weight:500;">${item.p} TL</div>
+                       <div style="font-size:22px;color:#FF6600;font-weight:900;line-height:1.1;">${item.campPrice} TL</div>`
+                    : `<span style="font-size:22px;font-weight:800;color:var(--primary);">${item.p} TL</span>`
+                  }
+                </div>
             </div>
             ${item.desc?`<p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.6;">${item.desc}</p>`:'<p style="font-size:13px;color:#bbb;margin:0 0 16px;">Taze malzemelerle hazırlanır.</p>'}
-            <button ${disabled?'disabled':''} onclick="document.getElementById('item-detail-overlay').remove(); checkAndAdd('${item.n.replace(/'/g,"\\'")}',${item.p},'${item.c}');"
+            <button ${disabled?'disabled':''} onclick="document.getElementById('item-detail-overlay').remove(); checkAndAdd('${item.n.replace(/'/g,"\\'")}',${item.campPrice||item.p},'${item.c}');"
                 style="width:100%;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;${disabled?'background:#ddd;color:#999;cursor:not-allowed;':'background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;box-shadow:0 8px 20px rgba(255,102,0,0.3);'}">
                 ${disabled?btnTxt:'🛒 '+btnTxt}
             </button>
@@ -1705,12 +1892,24 @@ window.finalizeOrder=async()=>{
         } catch(e) { console.log('Fiyat doğrulama atlandı:', e); }
 
 
+        // Konum — önce karttan alınan cache'e bak, yoksa son bir kez dene
+        let customerLocation = _cachedLocation || null;
+        if(!customerLocation && 'geolocation' in navigator) {
+            try {
+                const pos = await new Promise((res, rej) =>
+                    navigator.geolocation.getCurrentPosition(res, rej, {timeout:4000, maximumAge:120000})
+                );
+                customerLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+            } catch(_) { /* izin yok veya timeout — konum olmadan devam */ }
+        }
+
         // Sipariş oluştur
         const orderData = {
           orderNumber: orderNumber,
           customer: userData.name,
           phone: userData.phone||activePhone,
           addressDetails: addrTxt,
+          customerLocation: customerLocation,
           items: basket,
           subtotal: sub,
           discountRate: discount>0 ? appliedCoupon.discount : 0,
@@ -2100,8 +2299,22 @@ async function processLoginSuccess(id, isAuto=false){
         refreshMinFromAddr();
         startStatusListener(userData.phone||id);
         // FCM token al (bildirimler için)
-        if(!isAuto) showNotifPermissionPopup(userData.phone||id);
-        else if('Notification' in window && Notification.permission==='granted') initFcmToken(userData.phone||id);
+        // Her girişte: izin verilmişse taze token al; verilmemişse popup göster
+        const _fcmPhone = userData.phone||id;
+        if('Notification' in window && Notification.permission === 'granted') {
+            // Zaten izinli — taze token al (cihaz değişmiş olabilir)
+            initFcmToken(_fcmPhone);
+        } else if('Notification' in window && Notification.permission !== 'denied') {
+            if(isAuto) {
+                // Otomatik giriş: tokensiz mi diye kontrol et, öyleyse 4 sn sonra banner göster
+                checkAndPromptTokenIfMissing(_fcmPhone);
+            } else {
+                // Manuel giriş + henüz sorulmamış → popup göster
+                // Ama yeni kayıt ise inline kart zaten gösterdi, popup'ı atlayalım
+                const isNewReg = document.getElementById('login-step-success')?.style.display !== 'none';
+                if(!isNewReg) showNotifPermissionPopup(_fcmPhone);
+            }
+        }
         
         // Login modalını kapat
         if(!isAuto) closeModal();
@@ -2846,17 +3059,84 @@ window.handleCheckout=()=>{
     }
 
     openModal('checkout');
+    // Ödeme ekranı açılınca konum kartını göster (daha önce reddedilmediyse ve henüz verilmediyse)
+    setTimeout(showLocationCard, 300);
 };
 window.toggleSidebar=()=>{ document.getElementById('sidebar').classList.add('active'); document.getElementById('sidebar-overlay').style.display='block'; };
 window.closeSidebar=()=>{ document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').style.display='none'; };
 window.toggleAddressForm=()=>{ const f=document.getElementById('new-address-form'); f.style.display=f.style.display==='none'?'block':'none'; };
 
+// ── KONUM İZNİ ────────────────────────────────────────────────────────────────
+let _cachedLocation = null; // sipariş anında kullanmak için cache
+
+function showLocationCard() {
+    const card = document.getElementById('location-permission-card');
+    if(!card) return;
+    // Zaten verilmişse veya kalıcı reddedildiyse kartı gösterme
+    if(localStorage.getItem('loc_dismissed')) { card.style.display = 'none'; return; }
+    if(!('geolocation' in navigator)) { card.style.display = 'none'; return; }
+    // Daha önce izin verilmişse sessizce al, kartı gösterme
+    navigator.permissions?.query({name:'geolocation'}).then(p => {
+        if(p.state === 'granted') {
+            card.style.display = 'none';
+            navigator.geolocation.getCurrentPosition(pos => {
+                _cachedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+            }, () => {});
+        } else if(p.state === 'denied') {
+            card.style.display = 'none';
+        } else {
+            card.style.display = 'flex';
+        }
+    }).catch(() => {
+        // permissions API yoksa (bazı tarayıcılar) — kartı göster
+        card.style.display = 'flex';
+    });
+}
+
+window.requestLocationPermission = () => {
+    const btn    = document.getElementById('loc-allow-btn');
+    const status = document.getElementById('location-card-status');
+    const btns   = document.getElementById('location-card-btns');
+    if(btn) { btn.disabled = true; btn.textContent = '⏳ Alınıyor...'; }
+
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            _cachedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+            if(btns)   btns.style.display   = 'none';
+            if(status) {
+                status.style.display = 'block';
+                status.style.color   = '#27ae60';
+                status.innerHTML     = `✅ Konum alındı (±${_cachedLocation.acc}m doğruluk)`;
+            }
+        },
+        err => {
+            if(btn) { btn.disabled = false; btn.textContent = '📍 Tekrar Dene'; }
+            if(status) {
+                status.style.display = 'block';
+                status.style.color   = '#e67e22';
+                status.textContent   = err.code === 1
+                    ? '⚠️ İzin reddedildi. Tarayıcı ayarlarından konum iznini açabilirsiniz.'
+                    : '⚠️ Konum alınamadı, siparişe devam edebilirsiniz.';
+            }
+        },
+        { timeout: 8000, maximumAge: 60000, enableHighAccuracy: true }
+    );
+};
+
+window.dismissLocationCard = () => {
+    const card = document.getElementById('location-permission-card');
+    if(card) card.style.display = 'none';
+    localStorage.setItem('loc_dismissed', '1');
+};
+
 // FCM token al ve Firestore'a kaydet
 function showNotifPermissionPopup(phone) {
-    // Daha önce reddettiyse veya zaten izin varsa gösterme
-    if(localStorage.getItem('notif_dismissed')) return;
+    // Zaten izin verilmişse direkt token al
     if(Notification.permission === 'granted') { initFcmToken(phone); return; }
+    // Tarayıcı tarafından kalıcı reddedildiyse gösterme
     if(Notification.permission === 'denied') return;
+    // Daha önce popup'tan "Daha Sonra" dediyse gösterme (ama kayıt sonrası inline kart ayrı çalışır)
+    if(localStorage.getItem('notif_dismissed')) return;
     const popup = document.getElementById('notif-permission-popup');
     popup._phone = phone;
     popup.style.display = 'flex';
@@ -2872,6 +3152,145 @@ window.allowNotifPopup = async () => {
 window.dismissNotifPopup = () => {
     document.getElementById('notif-permission-popup').style.display = 'none';
     localStorage.setItem('notif_dismissed', '1');
+};
+
+// Kayıt sonrası tebrikler ekranındaki inline bildirim butonu
+window.requestNotifInline = async () => {
+    const btn  = document.getElementById('notif-inline-btn');
+    const stat = document.getElementById('notif-inline-status');
+    const card = document.getElementById('notif-inline-card');
+    if(!btn || !stat) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳';
+    stat.textContent = 'İzin isteniyor...';
+
+    try {
+        const perm = await Notification.requestPermission();
+        if(perm === 'granted') {
+            stat.style.color = '#27ae60';
+            stat.textContent = '✅ İzin verildi, bildirimler aktif!';
+            btn.style.background = '#27ae60';
+            btn.textContent = '✓';
+            // Token al ve Firestore'a kaydet
+            await initFcmToken(tempPhone || activePhone);
+        } else if(perm === 'denied') {
+            stat.style.color = '#c0392b';
+            stat.textContent = '❌ Tarayıcı tarafından reddedildi. Ayarlardan izin verebilirsiniz.';
+            btn.style.background = '#ccc';
+            btn.textContent = 'Reddedildi';
+        } else {
+            stat.style.color = '#e67e22';
+            stat.textContent = 'İzin verilmedi.';
+            btn.disabled = false;
+            btn.textContent = 'Tekrar Dene';
+        }
+    } catch(e) {
+        stat.style.color = '#c0392b';
+        stat.textContent = 'Hata: ' + e.message;
+        btn.disabled = false;
+        btn.textContent = 'Tekrar Dene';
+    }
+};
+
+
+// Tokensiz müşteri tespiti (auto-login sonrası sessiz kontrol)
+async function checkAndPromptTokenIfMissing(phone) {
+    if(!phone) return;
+    // Tarayıcı kalıcı olarak reddetmişse hiçbir şey yapma
+    if('Notification' in window && Notification.permission === 'denied') return;
+    // İzin zaten verilmişse — token al/yenile, başka işlem yok
+    if('Notification' in window && Notification.permission === 'granted') {
+        initFcmToken(phone);
+        return;
+    }
+    try {
+        const snap = await getDoc(doc(db,"phone_customers", phone));
+        if(!snap.exists()) return;
+        const data = snap.data();
+        const tokens = (data.fcmTokenlar || data.fcmTokens || []).filter(Boolean);
+        // Token zaten varsa bir şey yapma
+        if(tokens.length > 0) return;
+        // Daha önce "Hayır" demişse — 30 günde bir tekrar sor
+        const dismissedAt = data.notifDismissedAt;
+        if(dismissedAt) {
+            const dt = dismissedAt.toDate ? dismissedAt.toDate() : new Date(dismissedAt.seconds*1000);
+            const daysSince = (Date.now() - dt.getTime()) / 86400000;
+            if(daysSince < 30) return;
+        }
+        // 3 sn sonra banner göster
+        setTimeout(() => showTokenBanner(phone), 3000);
+    } catch(e) { console.warn('[FCM] Token kontrol hatası:', e.message); }
+}
+
+function showTokenBanner(phone) {
+    if(document.getElementById('token-missing-banner')) return;
+    if(Notification.permission === 'granted') { initFcmToken(phone); return; }
+    if(Notification.permission === 'denied') return;
+    const banner = document.createElement('div');
+    banner.id = 'token-missing-banner';
+    banner.style.cssText = `
+        position:fixed;bottom:0;left:0;right:0;
+        background:white;
+        padding:18px 16px 24px;
+        box-shadow:0 -4px 24px rgba(0,0,0,0.15);
+        z-index:8999;
+        animation:slideUpBanner 0.35s cubic-bezier(.34,1.56,.64,1);
+        border-top:3px solid #FF6600;
+    `;
+    banner.innerHTML = `
+        <div style="max-width:480px;margin:0 auto;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#FF6600,#CC5200);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🔔</div>
+            <div>
+              <div style="font-weight:800;font-size:15px;color:#1a1a1a;">Bildirim izni ver</div>
+              <div style="font-size:12px;color:#666;margin-top:2px;">Siparişin hazır olunca ve yola çıkınca anında haber al.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="handleTokenBannerAllow('${phone}')"
+              style="flex:1.5;background:linear-gradient(135deg,#FF6600,#CC5200);color:white;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,102,0,0.35);">
+              🔔 İzin Ver
+            </button>
+            <button onclick="handleTokenBannerDismiss()"
+              style="flex:1;background:#f5f5f5;color:#888;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+              Daha Sonra
+            </button>
+          </div>
+        </div>
+    `;
+    document.body.appendChild(banner);
+    // 20 sn sonra otomatik kapat
+    setTimeout(() => { if(banner.parentNode) banner.remove(); }, 20000);
+}
+window.handleTokenBannerAllow = async (phone) => {
+    const banner = document.getElementById('token-missing-banner');
+    // Butonu devre dışı bırak, yüklenme göster
+    if(banner) {
+        const btn = banner.querySelector('button');
+        if(btn) { btn.disabled = true; btn.textContent = '⏳ İzin isteniyor...'; }
+    }
+    const perm = await Notification.requestPermission();
+    if(banner) banner.remove();
+    if(perm === 'granted') {
+        await initFcmToken(phone);
+        // Başarı toast
+        showToast('🔔 Bildirimler aktif! Siparişlerini takip edebilirsin.', 'success');
+    } else if(perm === 'denied') {
+        showToast('Bildirim izni reddedildi. Tarayıcı ayarlarından açabilirsin.', 'warn');
+    }
+};
+window.handleTokenBannerDismiss = async () => {
+    const banner = document.getElementById('token-missing-banner');
+    if(banner) banner.remove();
+    // Firestore'a "30 gün sonra tekrar sor" şeklinde kaydet
+    const phone = activePhone;
+    if(phone) {
+        try {
+            await setDoc(doc(db,"phone_customers",phone),
+                { notifDismissedAt: new Date() }, {merge:true});
+        } catch(e) {}
+    }
 };
 
 async function initFcmToken(phone){
@@ -2901,14 +3320,17 @@ async function initFcmToken(phone){
         });
 
         if(token && phone){
-            // Eski token'ları temizle, sadece güncel token'ı tut
+            // Token'ı ve izin durumunu Firestore'a kaydet
             await setDoc(doc(db,"phone_customers",phone),{
                 fcmTokenlar: [token],
-                fcmTokenUpdated: new Date().toISOString()
+                fcmTokenUpdated: new Date().toISOString(),
+                notifPermission: 'granted'
             },{merge:true});
-            console.log("[FCM] ✅ Token güncellendi");
-            // showToast kaldırıldı — gereksiz bildirim
+            // localStorage'dan eski "dismissed" işaretini temizle (yeni cihazda izin verdiyse sıfırla)
+            localStorage.removeItem('notif_dismissed');
+            console.log("[FCM] ✅ Token güncellendi:", token.substring(0,20)+"...");
         } else {
+            console.warn("[FCM] Token boş geldi");
             showToast("⚠️ Bildirim token alınamadı", "warn");
         }
     } catch(e){
@@ -3927,6 +4349,7 @@ window.onload=()=>{
     }
 
     checkStore(); updateStoreUI(); loadMenu(); updateCart(); updateUserDisplay(); loadDeliveryZones();
+    loadKampanyaPopup();
     // Sepet draft'ını geri yükle (sayfa yenileme / offline koruması)
     try {
         const draft = localStorage.getItem('basketDraft');
@@ -3939,7 +4362,19 @@ window.onload=()=>{
             }
         }
     } catch(e) {}
-    if(activePhone) processLoginSuccess(activePhone,true);
+    if(activePhone) {
+        processLoginSuccess(activePhone,true);
+        // Giriş yapmış ama tokeni olmayan müşteri kontrolü
+        // processLoginSuccess isAuto=true geçer ve izin varsa initFcmToken çağırır
+        // İzin henüz verilmemişse: sayfa açılışından 3 sn sonra nazikçe sor
+        if('Notification' in window && Notification.permission === 'default') {
+            setTimeout(() => {
+                if(!localStorage.getItem('notif_dismissed')) {
+                    showNotifPermissionPopup(activePhone);
+                }
+            }, 3000);
+        }
+    }
     else loadFirstOrderBanner();
     setTimeout(startClosingCountdown, 1500);
 
@@ -3950,6 +4385,82 @@ window.onload=()=>{
     document.getElementById('bn-wa')?.addEventListener('click', () => window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank'));
 };
 </script>
+  <!-- TELEFON & YOL TARİFİ + ÇALIŞMA SAATLERİ + SOSYAL MEDYA -->
+  <div style="background:#f4f4f4; padding:24px 15px 20px; max-width:600px; margin:0 auto;">
+
+    <!-- 1. Telefon Et & Yol Tarifi Al -->
+    <div style="display:flex; gap:12px; margin-bottom:28px;">
+      <a href="tel:02242466120" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#1a1a1a; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.18);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012.77 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.74a16 16 0 006.35 6.35l1.1-1.1a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;">Telefon Et</span>
+      </a>
+      <a href="https://maps.app.goo.gl/dvcw2We1ZjZ3kJV7A?g_st=ac" target="_blank" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#FF6600; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(255,102,0,0.35);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;">Yol Tarifi Al</span>
+      </a>
+    </div>
+
+    <!-- 2. Çalışma Saatleri -->
+    <h3 style="text-align:center; font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin:0 0 14px; text-transform:uppercase; letter-spacing:0.5px;">Çalışma Saatleri</h3>
+    <div style="background:white; border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.06); margin-bottom:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Pazartesi</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0; background:#fff5f5;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#c0392b;">Salı</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#c0392b;">Kapalı</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Çarşamba</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Perşembe</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Cuma</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Cumartesi</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px;">
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Pazar</span>
+        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:00</span>
+      </div>
+    </div>
+
+    <!-- 3. Sosyal Medya -->
+    <h3 style="text-align:center; font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin:0 0 16px; text-transform:uppercase; letter-spacing:0.5px;">Bizi Takip Edin</h3>
+    <div style="display:flex; justify-content:center; gap:14px; padding-bottom:8px;">
+      <!-- WhatsApp -->
+      <a href="https://wa.me/902242466120?text=Merhaba%2C%20bilgi%20almak%20istiyorum." target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
+        <div style="width:54px; height:54px; border-radius:50%; background:#25D366; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(37,211,102,0.35);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </div>
+        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">WhatsApp</span>
+      </a>
+      <!-- Facebook -->
+      <a href="https://www.facebook.com/share/1LHRsGQr6P/" target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
+        <div style="width:54px; height:54px; border-radius:50%; background:#1877F2; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(24,119,242,0.35);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </div>
+        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">Facebook</span>
+      </a>
+      <!-- Instagram -->
+      <a href="https://www.instagram.com/donercismail?igsh=YWNnczdqNHUzYmJ1" target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
+        <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(220,39,67,0.35);">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </div>
+        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">Instagram</span>
+      </a>
+    </div>
+
+  </div>
+
   <!-- ALT NAVİGASYON BAR -->
   <div id="bottom-nav">
     <div class="bn-item" id="bn-points">
@@ -3978,6 +4489,35 @@ window.onload=()=>{
     </div>
   </div>
 
+ <!-- KAMPANYA / DUYURU POPUP -->
+ <div id="kp-overlay" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+   <div id="kp-box" style="background:white;border-radius:22px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);animation:kpIn .4s cubic-bezier(.34,1.4,.64,1);position:relative;">
+     <!-- Üst renkli header -->
+     <div id="kp-header" style="padding:20px 20px 16px;position:relative;">
+       <!-- Otomatik kapanma çubuğu -->
+       <div id="kp-timer-bar" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,255,255,0.4);transition:width linear;"></div>
+       <!-- X butonu -->
+       <button onclick="closeKampanyaPopup()" id="kp-close-btn" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.25);border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:16px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2;">×</button>
+       <div id="kp-emoji" style="font-size:32px;line-height:1;margin-bottom:10px;">🎉</div>
+       <div id="kp-title" style="color:white;font-size:17px;font-weight:800;line-height:1.3;padding-right:32px;"></div>
+     </div>
+     <!-- İçerik -->
+     <div style="padding:16px 20px 20px;">
+       <div id="kp-image-wrap" style="display:none;border-radius:12px;overflow:hidden;margin-bottom:14px;max-height:150px;">
+         <img id="kp-image" src="" alt="" style="width:100%;object-fit:cover;max-height:150px;display:block;" onerror="document.getElementById('kp-image-wrap').style.display='none'">
+       </div>
+       <div id="kp-message" style="font-size:14px;color:#444;line-height:1.55;margin-bottom:18px;"></div>
+       <div style="display:flex;gap:10px;">
+         <button id="kp-main-btn" onclick="closeKampanyaPopup()" style="flex:1;padding:13px;border:none;border-radius:14px;font-weight:800;font-size:14px;cursor:pointer;color:white;font-family:inherit;transition:opacity .2s;">Harika!</button>
+         <button onclick="closeKampanyaPopup()" style="padding:13px 16px;background:#f0f0f0;border:none;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;color:#888;font-family:inherit;">Kapat</button>
+       </div>
+     </div>
+   </div>
+ </div>
+ <style>
+ @keyframes kpIn{from{transform:scale(.75);opacity:0;}to{transform:scale(1);opacity:1;}}
+ </style>
+
  <!-- BİLDİRİM İZİN POPUP -->
  <div id="notif-permission-popup" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;padding:16px;">
    <div style="background:white;border-radius:24px;padding:28px 24px 24px;width:100%;max-width:420px;box-shadow:0 -4px 40px rgba(0,0,0,0.15);animation:slideUpNotif .35s cubic-bezier(.34,1.56,.64,1);">
@@ -3996,6 +4536,7 @@ window.onload=()=>{
  </div>
  <style>
  @keyframes slideUpNotif { from { transform:translateY(100px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+ @keyframes slideUpBanner { from { transform:translateY(80px); opacity:0; } to { transform:translateY(0); opacity:1; } }
  </style>
 
  </body>
