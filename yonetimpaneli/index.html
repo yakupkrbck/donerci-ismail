@@ -3041,6 +3041,7 @@ window.showTab=(id,el)=>{
   if(id==='courier-panel') loadCourierPanel();
   if(id==='vip-settings'){ loadVipSettings(); loadVipStats(); }
   if(id==='complaints') loadComplaints();
+  if(id==='popup-manager') loadPopups();
 };
 
 // ── ÇALIŞMA SAATLERİ ────────────────────────────────────────────────────────
@@ -4333,11 +4334,11 @@ window.loadVipStats=async()=>{
     </div>
 
   </div>
+</div>
 
   <!-- DUYURU & POPUP YÖNETİMİ -->
   <div id="popup-manager" class="tab">
     <style>
-      /* ── POPUP MANAGER STYLES ── */
       .pm-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
       @media(max-width:1100px){.pm-grid{grid-template-columns:1fr;}}
       .pm-card{background:white;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:18px;}
@@ -4348,7 +4349,7 @@ window.loadVipStats=async()=>{
       .pm-textarea{width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:75px;transition:.2s;}
       .pm-textarea:focus{border-color:var(--primary);outline:none;}
       .pm-row{margin-bottom:14px;}
-      .pm-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:1.5px solid #eee;cursor:pointer;transition:.2s;}
+      .pm-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:1.5px solid #eee;transition:.2s;}
       .pm-toggle-row:hover{background:#f0f0f0;}
       .pm-toggle-row.active-target{border-color:var(--primary);background:#fff8f5;}
       .pm-toggle-label{font-size:13px;font-weight:600;color:#444;display:flex;align-items:center;gap:8px;}
@@ -4363,31 +4364,8 @@ window.loadVipStats=async()=>{
       .pm-color-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
       .pm-preset-color{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:.2s;flex-shrink:0;}
       .pm-preset-color:hover,.pm-preset-color.selected{border-color:#333;transform:scale(1.15);}
-      /* Önizleme popup */
-      #pm-preview-popup{
-        position:relative;border-radius:20px;overflow:hidden;
-        box-shadow:0 10px 40px rgba(0,0,0,.25);
-        width:100%;max-width:360px;margin:0 auto;
-        animation:popIn .3s cubic-bezier(.34,1.56,.64,1);
-      }
-      .pm-prev-header{padding:20px 20px 16px;display:flex;justify-content:space-between;align-items:flex-start;}
-      .pm-prev-emoji{font-size:34px;line-height:1;}
-      .pm-prev-close{background:rgba(255,255,255,.25);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;}
-      .pm-prev-title{color:white;font-size:17px;font-weight:800;line-height:1.3;margin:0 0 6px;padding:0 20px;}
-      .pm-prev-msg{color:rgba(255,255,255,.9);font-size:13px;line-height:1.5;margin:0 0 14px;padding:0 20px;}
-      .pm-prev-img-wrap{margin:0 20px 14px;border-radius:12px;overflow:hidden;max-height:140px;}
-      .pm-prev-img-wrap img{width:100%;object-fit:cover;max-height:140px;display:block;}
-      .pm-prev-footer{padding:14px 20px 20px;display:flex;gap:10px;}
-      .pm-prev-btn{flex:1;padding:11px;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;}
-      .pm-prev-btn.main{background:white;color:#333;}
-      .pm-prev-btn.skip{background:rgba(255,255,255,.2);color:white;}
-      /* Popup listesi */
       .pp-list-item{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px;display:flex;align-items:center;gap:14px;border-left:5px solid #ddd;}
       .pp-list-item.is-active{border-left-color:var(--primary);}
-      .pp-list-item.is-active .pp-status-dot{background:#27ae60;}
-      .pp-status-dot{width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;}
-      .pp-item-title{font-weight:700;font-size:14px;color:#2c3e50;}
-      .pp-item-meta{font-size:11px;color:#95a5a6;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
       .pp-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#ecf0f1;color:#7f8c8d;}
       .pp-tag.green{background:#e8f8f5;color:#27ae60;}
       .pp-tag.red{background:#fdedec;color:#c0392b;}
@@ -4395,7 +4373,6 @@ window.loadVipStats=async()=>{
       .pp-tag.orange{background:#fef5e7;color:#e67e22;}
       .pm-action-btn{padding:7px 14px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;}
       .pm-action-btn:hover{opacity:.85;}
-      .pm-section-title{font-size:11px;font-weight:700;color:#95a5a6;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;}
     </style>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
@@ -4406,106 +4383,94 @@ window.loadVipStats=async()=>{
     <div class="pm-grid">
       <!-- SOL: FORM -->
       <div>
-
-        <!-- TEMEL BİLGİLER -->
         <div class="pm-card">
           <h4><i class="fas fa-edit" style="color:var(--primary);"></i> Popup İçeriği</h4>
-
           <div class="pm-row">
             <label class="pm-label">Emoji / İkon</label>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;" id="pm-emoji-row">
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'🎉')" data-e="🎉">🎉</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'🔥')" data-e="🔥">🔥</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'🍕')" data-e="🍕">🍕</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'⚡')" data-e="⚡">⚡</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'🎁')" data-e="🎁">🎁</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'📣')" data-e="📣">📣</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'💥')" data-e="💥">💥</span>
-              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="selectEmoji(this,'🌟')" data-e="🌟">🌟</span>
-              <input type="text" id="pm-emoji" value="🎉" class="pm-input" style="width:70px;text-align:center;font-size:18px;" oninput="updatePreview()" placeholder="Emoji">
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'🎉')">🎉</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'🔥')">🔥</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'🍕')">🍕</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'⚡')">⚡</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'🎁')">🎁</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'📣')">📣</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'💥')">💥</span>
+              <span style="font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;border:2px solid transparent;transition:.2s;" onclick="pmSelectEmoji(this,'🌟')">🌟</span>
+              <input type="text" id="pm-emoji" value="🎉" class="pm-input" style="width:70px;text-align:center;font-size:18px;" oninput="pmUpdatePreview()" placeholder="Emoji">
             </div>
           </div>
-
           <div class="pm-row">
             <label class="pm-label">Başlık *</label>
-            <input type="text" id="pm-title" class="pm-input" placeholder="Örn: 🔥 Haftasonu Kampanyası!" maxlength="60" oninput="updatePreview()">
+            <input type="text" id="pm-title" class="pm-input" placeholder="Örn: 🔥 Haftasonu Kampanyası!" maxlength="60" oninput="pmUpdatePreview()">
           </div>
-
           <div class="pm-row">
             <label class="pm-label">Mesaj *</label>
-            <textarea id="pm-message" class="pm-textarea" placeholder="Örn: 150₺ üzeri siparişlerde içecek bedava! Sadece bu hafta sonu geçerli." maxlength="200" oninput="updatePreview()"></textarea>
+            <textarea id="pm-message" class="pm-textarea" placeholder="Örn: 150₺ üzeri siparişlerde içecek bedava!" maxlength="200" oninput="pmUpdatePreview();document.getElementById('pm-char').textContent=this.value.length"></textarea>
             <div style="text-align:right;font-size:11px;color:#bbb;margin-top:3px;"><span id="pm-char">0</span>/200</div>
           </div>
-
           <div class="pm-row">
             <label class="pm-label">Görsel URL <span style="font-weight:400;text-transform:none;color:#bbb;">(opsiyonel)</span></label>
             <div style="display:flex;gap:8px;">
-              <input type="url" id="pm-image" class="pm-input" placeholder="https://..." oninput="updatePreview()">
-              <button onclick="previewPopupImg()" style="background:#3498db;color:white;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Önizle</button>
+              <input type="url" id="pm-image" class="pm-input" placeholder="https://..." oninput="pmUpdatePreview()">
             </div>
           </div>
-
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="pm-row">
               <label class="pm-label">Buton Metni</label>
-              <input type="text" id="pm-btn-text" class="pm-input" value="Harika!" maxlength="25" oninput="updatePreview()">
+              <input type="text" id="pm-btn-text" class="pm-input" value="Harika!" maxlength="25" oninput="pmUpdatePreview()">
             </div>
             <div class="pm-row">
               <label class="pm-label">Buton Linki <span style="font-weight:400;text-transform:none;color:#bbb;">(opsiyonel)</span></label>
-              <input type="url" id="pm-btn-link" class="pm-input" placeholder="https://..." oninput="updatePreview()">
+              <input type="url" id="pm-btn-link" class="pm-input" placeholder="https://...">
             </div>
           </div>
         </div>
 
-        <!-- RENK & GÖRÜNÜM -->
         <div class="pm-card">
           <h4><i class="fas fa-palette" style="color:#9b59b6;"></i> Renk & Görünüm</h4>
           <div class="pm-row">
             <label class="pm-label">Arkaplan Rengi</label>
             <div class="pm-color-row">
-              <input type="color" id="pm-color" value="#e63946" class="pm-color-swatch" oninput="updatePreview()">
-              <div id="pm-color-presets" style="display:flex;gap:6px;flex-wrap:wrap;">
-                <div class="pm-preset-color" style="background:#e63946;" onclick="setColor('#e63946')" title="Kırmızı"></div>
-                <div class="pm-preset-color" style="background:#d35400;" onclick="setColor('#d35400')" title="Turuncu"></div>
-                <div class="pm-preset-color" style="background:#27ae60;" onclick="setColor('#27ae60')" title="Yeşil"></div>
-                <div class="pm-preset-color" style="background:#2980b9;" onclick="setColor('#2980b9')" title="Mavi"></div>
-                <div class="pm-preset-color" style="background:#8e44ad;" onclick="setColor('#8e44ad')" title="Mor"></div>
-                <div class="pm-preset-color" style="background:#f39c12;" onclick="setColor('#f39c12')" title="Sarı"></div>
-                <div class="pm-preset-color" style="background:#2c3e50;" onclick="setColor('#2c3e50')" title="Koyu"></div>
-                <div class="pm-preset-color" style="background:linear-gradient(135deg,#e63946,#f39c12);" onclick="setColor('gradient-fire')" title="Ateş"></div>
-                <div class="pm-preset-color" style="background:linear-gradient(135deg,#667eea,#764ba2);" onclick="setColor('gradient-purple')" title="Mor Degrade"></div>
-                <div class="pm-preset-color" style="background:linear-gradient(135deg,#11998e,#38ef7d);" onclick="setColor('gradient-green')" title="Yeşil Degrade"></div>
+              <input type="color" id="pm-color" value="#e63946" class="pm-color-swatch" oninput="pmUpdatePreview()">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <div class="pm-preset-color" style="background:#e63946;" onclick="pmSetColor('#e63946',this)"></div>
+                <div class="pm-preset-color" style="background:#d35400;" onclick="pmSetColor('#d35400',this)"></div>
+                <div class="pm-preset-color" style="background:#27ae60;" onclick="pmSetColor('#27ae60',this)"></div>
+                <div class="pm-preset-color" style="background:#2980b9;" onclick="pmSetColor('#2980b9',this)"></div>
+                <div class="pm-preset-color" style="background:#8e44ad;" onclick="pmSetColor('#8e44ad',this)"></div>
+                <div class="pm-preset-color" style="background:#f39c12;" onclick="pmSetColor('#f39c12',this)"></div>
+                <div class="pm-preset-color" style="background:#2c3e50;" onclick="pmSetColor('#2c3e50',this)"></div>
+                <div class="pm-preset-color" style="background:linear-gradient(135deg,#e63946,#f39c12);" onclick="pmSetColor('gradient-fire',this)"></div>
+                <div class="pm-preset-color" style="background:linear-gradient(135deg,#667eea,#764ba2);" onclick="pmSetColor('gradient-purple',this)"></div>
+                <div class="pm-preset-color" style="background:linear-gradient(135deg,#11998e,#38ef7d);" onclick="pmSetColor('gradient-green',this)"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- NEREDE GÖSTERILSIN -->
         <div class="pm-card">
           <h4><i class="fas fa-map-marker-alt" style="color:#e67e22;"></i> Nerede Gösterilsin?</h4>
-          <label class="pm-toggle-row active-target" onclick="toggleTarget('siparis')" id="pmt-siparis">
-            <span class="pm-toggle-label">🛒 Sipariş Uygulaması <small>onlinesiparisuygulamasi.html</small></span>
-            <label class="pm-big-toggle" onclick="event.stopPropagation()">
-              <input type="checkbox" id="pm-target-siparis" checked onchange="updatePreview()">
+          <div class="pm-toggle-row active-target">
+            <span class="pm-toggle-label">🛒 Sipariş Uygulaması <small>onlinesparis.html</small></span>
+            <label class="pm-big-toggle">
+              <input type="checkbox" id="pm-target-siparis" checked onchange="pmUpdatePreview()">
               <span class="pm-big-slider"></span>
             </label>
-          </label>
-          <label class="pm-toggle-row active-target" onclick="toggleTarget('menu')" id="pmt-menu">
+          </div>
+          <div class="pm-toggle-row active-target">
             <span class="pm-toggle-label">🍽️ QR Menü <small>menü.html</small></span>
-            <label class="pm-big-toggle" onclick="event.stopPropagation()">
-              <input type="checkbox" id="pm-target-menu" checked onchange="updatePreview()">
+            <label class="pm-big-toggle">
+              <input type="checkbox" id="pm-target-menu" checked onchange="pmUpdatePreview()">
               <span class="pm-big-slider"></span>
             </label>
-          </label>
+          </div>
         </div>
 
-        <!-- NE ZAMAN GÖSTERILSIN -->
         <div class="pm-card">
           <h4><i class="fas fa-clock" style="color:#3498db;"></i> Ne Zaman Gösterilsin?</h4>
-
           <div class="pm-row">
             <label class="pm-label">Gösterim Sıklığı</label>
-            <select id="pm-frequency" class="pm-input" onchange="onFrequencyChange()">
+            <select id="pm-frequency" class="pm-input" onchange="pmOnFrequencyChange()">
               <option value="once_per_day">Günde 1 kez</option>
               <option value="once_per_session">Her oturumda 1 kez</option>
               <option value="every_visit">Her ziyarette</option>
@@ -4513,307 +4478,170 @@ window.loadVipStats=async()=>{
               <option value="until_date">Belirli tarihe kadar (günde 1 kez)</option>
             </select>
           </div>
-
           <div class="pm-row" id="pm-until-date-row" style="display:none;">
             <label class="pm-label">Bitiş Tarihi</label>
             <input type="datetime-local" id="pm-until-date" class="pm-input">
           </div>
-
           <div class="pm-row">
             <label class="pm-label">Gecikme (saniye)</label>
             <div style="display:flex;align-items:center;gap:10px;">
-              <input type="range" id="pm-delay" min="0" max="10" value="1" step="1" style="flex:1;" oninput="document.getElementById('pm-delay-val').textContent=this.value+'sn';updatePreview()">
+              <input type="range" id="pm-delay" min="0" max="10" value="1" step="1" style="flex:1;" oninput="document.getElementById('pm-delay-val').textContent=this.value+'sn'">
               <span id="pm-delay-val" style="font-size:13px;font-weight:700;color:var(--primary);min-width:30px;">1sn</span>
             </div>
           </div>
         </div>
 
-        <!-- AKTİFLİK & KAYDET -->
         <div class="pm-card">
           <h4><i class="fas fa-toggle-on" style="color:#27ae60;"></i> Yayın Durumu</h4>
-          <label class="pm-toggle-row" style="margin-bottom:0;" onclick="document.getElementById('pm-active').click();updatePreview()">
-            <span class="pm-toggle-label">
-              Popup Aktif
-              <small>Kapalıysa hiçbir sayfada gösterilmez</small>
-            </span>
-            <label class="pm-big-toggle" onclick="event.stopPropagation()">
-              <input type="checkbox" id="pm-active" checked onchange="updatePreview()">
+          <div class="pm-toggle-row" style="margin-bottom:0;">
+            <span class="pm-toggle-label">Popup Aktif <small>Kapalıysa hiçbir sayfada gösterilmez</small></span>
+            <label class="pm-big-toggle">
+              <input type="checkbox" id="pm-active" checked>
               <span class="pm-big-slider"></span>
             </label>
-          </label>
-
+          </div>
           <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
-            <button onclick="savePopup()" class="btn" style="background:var(--primary);flex:1;min-width:140px;height:44px;font-size:14px;">
-              <i class="fas fa-save"></i> Kaydet & Yayınla
-            </button>
-            <button onclick="clearPopupForm()" class="btn" style="background:#95a5a6;width:auto;padding:0 20px;height:44px;flex:none;">
-              <i class="fas fa-times"></i> Temizle
-            </button>
+            <button onclick="pmSavePopup()" class="btn" style="background:var(--primary);flex:1;min-width:140px;height:44px;font-size:14px;"><i class="fas fa-save"></i> Kaydet & Yayınla</button>
+            <button onclick="pmClearForm()" class="btn" style="background:#95a5a6;width:auto;padding:0 20px;height:44px;flex:none;"><i class="fas fa-times"></i> Temizle</button>
           </div>
         </div>
-
-      </div><!-- /SOL -->
+      </div>
 
       <!-- SAĞ: ÖNİZLEME + LİSTE -->
       <div>
-        <!-- Önizleme -->
         <div class="pm-card" style="margin-bottom:18px;">
           <h4><i class="fas fa-eye" style="color:#3498db;"></i> Canlı Önizleme</h4>
-          <div style="background:#111;border-radius:14px;padding:30px 16px;display:flex;align-items:center;justify-content:center;min-height:320px;">
-            <div id="pm-preview-popup" style="border-radius:20px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4);width:100%;max-width:320px;">
-              <div id="pmp-header" style="background:#e63946;padding:18px 18px 12px;">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                  <span id="pmp-emoji" style="font-size:30px;line-height:1;">🎉</span>
-                  <button style="background:rgba(255,255,255,.25);border:none;color:white;width:26px;height:26px;border-radius:50%;font-size:14px;font-weight:bold;cursor:default;display:flex;align-items:center;justify-content:center;">×</button>
-                </div>
-                <div id="pmp-title" style="color:white;font-size:16px;font-weight:800;margin-top:10px;line-height:1.3;font-family:'Poppins',sans-serif;">Başlık buraya gelecek</div>
+          <div style="background:#111;border-radius:14px;padding:30px 16px;display:flex;align-items:center;justify-content:center;min-height:300px;">
+            <div id="pm-preview-box" style="border-radius:20px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4);width:100%;max-width:300px;">
+              <div id="pmp-header" style="background:#e63946;padding:18px 18px 12px;position:relative;">
+                <div style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,.25);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;">×</div>
+                <div id="pmp-emoji" style="font-size:28px;line-height:1;margin-bottom:8px;">🎉</div>
+                <div id="pmp-title" style="color:white;font-size:15px;font-weight:800;line-height:1.3;padding-right:30px;">Başlık buraya gelecek</div>
               </div>
-              <div id="pmp-body" style="background:white;padding:16px;">
-                <div id="pmp-message" style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;font-family:'Poppins',sans-serif;">Mesaj metni burada görünecek.</div>
-                <div id="pmp-img-container" style="display:none;border-radius:10px;overflow:hidden;margin-bottom:12px;max-height:120px;">
-                  <img id="pmp-img" src="" style="width:100%;object-fit:cover;max-height:120px;display:block;">
-                </div>
+              <div style="background:white;padding:14px 16px 16px;">
+                <div id="pmp-message" style="font-size:12px;color:#555;line-height:1.5;margin-bottom:12px;">Mesaj metni burada görünecek.</div>
                 <div style="display:flex;gap:8px;">
-                  <button id="pmp-main-btn" style="flex:1;padding:10px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:default;color:white;font-family:'Poppins',sans-serif;">Harika!</button>
-                  <button style="padding:10px 14px;background:#f0f0f0;border:none;border-radius:10px;font-size:12px;font-weight:600;cursor:default;color:#888;font-family:'Poppins',sans-serif;">Kapat</button>
+                  <button id="pmp-main-btn" style="flex:1;padding:9px;border:none;border-radius:10px;font-weight:700;font-size:12px;color:white;background:#e63946;">Harika!</button>
+                  <button style="padding:9px 12px;background:#f0f0f0;border:none;border-radius:10px;font-size:11px;font-weight:600;color:#888;">Kapat</button>
                 </div>
-                <div style="text-align:center;margin-top:8px;">
-                  <span id="pmp-target-badges" style="font-size:10px;color:#bbb;"></span>
-                </div>
+                <div style="text-align:center;margin-top:8px;"><span id="pmp-badges" style="font-size:10px;color:#bbb;"></span></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Kayıtlı Popuplar -->
         <div class="pm-card">
           <h4><i class="fas fa-list" style="color:#7f8c8d;"></i> Kayıtlı Duyurular</h4>
-          <div id="pm-popup-list">
-            <div style="text-align:center;color:#bbb;font-size:13px;padding:20px;">Yükleniyor...</div>
-          </div>
+          <div id="pm-popup-list"><div style="text-align:center;color:#bbb;font-size:13px;padding:20px;">Yükleniyor...</div></div>
         </div>
-
-      </div><!-- /SAĞ -->
-    </div><!-- /pm-grid -->
-
-    <!-- Firestore yapısı bilgi notu -->
-    <details style="background:white;border-radius:10px;border:1px solid #e8f4fd;overflow:hidden;margin-top:8px;">
-      <summary style="padding:12px 16px;cursor:pointer;font-size:12px;font-weight:700;color:#2980b9;background:#eaf4fd;list-style:none;">
-        📋 Firebase Yapısı — Geliştirici Notu
-      </summary>
-      <pre style="padding:16px;font-size:11px;color:#555;overflow-x:auto;line-height:1.6;margin:0;">
-// Collection: popups / Document ID: otomatik veya özel id
-{
-  id: "popup_001",
-  active: true,
-  emoji: "🎉",
-  title: "Haftasonu Kampanyası!",
-  message: "150₺ üzeri siparişlerde içecek bedava!",
-  imageUrl: "",           // opsiyonel
-  buttonText: "Harika!",
-  buttonLink: "",         // opsiyonel — tıklanınca yönlendir
-  bgColor: "#e63946",     // düz renk veya "gradient-fire" vb.
-  targets: {
-    siparis: true,        // sipariş uygulamasında göster
-    menu: true            // QR menüde göster
-  },
-  frequency: "once_per_day",  // once_per_day | once_per_session | every_visit | once_ever | until_date
-  untilDate: null,        // frequency=until_date ise ISO timestamp
-  delaySeconds: 1,
-  createdAt: Timestamp,
-  updatedAt: Timestamp
-}
-// menü.html ve onlinesiparis.html şu doc'u okur:
-// db.collection("popups").where("active","==",true)
-// ve targets.menu / targets.siparis filtreler
-      </pre>
-    </details>
-
-  </div><!-- /popup-manager tab -->
-
+      </div>
+    </div>
   </div>
-</div>
 
 </main>
 
-</body>
 <script>
-/* ══════════════════════════════════════════
-   DUYURU & POPUP YÖNETİM FONKSİYONLARI
-══════════════════════════════════════════ */
-
-// Düzenleme modu: mevcut popup id'si
-let pmEditingId = null;
-
-// Firestore gradient haritası
-const PM_GRADIENTS = {
+/* ══ POPUP MANAGER JS ══ */
+const PM_GRAD = {
   'gradient-fire':   'linear-gradient(135deg,#e63946,#f39c12)',
   'gradient-purple': 'linear-gradient(135deg,#667eea,#764ba2)',
   'gradient-green':  'linear-gradient(135deg,#11998e,#38ef7d)',
 };
+let pmEditId = null;
 
-function pmGetBg(color) {
-  return PM_GRADIENTS[color] || color;
-}
+function pmGetBg(c){ return PM_GRAD[c] || c; }
 
-// ── Emoji seç ──
-function selectEmoji(el, emoji) {
-  document.getElementById('pm-emoji').value = emoji;
-  document.querySelectorAll('#pm-emoji-row span').forEach(s => s.style.border = '2px solid transparent');
-  el.style.border = '2px solid var(--primary)';
-  el.style.background = '#fff8f5';
-  updatePreview();
-}
+window.pmSelectEmoji = function(el, e) {
+  document.getElementById('pm-emoji').value = e;
+  document.querySelectorAll('#pm-emoji-row span').forEach(s=>{s.style.border='2px solid transparent';s.style.background='';});
+  el.style.border='2px solid var(--primary)';el.style.background='#fff8f5';
+  pmUpdatePreview();
+};
 
-// ── Renk seç ──
-function setColor(c) {
-  document.getElementById('pm-color').value = (c.startsWith('gradient') ? '#e63946' : c);
+window.pmSetColor = function(c, el) {
+  document.getElementById('pm-color').value = c.startsWith('gradient') ? '#e63946' : c;
   document.getElementById('pm-color').dataset.gradient = c.startsWith('gradient') ? c : '';
-  document.querySelectorAll('.pm-preset-color').forEach(d => d.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
-  updatePreview();
-}
+  document.querySelectorAll('.pm-preset-color').forEach(d=>d.classList.remove('selected'));
+  el.classList.add('selected');
+  pmUpdatePreview();
+};
 
-// ── Hedef toggle ──
-function toggleTarget(id) {
-  const cb = document.getElementById('pm-target-' + id);
-  cb.checked = !cb.checked;
-  updatePreview();
-}
+window.pmOnFrequencyChange = function() {
+  document.getElementById('pm-until-date-row').style.display =
+    document.getElementById('pm-frequency').value === 'until_date' ? 'block' : 'none';
+};
 
-// ── Gösterim sıklığı değişince tarih alanı göster/gizle ──
-function onFrequencyChange() {
-  const v = document.getElementById('pm-frequency').value;
-  document.getElementById('pm-until-date-row').style.display = (v === 'until_date') ? 'block' : 'none';
-  updatePreview();
-}
-
-// ── Mesaj karakter sayacı ──
-document.addEventListener('DOMContentLoaded', function() {
-  const msgEl = document.getElementById('pm-message');
-  if (msgEl) {
-    msgEl.addEventListener('input', function() {
-      document.getElementById('pm-char').textContent = this.value.length;
-    });
-  }
-  // Sayfa yüklenince popup listesini çek
-  // (showTab 'popup-manager' çağırılınca tetiklenir, aşağıdaki hook'ta)
-});
-
-// ── Canlı önizleme güncelle ──
-function updatePreview() {
+window.pmUpdatePreview = function() {
   const emoji   = document.getElementById('pm-emoji').value || '🎉';
   const title   = document.getElementById('pm-title').value || 'Başlık buraya gelecek';
   const message = document.getElementById('pm-message').value || 'Mesaj metni burada görünecek.';
   const btnText = document.getElementById('pm-btn-text').value || 'Harika!';
-  const imgUrl  = document.getElementById('pm-image').value;
-  const active  = document.getElementById('pm-active').checked;
-
-  // Renk
   const colorEl = document.getElementById('pm-color');
-  const gradient = colorEl.dataset.gradient;
-  const bgStyle = gradient ? pmGetBg(gradient) : colorEl.value;
-
-  // Header
-  document.getElementById('pmp-emoji').textContent = emoji;
-  document.getElementById('pmp-title').textContent = title;
-  document.getElementById('pmp-header').style.background = bgStyle;
-  document.getElementById('pmp-main-btn').style.background = bgStyle;
-  document.getElementById('pmp-main-btn').textContent = btnText;
-
-  // Message
-  document.getElementById('pmp-message').textContent = message;
-
-  // Image
-  const imgC = document.getElementById('pmp-img-container');
-  if (imgUrl) {
-    document.getElementById('pmp-img').src = imgUrl;
-    imgC.style.display = 'block';
-  } else {
-    imgC.style.display = 'none';
-  }
-
-  // Hedef badges
+  const bg = pmGetBg(colorEl.dataset.gradient || colorEl.value);
   const siparis = document.getElementById('pm-target-siparis').checked;
   const menu    = document.getElementById('pm-target-menu').checked;
-  let badges = [];
-  if (siparis) badges.push('🛒 Sipariş');
-  if (menu)    badges.push('🍽️ Menü');
-  if (!active) badges.push('⛔ Pasif');
-  document.getElementById('pmp-target-badges').textContent = badges.join(' · ');
+  const active  = document.getElementById('pm-active').checked;
 
-  // Opacity
-  document.getElementById('pm-preview-popup').style.opacity = active ? '1' : '0.5';
-}
+  document.getElementById('pmp-emoji').textContent   = emoji;
+  document.getElementById('pmp-title').textContent   = title;
+  document.getElementById('pmp-message').textContent = message;
+  document.getElementById('pmp-main-btn').textContent = btnText;
+  document.getElementById('pmp-header').style.background = bg;
+  document.getElementById('pmp-main-btn').style.background = bg;
 
-// ── Görsel önizle ──
-function previewPopupImg() {
-  const url = document.getElementById('pm-image').value;
-  if (!url) return;
-  document.getElementById('pmp-img').src = url;
-  document.getElementById('pmp-img-container').style.display = 'block';
-}
+  const badges = [];
+  if(siparis) badges.push('🛒 Sipariş');
+  if(menu)    badges.push('🍽️ Menü');
+  if(!active) badges.push('⛔ Pasif');
+  document.getElementById('pmp-badges').textContent = badges.join(' · ');
+  document.getElementById('pm-preview-box').style.opacity = active ? '1' : '0.5';
+};
 
-// ── Kaydet / Güncelle ──
-async function savePopup() {
+window.pmSavePopup = async function() {
   const title   = document.getElementById('pm-title').value.trim();
   const message = document.getElementById('pm-message').value.trim();
-  if (!title)   { showToast('Başlık boş olamaz!', true); return; }
-  if (!message) { showToast('Mesaj boş olamaz!', true); return; }
+  if(!title)   { toast('Başlık boş olamaz!', true); return; }
+  if(!message) { toast('Mesaj boş olamaz!', true); return; }
 
   const colorEl  = document.getElementById('pm-color');
-  const gradient = colorEl.dataset.gradient;
-  const bgColor  = gradient || colorEl.value;
-
-  const freq      = document.getElementById('pm-frequency').value;
-  const untilDate = freq === 'until_date'
-    ? document.getElementById('pm-until-date').value || null
-    : null;
+  const bgColor  = colorEl.dataset.gradient || colorEl.value;
+  const freq     = document.getElementById('pm-frequency').value;
+  const untilDate = freq === 'until_date' ? (document.getElementById('pm-until-date').value || null) : null;
 
   const data = {
     active:       document.getElementById('pm-active').checked,
     emoji:        document.getElementById('pm-emoji').value || '🎉',
-    title,
-    message,
+    title, message,
     imageUrl:     document.getElementById('pm-image').value.trim(),
     buttonText:   document.getElementById('pm-btn-text').value.trim() || 'Harika!',
     buttonLink:   document.getElementById('pm-btn-link').value.trim(),
-    bgColor,
+    bgColor, untilDate, frequency: freq,
+    delaySeconds: parseInt(document.getElementById('pm-delay').value) || 1,
     targets: {
       siparis: document.getElementById('pm-target-siparis').checked,
       menu:    document.getElementById('pm-target-menu').checked,
     },
-    frequency:    freq,
-    untilDate:    untilDate,
-    delaySeconds: parseInt(document.getElementById('pm-delay').value) || 1,
-    updatedAt:    firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   };
 
   try {
-    if (pmEditingId) {
-      await db.collection('popups').doc(pmEditingId).update(data);
-      showToast('Popup güncellendi ✅');
+    if(pmEditId) {
+      await db.collection('popups').doc(pmEditId).update(data);
+      toast('Popup güncellendi ✅');
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection('popups').add(data);
-      showToast('Popup kaydedildi & yayınlandı 🎉');
+      toast('Popup kaydedildi 🎉');
     }
-    clearPopupForm();
-    loadPopups();
-  } catch(e) {
-    showToast('Kayıt hatası: ' + e.message, true);
-  }
-}
+    pmClearForm(); loadPopups();
+  } catch(e) { toast('Kayıt hatası: '+e.message, true); }
+};
 
-// ── Formu temizle ──
-function clearPopupForm() {
-  pmEditingId = null;
+window.pmClearForm = function() {
+  pmEditId = null;
+  ['pm-title','pm-message','pm-image','pm-btn-link'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pm-emoji').value    = '🎉';
-  document.getElementById('pm-title').value    = '';
-  document.getElementById('pm-message').value  = '';
-  document.getElementById('pm-image').value    = '';
   document.getElementById('pm-btn-text').value = 'Harika!';
-  document.getElementById('pm-btn-link').value = '';
   document.getElementById('pm-color').value    = '#e63946';
   document.getElementById('pm-color').dataset.gradient = '';
   document.getElementById('pm-active').checked = true;
@@ -4824,74 +4652,58 @@ function clearPopupForm() {
   document.getElementById('pm-delay').value = '1';
   document.getElementById('pm-delay-val').textContent = '1sn';
   document.getElementById('pm-char').textContent = '0';
-  document.querySelectorAll('.pm-preset-color').forEach(d => d.classList.remove('selected'));
-  document.querySelectorAll('#pm-emoji-row span').forEach(s => {
-    s.style.border = '2px solid transparent';
-    s.style.background = '';
-  });
-  updatePreview();
-}
+  document.querySelectorAll('.pm-preset-color').forEach(d=>d.classList.remove('selected'));
+  document.querySelectorAll('#pm-emoji-row span').forEach(s=>{s.style.border='2px solid transparent';s.style.background='';});
+  pmUpdatePreview();
+};
 
-// ── Popup listesini yükle ──
-async function loadPopups() {
+window.loadPopups = async function() {
   const listEl = document.getElementById('pm-popup-list');
-  if (!listEl) return;
+  if(!listEl) return;
   listEl.innerHTML = '<div style="text-align:center;color:#bbb;font-size:13px;padding:20px;">Yükleniyor...</div>';
   try {
     const snap = await db.collection('popups').orderBy('createdAt','desc').get();
-    if (snap.empty) {
-      listEl.innerHTML = '<div style="text-align:center;color:#bbb;font-size:13px;padding:20px;">Henüz popup oluşturulmadı.</div>';
-      return;
-    }
+    if(snap.empty){ listEl.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:20px;">Henüz popup oluşturulmadı.</div>'; return; }
+    const freqLabels = { once_per_day:'Günde 1 kez', once_per_session:'Her oturumda', every_visit:'Her ziyarette', once_ever:'Tek seferlik', until_date:'Tarihe kadar' };
     listEl.innerHTML = '';
     snap.forEach(doc => {
       const d = doc.data();
       const bg = pmGetBg(d.bgColor || '#e63946');
-      const freqLabels = {
-        once_per_day: 'Günde 1 kez', once_per_session: 'Her oturumda',
-        every_visit: 'Her ziyarette', once_ever: 'Tek seferlik',
-        until_date: 'Tarihe kadar',
-      };
       const targets = [];
-      if (d.targets?.siparis) targets.push('🛒 Sipariş');
-      if (d.targets?.menu)    targets.push('🍽️ Menü');
-
+      if(d.targets?.siparis) targets.push('🛒 Sipariş');
+      if(d.targets?.menu)    targets.push('🍽️ Menü');
       const item = document.createElement('div');
       item.className = 'pp-list-item' + (d.active ? ' is-active' : '');
       item.innerHTML = `
         <div style="width:38px;height:38px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${d.emoji||'📢'}</div>
         <div style="flex:1;min-width:0;">
-          <div class="pp-item-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title||'—'}</div>
-          <div class="pp-item-meta">
+          <div style="font-weight:700;font-size:14px;color:#2c3e50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title||'—'}</div>
+          <div style="font-size:11px;color:#95a5a6;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;">
             <span class="pp-tag ${d.active?'green':'red'}">${d.active?'✅ Aktif':'⛔ Pasif'}</span>
             ${targets.map(t=>`<span class="pp-tag blue">${t}</span>`).join('')}
-            <span class="pp-tag orange">${freqLabels[d.frequency]||d.frequency}</span>
+            <span class="pp-tag orange">${freqLabels[d.frequency]||d.frequency||''}</span>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
-          <button class="pm-action-btn" style="background:var(--primary);color:white;" onclick="editPopup('${doc.id}')"><i class="fas fa-edit"></i> Düzenle</button>
-          <button class="pm-action-btn" style="background:${d.active?'#e67e22':'#27ae60'};color:white;" onclick="togglePopupActive('${doc.id}',${d.active})">${d.active?'⛔ Durdur':'▶️ Aktifleştir'}</button>
-          <button class="pm-action-btn" style="background:#fdedec;color:#c0392b;" onclick="deletePopup('${doc.id}')"><i class="fas fa-trash"></i> Sil</button>
-        </div>
-      `;
+          <button class="pm-action-btn" style="background:var(--primary);color:white;" onclick="pmEditPopup('${doc.id}')"><i class="fas fa-edit"></i> Düzenle</button>
+          <button class="pm-action-btn" style="background:${d.active?'#e67e22':'#27ae60'};color:white;" onclick="pmToggleActive('${doc.id}',${!!d.active})">${d.active?'⛔ Durdur':'▶️ Aktifleştir'}</button>
+          <button class="pm-action-btn" style="background:#fdedec;color:#c0392b;" onclick="pmDeletePopup('${doc.id}')"><i class="fas fa-trash"></i> Sil</button>
+        </div>`;
       listEl.appendChild(item);
     });
-  } catch(e) {
-    listEl.innerHTML = `<div style="color:#c0392b;font-size:13px;padding:16px;">Hata: ${e.message}</div>`;
-  }
-}
+  } catch(e) { listEl.innerHTML=`<div style="color:#c0392b;font-size:13px;padding:16px;">Hata: ${e.message}</div>`; }
+};
 
-// ── Düzenleme moduna geç ──
-async function editPopup(id) {
+window.pmEditPopup = async function(id) {
   try {
-    const doc = await db.collection('popups').doc(id).get();
-    if (!doc.exists) return;
-    const d = doc.data();
-    pmEditingId = id;
-
+    const docSnap = await db.collection('popups').doc(id).get();
+    if(!docSnap.exists) return;
+    const d = docSnap.data();
+    pmEditId = id;
     document.getElementById('pm-emoji').value    = d.emoji || '🎉';
     document.getElementById('pm-title').value    = d.title || '';
     document.getElementById('pm-message').value  = d.message || '';
+    document.getElementById('pm-char').textContent = (d.message||'').length;
     document.getElementById('pm-image').value    = d.imageUrl || '';
     document.getElementById('pm-btn-text').value = d.buttonText || 'Harika!';
     document.getElementById('pm-btn-link').value = d.buttonLink || '';
@@ -4899,66 +4711,38 @@ async function editPopup(id) {
     document.getElementById('pm-target-siparis').checked = d.targets?.siparis !== false;
     document.getElementById('pm-target-menu').checked    = d.targets?.menu !== false;
     document.getElementById('pm-frequency').value = d.frequency || 'once_per_day';
-    document.getElementById('pm-delay').value     = d.delaySeconds || 1;
-    document.getElementById('pm-delay-val').textContent = (d.delaySeconds||1) + 'sn';
-    document.getElementById('pm-char').textContent = (d.message||'').length;
-
-    // Renk
-    if (d.bgColor && !d.bgColor.startsWith('gradient')) {
+    document.getElementById('pm-delay').value = d.delaySeconds || 1;
+    document.getElementById('pm-delay-val').textContent = (d.delaySeconds||1)+'sn';
+    if(d.bgColor && !d.bgColor.startsWith('gradient')) {
       document.getElementById('pm-color').value = d.bgColor;
       document.getElementById('pm-color').dataset.gradient = '';
-    } else if (d.bgColor) {
+    } else if(d.bgColor) {
       document.getElementById('pm-color').dataset.gradient = d.bgColor;
     }
-
-    onFrequencyChange();
-    if (d.frequency === 'until_date' && d.untilDate) {
-      document.getElementById('pm-until-date').value = d.untilDate;
-    }
-
-    updatePreview();
-    // Forma scroll
+    pmOnFrequencyChange();
+    if(d.frequency==='until_date' && d.untilDate) document.getElementById('pm-until-date').value = d.untilDate;
+    pmUpdatePreview();
     document.querySelector('#popup-manager .pm-card').scrollIntoView({behavior:'smooth'});
-    showToast('Düzenleme moduna geçildi');
-  } catch(e) {
-    showToast('Yüklenemedi: ' + e.message, true);
-  }
-}
+    toast('Düzenleme moduna geçildi');
+  } catch(e) { toast('Yüklenemedi: '+e.message, true); }
+};
 
-// ── Aktif/pasif değiştir ──
-async function togglePopupActive(id, isActive) {
+window.pmToggleActive = async function(id, isActive) {
   try {
-    await db.collection('popups').doc(id).update({
-      active: !isActive,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showToast(isActive ? 'Popup durduruldu' : 'Popup aktifleştirildi ✅');
+    await db.collection('popups').doc(id).update({ active: !isActive, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    toast(isActive ? 'Popup durduruldu' : 'Popup aktifleştirildi ✅');
     loadPopups();
-  } catch(e) {
-    showToast('Hata: ' + e.message, true);
-  }
-}
+  } catch(e) { toast('Hata: '+e.message, true); }
+};
 
-// ── Popup sil ──
-async function deletePopup(id) {
-  if (!confirm('Bu popup\'ı kalıcı olarak silmek istiyor musunuz?')) return;
+window.pmDeletePopup = async function(id) {
+  if(!confirm('Bu popup\'ı kalıcı olarak silmek istiyor musunuz?')) return;
   try {
     await db.collection('popups').doc(id).delete();
-    showToast('Popup silindi');
-    if (pmEditingId === id) clearPopupForm();
+    toast('Popup silindi');
+    if(pmEditId===id) pmClearForm();
     loadPopups();
-  } catch(e) {
-    showToast('Silinemedi: ' + e.message, true);
-  }
-}
-
-// ── showTab hook: popup-manager sekmesi açılınca yükle ──
-const _origShowTab = typeof showTab === 'function' ? showTab : null;
-// showTab panelde zaten tanımlı; sadece popup-manager için hook ekleyelim
-document.addEventListener('click', function(e) {
-  const mi = e.target.closest('.mi');
-  if (mi && mi.getAttribute('onclick') && mi.getAttribute('onclick').includes('popup-manager')) {
-    setTimeout(loadPopups, 100);
-  }
-});
+  } catch(e) { toast('Silinemedi: '+e.message, true); }
+};
 </script>
+</html>
