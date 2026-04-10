@@ -405,12 +405,12 @@ input:checked+.slider:before{transform:translateX(24px);}
   <div class="mi active" onclick="showTab('dashboard',this)"><i class="fas fa-th-large"></i> Sipariş Paneli <span id="pbadge" class="badge">0</span></div>
   <div class="mi" onclick="showTab('courier-panel',this)"><i class="fas fa-motorcycle"></i> Kurye Yönetimi</div>
   <div class="mi" onclick="showTab('products',this)"><i class="fas fa-hamburger"></i> Menü Yönetimi</div>
+  <div class="mi" onclick="showTab('qr-menu',this)"><i class="fas fa-qrcode"></i> QR Menü Düzenle</div>
   <div class="mi" onclick="showTab('customers',this)"><i class="fas fa-users"></i> Müşteriler</div>
 
   <div style="font-size:10px;color:rgba(255,255,255,.35);padding:10px 18px 4px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Pazarlama</div>
   <div class="mi" onclick="showTab('campaigns',this)"><i class="fas fa-tags"></i> Kampanyalar</div>
   <div class="mi" onclick="showTab('coupons',this)"><i class="fas fa-ticket-alt"></i> Kuponlar</div>
-  <div class="mi" onclick="showTab('popup-manager',this)"><i class="fas fa-bullhorn"></i> Duyuru & Popup</div>
   <div class="mi" onclick="showTab('vip-settings',this)"><i class="fas fa-crown"></i> VIP & Puan</div>
 
   <div style="font-size:10px;color:rgba(255,255,255,.35);padding:10px 18px 4px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Bildirimler</div>
@@ -3041,7 +3041,7 @@ window.showTab=(id,el)=>{
   if(id==='courier-panel') loadCourierPanel();
   if(id==='vip-settings'){ loadVipSettings(); loadVipStats(); }
   if(id==='complaints') loadComplaints();
-  if(id==='popup-manager') pmLoadList();
+  if(id==='qr-menu') qrMenuInit();
 };
 
 // ── ÇALIŞMA SAATLERİ ────────────────────────────────────────────────────────
@@ -4256,6 +4256,202 @@ window.loadVipStats=async()=>{
       <div style="font-size:12px;color:#aaa;">Toplam ${total} aktif müşteri · Son 30 günlük teslimlara göre</div>`;
   }catch(e){ el.innerHTML=`<div style="color:red;font-size:13px;">Yüklenemedi: ${e.message}</div>`; }
 };
+
+/* ══════════════════════════════════════════════════════
+   QR MENÜ YÖNETİMİ
+══════════════════════════════════════════════════════ */
+let qrEditProdId = null;
+let qrEditCatId  = null;
+
+window.qrMenuInit = async function() {
+  await Promise.all([qrLoadCategories(), qrLoadProducts()]);
+};
+
+// ── KATEGORİLER ──
+window.qrLoadCategories = async function() {
+  const el = document.getElementById('qr-cat-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:10px;">Yükleniyor...</div>';
+  try {
+    const snap = await getDocs(query(collection(db,'menuCategories'), orderBy('order')));
+    // Kategori select'i de doldur
+    const sel = document.getElementById('qr-prod-cat');
+    if (sel) { sel.innerHTML = ''; snap.forEach(d=>{ const o=document.createElement('option'); o.value=d.id; o.textContent=d.data().name; sel.appendChild(o); }); }
+    if (snap.empty) { el.innerHTML='<div style="color:#bbb;font-size:13px;padding:10px;">Henüz kategori yok.</div>'; return; }
+    el.innerHTML = '';
+    snap.forEach(d => {
+      const c = d.data();
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border-radius:10px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid '+(c.active!==false?'var(--primary)':'#ccc')+';';
+      row.innerHTML = `
+        <span style="font-size:22px;flex-shrink:0;">${c.emoji||'📋'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;">${c.name||'—'}</div>
+          <div style="font-size:11px;color:#999;">Sıra: ${c.order||0} · ${c.active!==false?'<span style="color:#27ae60;">Aktif</span>':'<span style="color:#bbb;">Pasif</span>'}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn" onclick="qrEditCat('${d.id}')" style="background:#3498db;width:auto;padding:5px 10px;font-size:12px;"><i class="fas fa-edit"></i></button>
+          <button class="btn" onclick="qrToggleCat('${d.id}',${c.active!==false})" style="background:${c.active!==false?'#e67e22':'#27ae60'};width:auto;padding:5px 10px;font-size:12px;">${c.active!==false?'⛔':'✅'}</button>
+          <button class="btn" onclick="qrDeleteCat('${d.id}')" style="background:#c0392b;width:auto;padding:5px 10px;font-size:12px;"><i class="fas fa-trash"></i></button>
+        </div>`;
+      el.appendChild(row);
+    });
+  } catch(e) { el.innerHTML=`<div style="color:#c0392b;font-size:13px;">Hata: ${e.message}</div>`; }
+};
+
+window.qrSaveCat = async function() {
+  const name  = document.getElementById('qr-cat-name').value.trim();
+  const emoji = document.getElementById('qr-cat-emoji').value.trim() || '📋';
+  const order = parseInt(document.getElementById('qr-cat-order').value) || 0;
+  if (!name) { toast('Kategori adı boş olamaz!',true); return; }
+  const data = { name, emoji, order, active: true, updatedAt: serverTimestamp() };
+  try {
+    if (qrEditCatId) {
+      await updateDoc(doc(db,'menuCategories',qrEditCatId), data);
+      toast('Kategori güncellendi ✅');
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db,'menuCategories'), data);
+      toast('Kategori eklendi ✅');
+    }
+    qrEditCatId = null;
+    document.getElementById('qr-cat-name').value = '';
+    document.getElementById('qr-cat-emoji').value = '';
+    document.getElementById('qr-cat-order').value = '';
+    document.getElementById('qr-cat-save-btn').textContent = '+ Ekle';
+    qrLoadCategories();
+  } catch(e) { toast('Hata: '+e.message,true); }
+};
+
+window.qrEditCat = async function(id) {
+  const snap = await getDoc(doc(db,'menuCategories',id));
+  if (!snap.exists()) return;
+  const c = snap.data(); qrEditCatId = id;
+  document.getElementById('qr-cat-name').value  = c.name||'';
+  document.getElementById('qr-cat-emoji').value = c.emoji||'';
+  document.getElementById('qr-cat-order').value = c.order||0;
+  document.getElementById('qr-cat-save-btn').textContent = '💾 Güncelle';
+  document.getElementById('qr-cat-name').focus();
+};
+
+window.qrToggleCat = async function(id, isActive) {
+  await updateDoc(doc(db,'menuCategories',id), {active:!isActive, updatedAt:serverTimestamp()});
+  toast(isActive?'Kategori gizlendi':'Kategori gösterildi ✅');
+  qrLoadCategories();
+};
+
+window.qrDeleteCat = async function(id) {
+  if (!confirm('Kategoriyi sil? İçindeki ürünler silinmez.')) return;
+  await deleteDoc(doc(db,'menuCategories',id));
+  toast('Kategori silindi'); qrLoadCategories();
+};
+
+// ── ÜRÜNLER ──
+window.qrLoadProducts = async function() {
+  const el = document.getElementById('qr-prod-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:10px;">Yükleniyor...</div>';
+  try {
+    const [prodSnap, catSnap] = await Promise.all([
+      getDocs(query(collection(db,'products'), orderBy('order'))),
+      getDocs(collection(db,'menuCategories'))
+    ]);
+    const catMap = {}; catSnap.forEach(d=>{ catMap[d.id]=d.data().name; catMap[d.data().name]=d.data().name; });
+    if (prodSnap.empty) { el.innerHTML='<div style="color:#bbb;font-size:13px;padding:10px;">Henüz ürün yok.</div>'; return; }
+    // Kategoriye göre grupla
+    const groups = {};
+    prodSnap.forEach(d => {
+      const p = d.data();
+      const cat = p.menuCategory || p.category || 'Diğer';
+      const catName = catMap[cat] || cat;
+      if (!groups[catName]) groups[catName] = [];
+      groups[catName].push({id:d.id, ...p});
+    });
+    el.innerHTML = '';
+    Object.entries(groups).forEach(([catName, prods]) => {
+      const header = document.createElement('div');
+      header.style.cssText = 'background:#34495e;color:white;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;';
+      header.textContent = catName + ' (' + prods.length + ')';
+      el.appendChild(header);
+      prods.forEach(p => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid '+(p.inStock!==false?'#27ae60':'#e74c3c')+';';
+        row.innerHTML = `
+          ${p.image?`<img src="${p.image}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`:`<div style="width:44px;height:44px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🍽</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name||'—'}</div>
+            <div style="font-size:11px;color:#999;margin-top:2px;">${p.description||''}</div>
+            <div style="font-size:13px;font-weight:800;color:var(--primary);margin-top:2px;">${p.price||0} ₺ ${p.subPrice?'<span style="font-size:11px;color:#888;font-weight:600;">· '+p.subPrice+'</span>':''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+            <label class="switch" title="${p.inStock!==false?'Stokta':'Stok yok'}"><input type="checkbox" ${p.inStock!==false?'checked':''} onchange="qrToggleStock('${p.id}',this.checked)"><span class="slider"></span></label>
+            <button class="btn" onclick="qrEditProd('${p.id}')" style="background:#3498db;width:auto;padding:4px 8px;font-size:11px;"><i class="fas fa-edit"></i></button>
+            <button class="btn" onclick="qrDeleteProd('${p.id}','${(p.name||'').replace(/'/g,"\\'")}' )" style="background:#c0392b;width:auto;padding:4px 8px;font-size:11px;"><i class="fas fa-trash"></i></button>
+          </div>`;
+        el.appendChild(row);
+      });
+    });
+  } catch(e) { el.innerHTML=`<div style="color:#c0392b;font-size:13px;">Hata: ${e.message}</div>`; }
+};
+
+window.qrSaveProd = async function() {
+  const name     = document.getElementById('qr-prod-name').value.trim();
+  const price    = parseFloat(document.getElementById('qr-prod-price').value);
+  const subPrice = document.getElementById('qr-prod-subprice').value.trim();
+  const desc     = document.getElementById('qr-prod-desc').value.trim();
+  const image    = document.getElementById('qr-prod-image').value.trim();
+  const catEl    = document.getElementById('qr-prod-cat');
+  const catId    = catEl?.value || '';
+  const catName  = catEl?.options[catEl.selectedIndex]?.text || catId;
+  const order    = parseInt(document.getElementById('qr-prod-order').value) || 99;
+  if (!name) { toast('Ürün adı boş olamaz!',true); return; }
+  if (isNaN(price)) { toast('Geçerli bir fiyat gir!',true); return; }
+  const data = { name, price, description:desc, image:image||null, subPrice, category:catName, menuCategory:catName, order, inStock:true, options:[], updatedAt:serverTimestamp() };
+  try {
+    if (qrEditProdId) {
+      await updateDoc(doc(db,'products',qrEditProdId), data);
+      toast('Ürün güncellendi ✅');
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db,'products'), data);
+      toast('Ürün eklendi ✅');
+    }
+    qrEditProdId = null;
+    ['qr-prod-name','qr-prod-price','qr-prod-subprice','qr-prod-desc','qr-prod-image','qr-prod-order'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('qr-prod-save-btn').textContent = '+ Ürün Ekle';
+    qrLoadProducts();
+  } catch(e) { toast('Hata: '+e.message,true); }
+};
+
+window.qrEditProd = async function(id) {
+  const snap = await getDoc(doc(db,'products',id));
+  if (!snap.exists()) return;
+  const p = snap.data(); qrEditProdId = id;
+  document.getElementById('qr-prod-name').value     = p.name||'';
+  document.getElementById('qr-prod-price').value    = p.price||'';
+  document.getElementById('qr-prod-subprice').value = p.subPrice||'';
+  document.getElementById('qr-prod-desc').value     = p.description||'';
+  document.getElementById('qr-prod-image').value    = p.image||'';
+  document.getElementById('qr-prod-order').value    = p.order||99;
+  // Kategori seç
+  const sel = document.getElementById('qr-prod-cat');
+  if (sel) { [...sel.options].forEach(o=>{ if(o.text===(p.menuCategory||p.category)) sel.value=o.value; }); }
+  document.getElementById('qr-prod-save-btn').textContent = '💾 Güncelle';
+  document.querySelector('#qr-menu .qr-prod-form').scrollIntoView({behavior:'smooth'});
+  toast('Düzenleme modu');
+};
+
+window.qrToggleStock = async function(id, val) {
+  await updateDoc(doc(db,'products',id), {inStock:val, updatedAt:serverTimestamp()});
+  toast(val?'Stokta ✅':'Stok kapalı 🚫');
+};
+
+window.qrDeleteProd = async function(id, name) {
+  if (!confirm(`"${name}" ürününü silmek istiyor musunuz?`)) return;
+  await deleteDoc(doc(db,'products',id));
+  toast('Ürün silindi'); qrLoadProducts();
+};
+/* ── QR MENÜ SONU ── */
 </script>
 
 <!-- ŞİKAYETLER SEKMESİ -->
@@ -4336,376 +4532,81 @@ window.loadVipStats=async()=>{
   </div>
 </div>
 
-<!-- DUYURU & POPUP YÖNETİMİ -->
-<div id="popup-manager" class="tab">
+<!-- QR MENÜ YÖNETİMİ -->
+<div id="qr-menu" class="tab">
 <style>
-.pm-card{background:white;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:16px;}
-.pm-card h4{margin:0 0 14px;color:var(--dark);font-size:15px;}
-.pm-label{font-size:11px;font-weight:700;color:#7f8c8d;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
-.pm-input{width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;}
-.pm-input:focus{border-color:var(--primary);outline:none;}
-.pm-row{margin-bottom:12px;}
-.pm-grid2{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start;}
-@media(max-width:1000px){.pm-grid2{grid-template-columns:1fr;}}
-/* Popup liste kartı */
-.pp-card{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px;display:flex;align-items:center;gap:12px;border-left:5px solid #ddd;transition:.2s;}
-.pp-card.on{border-left-color:#27ae60;}
-.pp-card.off{border-left-color:#bbb;opacity:.7;}
-.pp-status{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
-.pp-status.on{background:#e8f8f5;color:#27ae60;}
-.pp-status.off{background:#f5f5f5;color:#999;}
-.pp-dot{width:8px;height:8px;border-radius:50%;}
-.pp-dot.on{background:#27ae60;animation:pulse2 1.5s infinite;}
-.pp-dot.off{background:#bbb;}
-@keyframes pulse2{0%{box-shadow:0 0 0 0 rgba(39,174,96,.5);}100%{box-shadow:0 0 0 6px rgba(39,174,96,0);}}
-.pp-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#ecf0f1;color:#7f8c8d;margin-right:4px;}
-.pp-tag.blue{background:#eaf4fd;color:#2980b9;}
-.pp-tag.orange{background:#fef5e7;color:#e67e22;}
-.pm-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f8f9fa;border-radius:10px;margin-bottom:8px;border:1.5px solid #eee;}
-.pm-toggle-row.on{border-color:var(--primary);background:#fff8f5;}
-.pm-big-toggle{position:relative;display:inline-block;width:52px;height:26px;flex-shrink:0;}
-.pm-big-toggle input{opacity:0;width:0;height:0;}
-.pm-big-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;transition:.3s;border-radius:34px;}
-.pm-big-slider:before{position:absolute;content:"";height:18px;width:18px;left:4px;bottom:4px;background:white;transition:.3s;border-radius:50%;}
-input:checked+.pm-big-slider{background:var(--primary);}
-input:checked+.pm-big-slider:before{transform:translateX(26px);}
-/* Önizleme */
-#pm-preview{border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.3);width:100%;max-width:300px;margin:0 auto;}
-.pmp-hd{padding:16px 16px 12px;position:relative;}
-.pmp-close-demo{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.3);border:none;color:white;width:24px;height:24px;border-radius:50%;font-size:13px;font-weight:bold;cursor:default;display:flex;align-items:center;justify-content:center;}
-.pmp-body{background:white;padding:14px 16px 16px;}
+.qr-section{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:18px;}
+.qr-section h4{margin:0 0 14px;color:var(--dark);font-size:15px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #f0f0f0;padding-bottom:10px;}
+.qr-label{font-size:11px;font-weight:700;color:#7f8c8d;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.qr-input{width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;}
+.qr-input:focus{border-color:var(--primary);outline:none;}
+.qr-row{margin-bottom:10px;}
+.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:900px){.qr-grid{grid-template-columns:1fr;}}
+.qr-prod-form{background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px;border:2px dashed #e0e0e0;}
+.qr-prod-form.editing{border-color:var(--primary);background:#fff8f5;}
 </style>
-
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-  <h3 style="margin:0;">📢 Duyuru & Popup Yönetimi</h3>
-  <button onclick="pmLoadList()" class="btn" style="width:auto;background:#3498db;padding:8px 16px;flex:none;"><i class="fas fa-sync-alt"></i> Yenile</button>
+  <h3 style="margin:0;">🍽️ QR Menü Düzenle</h3>
+  <button onclick="qrMenuInit()" class="btn" style="width:auto;background:#3498db;padding:8px 14px;flex:none;"><i class="fas fa-sync-alt"></i> Yenile</button>
 </div>
 
-<div class="pm-grid2">
-  <!-- SOL: FORM -->
+<div class="qr-grid">
+  <!-- SOL: KATEGORİLER -->
   <div>
-    <div class="pm-card">
-      <h4><i class="fas fa-edit" style="color:var(--primary);"></i> Popup İçeriği</h4>
-      <input type="hidden" id="pm-edit-id">
-      <div class="pm-row"><label class="pm-label">Emoji</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'🎉')">🎉</span>
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'🔥')">🔥</span>
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'🎁')">🎁</span>
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'⚡')">⚡</span>
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'📣')">📣</span>
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'💥')">💥</span>
-          <span style="font-size:20px;cursor:pointer;padding:3px 7px;border-radius:6px;border:2px solid transparent;" onclick="pmEmoji(this,'🌟')">🌟</span>
-          <input type="text" id="pm-emoji" class="pm-input" style="width:60px;text-align:center;font-size:16px;" value="🎉" oninput="pmPreview()">
+    <div class="qr-section">
+      <h4><i class="fas fa-layer-group" style="color:#9b59b6;"></i> Kategoriler</h4>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <div class="qr-row"><label class="qr-label">Kategori Adı *</label><input type="text" id="qr-cat-name" class="qr-input" placeholder="Örn: Dönerler, Pideler..."></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="qr-row"><label class="qr-label">Emoji</label><input type="text" id="qr-cat-emoji" class="qr-input" placeholder="🌯" style="text-align:center;font-size:18px;"></div>
+          <div class="qr-row"><label class="qr-label">Sıra</label><input type="number" id="qr-cat-order" class="qr-input" placeholder="1,2,3..." min="0"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="qr-cat-save-btn" onclick="qrSaveCat()" class="btn" style="background:var(--primary);flex:1;height:38px;font-size:13px;">+ Ekle</button>
+          <button onclick="qrEditCatId=null;document.getElementById('qr-cat-name').value='';document.getElementById('qr-cat-emoji').value='';document.getElementById('qr-cat-order').value='';document.getElementById('qr-cat-save-btn').textContent='+ Ekle';" class="btn" style="background:#95a5a6;width:auto;padding:0 14px;height:38px;">İptal</button>
         </div>
       </div>
-      <div class="pm-row"><label class="pm-label">Başlık *</label><input type="text" id="pm-title" class="pm-input" placeholder="Kampanya başlığı..." maxlength="60" oninput="pmPreview()"></div>
-      <div class="pm-row"><label class="pm-label">Mesaj *</label><textarea id="pm-message" class="pm-input" style="resize:vertical;min-height:70px;" placeholder="Duyuru metni..." maxlength="200" oninput="pmPreview();document.getElementById('pm-char').textContent=this.value.length"></textarea><div style="text-align:right;font-size:11px;color:#aaa;margin-top:2px;"><span id="pm-char">0</span>/200</div></div>
-      <div class="pm-row"><label class="pm-label">Görsel URL <span style="font-weight:400;text-transform:none;">(opsiyonel)</span></label><input type="url" id="pm-image" class="pm-input" placeholder="https://..." oninput="pmPreview()"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="pm-row"><label class="pm-label">Buton Metni</label><input type="text" id="pm-btntext" class="pm-input" value="Harika!" maxlength="25" oninput="pmPreview()"></div>
-        <div class="pm-row"><label class="pm-label">Buton Linki</label><input type="url" id="pm-btnlink" class="pm-input" placeholder="https://..."></div>
-      </div>
-    </div>
-
-    <div class="pm-card">
-      <h4><i class="fas fa-palette" style="color:#9b59b6;"></i> Renk</h4>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <input type="color" id="pm-color" value="#e63946" style="width:38px;height:38px;border-radius:8px;border:2px solid #ddd;cursor:pointer;" oninput="pmPreview()">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <div style="width:26px;height:26px;border-radius:6px;background:#e63946;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#e63946',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:#d35400;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#d35400',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:#27ae60;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#27ae60',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:#2980b9;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#2980b9',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:#8e44ad;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#8e44ad',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:#f39c12;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#f39c12',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:#2c3e50;cursor:pointer;border:2px solid transparent;" onclick="pmColor('#2c3e50',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#e63946,#f39c12);cursor:pointer;border:2px solid transparent;" onclick="pmColor('gradient-fire',this)"></div>
-          <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#667eea,#764ba2);cursor:pointer;border:2px solid transparent;" onclick="pmColor('gradient-purple',this)"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="pm-card">
-      <h4><i class="fas fa-map-marker-alt" style="color:#e67e22;"></i> Nerede Gösterilsin?</h4>
-      <div class="pm-toggle-row on" id="pmtr-siparis">
-        <span style="font-size:13px;font-weight:600;color:#444;">🛒 Sipariş Uygulaması</span>
-        <label class="pm-big-toggle"><input type="checkbox" id="pm-t-siparis" checked><span class="pm-big-slider"></span></label>
-      </div>
-      <div class="pm-toggle-row on" id="pmtr-menu">
-        <span style="font-size:13px;font-weight:600;color:#444;">🍽️ QR Menü</span>
-        <label class="pm-big-toggle"><input type="checkbox" id="pm-t-menu" checked><span class="pm-big-slider"></span></label>
-      </div>
-    </div>
-
-    <div class="pm-card">
-      <h4><i class="fas fa-clock" style="color:#3498db;"></i> Gösterim Ayarları</h4>
-      <div class="pm-row"><label class="pm-label">Sıklık</label>
-        <select id="pm-freq" class="pm-input" onchange="pmFreqChange()">
-          <option value="once_per_day">Günde 1 kez</option>
-          <option value="once_per_session">Her oturumda 1 kez</option>
-          <option value="every_visit">Her ziyarette</option>
-          <option value="once_ever">Tek seferlik</option>
-          <option value="until_date">Tarihe kadar (günde 1 kez)</option>
-        </select>
-      </div>
-      <div class="pm-row" id="pm-until-row" style="display:none;"><label class="pm-label">Bitiş Tarihi</label><input type="datetime-local" id="pm-until" class="pm-input"></div>
-      <div class="pm-row"><label class="pm-label">Gecikme: <span id="pm-delay-val">1</span> saniye</label>
-        <input type="range" id="pm-delay" min="0" max="10" value="1" style="width:100%;" oninput="document.getElementById('pm-delay-val').textContent=this.value">
-      </div>
-    </div>
-
-    <!-- YAYINA AL / YAYINDAN KALDIR -->
-    <div class="pm-card" style="border:2px solid #eee;">
-      <h4><i class="fas fa-broadcast-tower" style="color:#27ae60;"></i> Yayın Durumu</h4>
-      <div style="display:flex;align-items:center;justify-content:space-between;background:#f8f9fa;border-radius:10px;padding:14px 16px;margin-bottom:14px;" id="pm-status-row">
-        <div>
-          <div id="pm-status-label" style="font-size:15px;font-weight:700;color:#27ae60;">● Yayında</div>
-          <div style="font-size:11px;color:#999;margin-top:2px;">Müşteriler bu popup'ı görecek</div>
-        </div>
-        <label class="pm-big-toggle">
-          <input type="checkbox" id="pm-active" checked onchange="pmStatusChange()">
-          <span class="pm-big-slider"></span>
-        </label>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button onclick="pmSave()" class="btn" style="background:var(--primary);flex:1;height:44px;font-size:14px;"><i class="fas fa-save"></i> Kaydet & Yayınla</button>
-        <button onclick="pmClear()" class="btn" style="background:#95a5a6;width:auto;padding:0 18px;height:44px;flex:none;">Temizle</button>
-      </div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:8px;">💡 Hızlı ekle: 🌯 Dönerler · 🍕 Cantıklar · 🥖 Pideler · 🥤 İçecekler</div>
+      <div id="qr-cat-list"><div style="color:#bbb;font-size:13px;padding:10px;">Yükleniyor...</div></div>
     </div>
   </div>
 
-  <!-- SAĞ: ÖNİZLEME + LİSTE -->
+  <!-- SAĞ: ÜRÜNLER -->
   <div>
-    <div class="pm-card">
-      <h4><i class="fas fa-eye" style="color:#3498db;"></i> Canlı Önizleme</h4>
-      <div style="background:#111;border-radius:12px;padding:24px 14px;display:flex;align-items:center;justify-content:center;min-height:280px;">
-        <div id="pm-preview" style="border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.4);width:100%;max-width:300px;">
-          <div id="pmp-hd" style="background:#e63946;padding:16px 16px 12px;position:relative;">
-            <div class="pmp-close-demo">×</div>
-            <div id="pmp-emoji" style="font-size:28px;line-height:1;margin-bottom:8px;">🎉</div>
-            <div id="pmp-title" style="color:white;font-size:15px;font-weight:800;line-height:1.3;padding-right:28px;">Başlık buraya gelecek</div>
+    <div class="qr-section">
+      <h4><i class="fas fa-utensils" style="color:var(--primary);"></i> Ürün Ekle / Düzenle</h4>
+      <div class="qr-prod-form" id="qr-prod-form">
+        <div class="qr-row"><label class="qr-label">Ürün Adı *</label><input type="text" id="qr-prod-name" class="qr-input" placeholder="Örn: Porsiyon Döner"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="qr-row"><label class="qr-label">Fiyat (₺) *</label><input type="number" id="qr-prod-price" class="qr-input" placeholder="0" min="0"></div>
+          <div class="qr-row"><label class="qr-label">Alt Fiyat <span style="font-weight:400;text-transform:none;">(opsiyonel)</span></label><input type="text" id="qr-prod-subprice" class="qr-input" placeholder="Örn: 1.5 Por: 230 ₺"></div>
+        </div>
+        <div class="qr-row"><label class="qr-label">Açıklama</label><input type="text" id="qr-prod-desc" class="qr-input" placeholder="Örn: Yanında Mevsim Salatası İle"></div>
+        <div class="qr-row"><label class="qr-label">Görsel URL</label><div style="display:flex;gap:6px;"><input type="url" id="qr-prod-image" class="qr-input" placeholder="https://..."><button onclick="document.getElementById('qr-img-prev').src=document.getElementById('qr-prod-image').value;document.getElementById('qr-img-prev').style.display='block';" class="btn" style="background:#3498db;width:auto;padding:0 10px;height:38px;font-size:12px;flex:none;">👁</button></div><img id="qr-img-prev" src="" style="display:none;width:60px;height:60px;border-radius:8px;object-fit:cover;margin-top:6px;" onerror="this.style.display='none'"></div>
+        <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;">
+          <div class="qr-row"><label class="qr-label">Kategori</label>
+            <select id="qr-prod-cat" class="qr-input"><option value="">Yükleniyor...</option></select>
           </div>
-          <div class="pmp-body">
-            <div id="pmp-msg" style="font-size:12px;color:#555;line-height:1.5;margin-bottom:12px;">Mesaj metni burada görünecek.</div>
-            <div style="display:flex;gap:8px;">
-              <button id="pmp-btn" style="flex:1;padding:9px;border:none;border-radius:10px;font-weight:700;font-size:12px;color:white;background:#e63946;">Harika!</button>
-              <button style="padding:9px 12px;background:#f0f0f0;border:none;border-radius:10px;font-size:11px;font-weight:600;color:#888;">Kapat</button>
-            </div>
-            <div style="text-align:center;margin-top:8px;" id="pmp-badges"></div>
-          </div>
+          <div class="qr-row"><label class="qr-label">Sıra</label><input type="number" id="qr-prod-order" class="qr-input" placeholder="1" min="0" value="99"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button id="qr-prod-save-btn" onclick="qrSaveProd()" class="btn" style="background:var(--primary);flex:1;height:40px;">+ Ürün Ekle</button>
+          <button onclick="qrEditProdId=null;['qr-prod-name','qr-prod-price','qr-prod-subprice','qr-prod-desc','qr-prod-image','qr-prod-order'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('qr-prod-save-btn').textContent='+ Ürün Ekle';document.getElementById('qr-img-prev').style.display='none';" class="btn" style="background:#95a5a6;width:auto;padding:0 14px;height:40px;">İptal</button>
         </div>
       </div>
-    </div>
 
-    <div class="pm-card">
-      <h4><i class="fas fa-list" style="color:#7f8c8d;"></i> Kayıtlı Duyurular</h4>
-      <div id="pm-list"><div style="text-align:center;color:#bbb;font-size:13px;padding:20px;">Yükleniyor...</div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;color:var(--dark);">Ürün Listesi</div>
+        <button onclick="qrLoadProducts()" class="btn" style="background:#95a5a6;width:auto;padding:4px 12px;font-size:12px;height:30px;"><i class="fas fa-sync-alt"></i></button>
+      </div>
+      <div id="qr-prod-list"><div style="color:#bbb;font-size:13px;padding:10px;">Yükleniyor...</div></div>
     </div>
   </div>
 </div>
 </div>
 
 </main>
-
-<script>
-/* ══════════════════════════════
-   POPUP MANAGER — PANEL JS
-══════════════════════════════ */
-const PM_GRAD={'gradient-fire':'linear-gradient(135deg,#e63946,#f39c12)','gradient-purple':'linear-gradient(135deg,#667eea,#764ba2)','gradient-green':'linear-gradient(135deg,#11998e,#38ef7d)'};
-let pmEditId = null;
-
-function pmGetBg(c){ return PM_GRAD[c]||c; }
-
-window.pmEmoji = function(el,e){
-  document.getElementById('pm-emoji').value=e;
-  document.querySelectorAll('#popup-manager span[onclick^="pmEmoji"]').forEach(s=>{s.style.border='2px solid transparent';s.style.background='';});
-  el.style.border='2px solid var(--primary)'; el.style.background='#fff8f5';
-  pmPreview();
-};
-
-window.pmColor = function(c,el){
-  document.getElementById('pm-color').value=c.startsWith('gradient')?'#e63946':c;
-  document.getElementById('pm-color').dataset.grad=c.startsWith('gradient')?c:'';
-  document.querySelectorAll('#popup-manager div[onclick^="pmColor"]').forEach(d=>d.style.border='2px solid transparent');
-  el.style.border='2px solid #333';
-  pmPreview();
-};
-
-window.pmFreqChange=function(){
-  document.getElementById('pm-until-row').style.display=
-    document.getElementById('pm-freq').value==='until_date'?'block':'none';
-};
-
-window.pmStatusChange=function(){
-  const on=document.getElementById('pm-active').checked;
-  const lbl=document.getElementById('pm-status-label');
-  const row=document.getElementById('pm-status-row');
-  lbl.textContent = on ? '● Yayında' : '○ Yayında Değil';
-  lbl.style.color = on ? '#27ae60' : '#999';
-  row.style.background = on ? '#eafaf1' : '#f8f9fa';
-};
-
-window.pmPreview=function(){
-  const emoji  = document.getElementById('pm-emoji').value||'📢';
-  const title  = document.getElementById('pm-title').value||'Başlık buraya gelecek';
-  const msg    = document.getElementById('pm-message').value||'Mesaj metni burada görünecek.';
-  const btn    = document.getElementById('pm-btntext').value||'Harika!';
-  const active = document.getElementById('pm-active').checked;
-  const siparis= document.getElementById('pm-t-siparis').checked;
-  const menu   = document.getElementById('pm-t-menu').checked;
-  const colorEl= document.getElementById('pm-color');
-  const bg     = pmGetBg(colorEl.dataset.grad||colorEl.value);
-
-  document.getElementById('pmp-emoji').textContent=emoji;
-  document.getElementById('pmp-title').textContent=title;
-  document.getElementById('pmp-msg').textContent=msg;
-  document.getElementById('pmp-btn').textContent=btn;
-  document.getElementById('pmp-hd').style.background=bg;
-  document.getElementById('pmp-btn').style.background=bg;
-  document.getElementById('pm-preview').style.opacity=active?'1':'0.45';
-
-  const tags=[];
-  if(siparis) tags.push('🛒 Sipariş');
-  if(menu)    tags.push('🍽️ Menü');
-  if(!active) tags.push('⛔ Pasif');
-  document.getElementById('pmp-badges').innerHTML=tags.map(t=>`<span style="font-size:10px;color:#bbb;">${t}</span>`).join(' · ');
-};
-
-window.pmSave=async function(){
-  const title=document.getElementById('pm-title').value.trim();
-  const message=document.getElementById('pm-message').value.trim();
-  if(!title||!message){toast('Başlık ve mesaj zorunlu!',true);return;}
-  const colorEl=document.getElementById('pm-color');
-  const bgColor=colorEl.dataset.grad||colorEl.value;
-  const freq=document.getElementById('pm-freq').value;
-  const data={
-    active:document.getElementById('pm-active').checked,
-    emoji:document.getElementById('pm-emoji').value||'🎉',
-    title,message,
-    imageUrl:document.getElementById('pm-image').value.trim(),
-    buttonText:document.getElementById('pm-btntext').value.trim()||'Harika!',
-    buttonLink:document.getElementById('pm-btnlink').value.trim(),
-    bgColor,
-    targets:{siparis:document.getElementById('pm-t-siparis').checked,menu:document.getElementById('pm-t-menu').checked},
-    frequency:freq,
-    untilDate:freq==='until_date'?(document.getElementById('pm-until').value||null):null,
-    delaySeconds:parseInt(document.getElementById('pm-delay').value)||1,
-    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-  };
-  try{
-    if(pmEditId){
-      await db.collection('popups').doc(pmEditId).update(data);
-      toast('Popup güncellendi ✅');
-    }else{
-      data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('popups').add(data);
-      toast('Popup yayına alındı 🎉');
-    }
-    pmClear(); pmLoadList();
-  }catch(e){toast('Hata: '+e.message,true);}
-};
-
-window.pmClear=function(){
-  pmEditId=null;
-  ['pm-title','pm-message','pm-image','pm-btnlink'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('pm-emoji').value='🎉';
-  document.getElementById('pm-btntext').value='Harika!';
-  document.getElementById('pm-color').value='#e63946';
-  document.getElementById('pm-color').dataset.grad='';
-  document.getElementById('pm-active').checked=true;
-  document.getElementById('pm-t-siparis').checked=true;
-  document.getElementById('pm-t-menu').checked=true;
-  document.getElementById('pm-freq').value='once_per_day';
-  document.getElementById('pm-until-row').style.display='none';
-  document.getElementById('pm-delay').value=1;
-  document.getElementById('pm-delay-val').textContent=1;
-  document.getElementById('pm-char').textContent=0;
-  pmStatusChange(); pmPreview();
-};
-
-window.pmLoadList=async function(){
-  const listEl=document.getElementById('pm-list');
-  if(!listEl)return;
-  listEl.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:16px;">Yükleniyor...</div>';
-  try{
-    const snap=await db.collection('popups').orderBy('createdAt','desc').get();
-    if(snap.empty){listEl.innerHTML='<div style="text-align:center;color:#bbb;font-size:13px;padding:16px;">Henüz popup oluşturulmadı.</div>';return;}
-    const freqL={once_per_day:'Günde 1',once_per_session:'Her oturum',every_visit:'Her ziyaret',once_ever:'Tek seferlik',until_date:'Tarihe kadar'};
-    listEl.innerHTML='';
-    snap.forEach(docSnap=>{
-      const d=docSnap.data(); const on=!!d.active;
-      const bg=pmGetBg(d.bgColor||'#e63946');
-      const targets=[];
-      if(d.targets?.siparis)targets.push('🛒 Sipariş');
-      if(d.targets?.menu)targets.push('🍽️ Menü');
-      const card=document.createElement('div');
-      card.className='pp-card '+(on?'on':'off');
-      card.innerHTML=`
-        <div style="width:40px;height:40px;border-radius:10px;flex-shrink:0;background:${bg};display:flex;align-items:center;justify-content:center;font-size:20px;">${d.emoji||'📢'}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:14px;color:#2c3e50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title||'—'}</div>
-          <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span class="pp-status ${on?'on':'off'}"><span class="pp-dot ${on?'on':'off'}"></span>${on?'Yayında':'Yayında Değil'}</span>
-            ${targets.map(t=>`<span class="pp-tag blue">${t}</span>`).join('')}
-            <span class="pp-tag orange">${freqL[d.frequency]||d.frequency||''}</span>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-          <button class="btn" style="background:${on?'#e67e22':'#27ae60'};width:auto;padding:6px 12px;font-size:12px;" onclick="pmToggle('${docSnap.id}',${on})">${on?'⛔ Yayından Kaldır':'▶️ Yayına Al'}</button>
-          <button class="btn" style="background:#3498db;width:auto;padding:6px 12px;font-size:12px;" onclick="pmEdit('${docSnap.id}')"><i class="fas fa-edit"></i> Düzenle</button>
-          <button class="btn" style="background:#c0392b;width:auto;padding:6px 12px;font-size:12px;" onclick="pmDelete('${docSnap.id}')"><i class="fas fa-trash"></i></button>
-        </div>`;
-      listEl.appendChild(card);
-    });
-  }catch(e){listEl.innerHTML=`<div style="color:#c0392b;font-size:13px;padding:14px;">Hata: ${e.message}</div>`;}
-};
-
-window.pmToggle=async function(id,isActive){
-  try{
-    await db.collection('popups').doc(id).update({active:!isActive,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-    toast(isActive?'Popup yayından kaldırıldı ⛔':'Popup yayına alındı ✅');
-    pmLoadList();
-  }catch(e){toast('Hata: '+e.message,true);}
-};
-
-window.pmEdit=async function(id){
-  try{
-    const snap=await db.collection('popups').doc(id).get();
-    if(!snap.exists)return;
-    const d=snap.data(); pmEditId=id;
-    document.getElementById('pm-emoji').value=d.emoji||'🎉';
-    document.getElementById('pm-title').value=d.title||'';
-    document.getElementById('pm-message').value=d.message||'';
-    document.getElementById('pm-char').textContent=(d.message||'').length;
-    document.getElementById('pm-image').value=d.imageUrl||'';
-    document.getElementById('pm-btntext').value=d.buttonText||'Harika!';
-    document.getElementById('pm-btnlink').value=d.buttonLink||'';
-    document.getElementById('pm-active').checked=!!d.active;
-    document.getElementById('pm-t-siparis').checked=d.targets?.siparis!==false;
-    document.getElementById('pm-t-menu').checked=d.targets?.menu!==false;
-    document.getElementById('pm-freq').value=d.frequency||'once_per_day';
-    document.getElementById('pm-delay').value=d.delaySeconds||1;
-    document.getElementById('pm-delay-val').textContent=d.delaySeconds||1;
-    if(d.bgColor&&!d.bgColor.startsWith('gradient')){document.getElementById('pm-color').value=d.bgColor;document.getElementById('pm-color').dataset.grad='';}
-    else if(d.bgColor){document.getElementById('pm-color').dataset.grad=d.bgColor;}
-    if(d.frequency==='until_date'&&d.untilDate){document.getElementById('pm-until-row').style.display='block';document.getElementById('pm-until').value=d.untilDate;}
-    pmStatusChange(); pmPreview();
-    document.querySelector('#popup-manager .pm-card').scrollIntoView({behavior:'smooth'});
-    toast('Düzenleme moduna geçildi');
-  }catch(e){toast('Yüklenemedi: '+e.message,true);}
-};
-
-window.pmDelete=async function(id){
-  if(!confirm('Bu popup\'ı silmek istiyor musunuz?'))return;
-  try{
-    await db.collection('popups').doc(id).delete();
-    toast('Popup silindi');
-    if(pmEditId===id)pmClear();
-    pmLoadList();
-  }catch(e){toast('Silinemedi: '+e.message,true);}
-};
-</script>
 
 </body>
 </html>
