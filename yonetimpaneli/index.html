@@ -423,6 +423,7 @@ input:checked+.slider:before{transform:translateX(24px);}
   <div style="font-size:10px;color:rgba(255,255,255,.35);padding:10px 18px 4px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Raporlar</div>
   <div class="mi" onclick="showTab('reports',this)"><i class="fas fa-chart-bar"></i> Raporlar</div>
   <div class="mi" onclick="showTab('daily-report',this)"><i class="fas fa-receipt"></i> Gün Sonu</div>
+  <div class="mi" onclick="showTab('ciro-takip',this)"><i class="fas fa-coins"></i> Ciro Takibi</div>
   <div class="mi" onclick="showTab('complaints',this)"><i class="fas fa-exclamation-circle"></i> Şikayetler</div>
 
   <div style="font-size:10px;color:rgba(255,255,255,.35);padding:10px 18px 4px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Ayarlar</div>
@@ -3046,6 +3047,7 @@ window.showTab=(id,el)=>{
   if(id==='qr-menu') qrMenuInit();
   if(id==='popup-manager') window.pmLoadList();
   if(id==='menu-fiyat') window.loadMenuFiyatlar();
+  if(id==='ciro-takip') window.ciroInit();
 };
 
 // ── ÇALIŞMA SAATLERİ ────────────────────────────────────────────────────────
@@ -4464,6 +4466,131 @@ const PM_GRAD={'gradient-fire':'linear-gradient(135deg,#e63946,#f39c12)','gradie
 let pmEditId=null;
 function pmGetBg(c){return PM_GRAD[c]||c;}
 
+window.pmSetMode=function(mode){
+  const isCart = mode==='add_to_cart';
+  document.getElementById('pm-normal-fields').style.display = isCart?'none':'grid';
+  document.getElementById('pm-cart-fields').style.display   = isCart?'block':'none';
+  document.getElementById('pm-mode-btn-normal').style.cssText += isCart?';border-color:#ddd;background:white;color:#555':';border-color:var(--primary);background:#fff8f5;color:var(--primary)';
+  document.getElementById('pm-mode-btn-cart').style.cssText += isCart?';border-color:#27ae60;background:#f0fff4;color:#27ae60':';border-color:#ddd;background:white;color:#555';
+  document.querySelector(`input[value="${mode}"]`).checked=true;
+  if(isCart) pmCartSource('campaigns'); // Modu açınca kampanyaları yükle
+  window.pmPreview();
+};
+window.pmGetMode=function(){return document.querySelector('input[name="pm-action-mode"]:checked')?.value||'normal';};
+
+let _pmCartCurrentSource = 'campaigns';
+
+window.pmCartSource = async function(src) {
+  _pmCartCurrentSource = src;
+  // Buton stilleri
+  const campBtn = document.getElementById('pm-src-camp-btn');
+  const prodBtn = document.getElementById('pm-src-prod-btn');
+  if(src === 'campaigns'){
+    campBtn.style.cssText = campBtn.style.cssText.replace(/border:[^;]+/,'') + ';border:2px solid var(--primary);background:#fff8f5;color:var(--primary);';
+    prodBtn.style.cssText = prodBtn.style.cssText.replace(/border:[^;]+/,'') + ';border:2px solid #ddd;background:white;color:#888;';
+  } else {
+    prodBtn.style.cssText = prodBtn.style.cssText.replace(/border:[^;]+/,'') + ';border:2px solid var(--primary);background:#fff8f5;color:var(--primary);';
+    campBtn.style.cssText = campBtn.style.cssText.replace(/border:[^;]+/,'') + ';border:2px solid #ddd;background:white;color:#888;';
+  }
+
+  const sel = document.getElementById('pm-cart-product-select');
+  sel.innerHTML = '<option value="">Yükleniyor...</option>';
+  document.getElementById('pm-cart-product-preview').style.display = 'none';
+
+  try {
+    if(src === 'campaigns'){
+      const snap = await getDocs(collection(db,'campaigns'));
+      sel.innerHTML = '<option value="">— Kampanya seç —</option>';
+      snap.forEach(d => {
+        const c = d.data();
+        const name = c.name || c.n || '—';
+        const price = c.campPrice || c.price || 0;
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = `${name} — ${price} ₺ (Kampanya)`;
+        opt.dataset.name = name;
+        opt.dataset.price = c.price || price;
+        opt.dataset.campPrice = c.campPrice || price;
+        opt.dataset.category = c.category || '';
+        opt.dataset.image = c.image || c.i || '';
+        opt.dataset.src = 'campaign';
+        sel.appendChild(opt);
+      });
+      if(snap.size === 0) sel.innerHTML = '<option value="">Kampanya bulunamadı — Ürünlere bak</option>';
+    } else {
+      const snap = await getDocs(query(collection(db,'products'), orderBy('order')));
+      sel.innerHTML = '<option value="">— Ürün seç —</option>';
+      // Kategoriye göre grupla
+      const groups = {};
+      snap.forEach(d => {
+        const p = d.data();
+        const cat = p.menuCategory || p.category || 'Diğer';
+        if(!groups[cat]) groups[cat] = [];
+        groups[cat].push({id:d.id, ...p});
+      });
+      Object.entries(groups).forEach(([cat, prods]) => {
+        const og = document.createElement('optgroup');
+        og.label = cat;
+        prods.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} — ${p.price} ₺`;
+          opt.dataset.name = p.name;
+          opt.dataset.price = p.price || 0;
+          opt.dataset.campPrice = p.price || 0; // başlangıçta aynı, kullanıcı değiştirir
+          opt.dataset.category = cat;
+          opt.dataset.image = p.image || p.i || '';
+          opt.dataset.src = 'product';
+          og.appendChild(opt);
+        });
+        sel.appendChild(og);
+      });
+    }
+  } catch(e) {
+    sel.innerHTML = `<option value="">Hata: ${e.message}</option>`;
+  }
+};
+
+window.pmCartProductSelected = function(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if(!opt || !opt.value) {
+    document.getElementById('pm-cart-product-preview').style.display = 'none';
+    return;
+  }
+  // Hidden alanları doldur
+  document.getElementById('pm-cart-name').value     = opt.dataset.name || '';
+  document.getElementById('pm-cart-category').value = opt.dataset.category || '';
+  document.getElementById('pm-cart-image').value    = opt.dataset.image || '';
+  document.getElementById('pm-cart-price').value    = opt.dataset.price || '';
+  document.getElementById('pm-cart-campprice').value = opt.dataset.campPrice || opt.dataset.price || '';
+
+  // Önizleme
+  const prev = document.getElementById('pm-cart-product-preview');
+  prev.style.display = 'block';
+  const img = document.getElementById('pm-cart-prev-img');
+  if(opt.dataset.image){ img.src = opt.dataset.image; img.style.display = 'block'; }
+  else img.style.display = 'none';
+  document.getElementById('pm-cart-prev-name').textContent = opt.dataset.name || '—';
+  document.getElementById('pm-cart-prev-cat').textContent  = opt.dataset.category || '';
+  document.getElementById('pm-cart-prev-price').textContent = (opt.dataset.price||0) + ' ₺';
+
+  pmUpdateDiscountInfo();
+};
+
+window.pmUpdateDiscountInfo = function() {
+  const normal = parseFloat(document.getElementById('pm-cart-price').value);
+  const kamp   = parseFloat(document.getElementById('pm-cart-campprice').value);
+  const info   = document.getElementById('pm-cart-discount-info');
+  if(!isNaN(normal) && !isNaN(kamp) && normal > kamp && kamp > 0) {
+    const indirim = Math.round((1 - kamp/normal)*100);
+    const kazanc  = normal - kamp;
+    info.style.display = 'block';
+    info.innerHTML = `🎉 %${indirim} İndirim — Müşteri <b>${kazanc} ₺</b> kazanıyor! (${normal}₺ → ${kamp}₺)`;
+  } else {
+    info.style.display = 'none';
+  }
+};
+
 window.pmEmoji=function(el,e){
   document.getElementById('pm-emoji').value=e;
   document.querySelectorAll('#popup-manager .pm-emoji-btn').forEach(s=>{s.style.border='2px solid transparent';s.style.background='';});
@@ -4512,20 +4639,46 @@ window.pmSave=async function(){
   const message=document.getElementById('pm-message').value.trim();
   if(!title||!message){toast('Başlık ve mesaj zorunlu!',true);return;}
   const colorEl=document.getElementById('pm-color');
+  const mode=window.pmGetMode();
+
+  // Sepete ekle modu doğrulama
+  if(mode==='add_to_cart'){
+    const cartName=document.getElementById('pm-cart-name').value.trim();
+    const campPrice=parseFloat(document.getElementById('pm-cart-campprice').value);
+    if(!cartName){toast('Ürün adı zorunlu!',true);return;}
+    if(isNaN(campPrice)||campPrice<=0){toast('Kampanya fiyatı zorunlu!',true);return;}
+  }
+
   const data={
     active:document.getElementById('pm-active').checked,
     emoji:document.getElementById('pm-emoji').value||'🎉',
     title,message,
     imageUrl:document.getElementById('pm-image').value.trim(),
-    buttonText:document.getElementById('pm-btntext').value.trim()||'Harika!',
-    buttonLink:document.getElementById('pm-btnlink').value.trim(),
     bgColor:colorEl.dataset.grad||colorEl.value,
     targets:{siparis:document.getElementById('pm-t-siparis').checked,menu:document.getElementById('pm-t-menu').checked},
     frequency:document.getElementById('pm-freq').value,
     untilDate:document.getElementById('pm-freq').value==='until_date'?(document.getElementById('pm-until').value||null):null,
     delaySeconds:parseInt(document.getElementById('pm-delay').value)||1,
+    action: mode,
     updatedAt:serverTimestamp(),
   };
+
+  if(mode==='add_to_cart'){
+    data.cartItem = {
+      name:     document.getElementById('pm-cart-name').value.trim(),
+      price:    parseFloat(document.getElementById('pm-cart-price').value)||0,
+      campPrice:parseFloat(document.getElementById('pm-cart-campprice').value),
+      category: document.getElementById('pm-cart-category').value,
+      image:    document.getElementById('pm-cart-image').value,
+    };
+    data.buttonText = document.getElementById('pm-cart-btntext').value.trim()||'🛒 Hemen Al';
+    data.buttonLink = '';
+  } else {
+    data.buttonText = document.getElementById('pm-btntext').value.trim()||'Harika!';
+    data.buttonLink = document.getElementById('pm-btnlink').value.trim();
+    data.cartItem   = null;
+  }
+
   try{
     if(pmEditId){await updateDoc(doc(db,'popups',pmEditId),data);toast('Popup güncellendi ✅');}
     else{data.createdAt=serverTimestamp();await addDoc(collection(db,'popups'),data);toast('Popup yayına alındı 🎉');}
@@ -4534,9 +4687,17 @@ window.pmSave=async function(){
 };
 window.pmClear=function(){
   pmEditId=null;
-  ['pm-title','pm-message','pm-image','pm-btnlink'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pm-title','pm-message','pm-image','pm-btnlink','pm-cart-name','pm-cart-price','pm-cart-campprice','pm-cart-category','pm-cart-image'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pm-emoji').value='🎉';
   document.getElementById('pm-btntext').value='Harika!';
+  document.getElementById('pm-cart-btntext').value='🛒 Hemen Al';
+  const sel = document.getElementById('pm-cart-product-select');
+  if(sel) sel.innerHTML = '<option value="">— Önce kaynak seç —</option>';
+  const prev = document.getElementById('pm-cart-product-preview');
+  if(prev) prev.style.display='none';
+  const disc = document.getElementById('pm-cart-discount-info');
+  if(disc) disc.style.display='none';
+  document.getElementById('pm-cart-category').value='';
   document.getElementById('pm-color').value='#e63946';
   document.getElementById('pm-color').dataset.grad='';
   document.getElementById('pm-active').checked=true;
@@ -4547,6 +4708,7 @@ window.pmClear=function(){
   document.getElementById('pm-delay').value=1;
   document.getElementById('pm-delay-val').textContent=1;
   document.getElementById('pm-char').textContent=0;
+  window.pmSetMode('normal');
   window.pmStatusChange();window.pmPreview();
 };
 window.pmLoadList=async function(){
@@ -4598,10 +4760,7 @@ window.pmEdit=async function(id){
     document.getElementById('pm-message').value=p.message||'';
     document.getElementById('pm-char').textContent=(p.message||'').length;
     document.getElementById('pm-image').value=p.imageUrl||'';
-    document.getElementById('pm-btntext').value=p.buttonText||'Harika!';
-    document.getElementById('pm-btnlink').value=p.buttonLink||'';
     document.getElementById('pm-active').checked=!!p.active;
-    document.getElementById('pm-t-siparis').checked=p.targets?.siparis!==false;
     document.getElementById('pm-t-menu').checked=p.targets?.menu!==false;
     document.getElementById('pm-freq').value=p.frequency||'once_per_day';
     document.getElementById('pm-delay').value=p.delaySeconds||1;
@@ -4610,6 +4769,35 @@ window.pmEdit=async function(id){
     if(p.bgColor&&!p.bgColor.startsWith('gradient')){colorEl.value=p.bgColor;colorEl.dataset.grad='';}
     else if(p.bgColor){colorEl.dataset.grad=p.bgColor;}
     if(p.frequency==='until_date'&&p.untilDate){document.getElementById('pm-until-row').style.display='block';document.getElementById('pm-until').value=p.untilDate;}
+
+    // Aksiyon modu
+    const mode = p.action||'normal';
+    window.pmSetMode(mode);
+    if(mode==='add_to_cart'&&p.cartItem){
+      const ci = p.cartItem;
+      document.getElementById('pm-cart-name').value     = ci.name||'';
+      document.getElementById('pm-cart-price').value    = ci.price||'';
+      document.getElementById('pm-cart-campprice').value= ci.campPrice||'';
+      document.getElementById('pm-cart-category').value = ci.category||'';
+      document.getElementById('pm-cart-image').value    = ci.image||'';
+      document.getElementById('pm-cart-btntext').value  = p.buttonText||'🛒 Hemen Al';
+      // Select'e "Düzenleme: [ürün adı]" göster
+      const sel = document.getElementById('pm-cart-product-select');
+      sel.innerHTML = `<option value="edit" selected>✏️ Mevcut: ${ci.name} — ${ci.campPrice}₺</option><option value="">— Yeni ürün seçmek için kaynak seç —</option>`;
+      // Önizleme göster
+      const prev = document.getElementById('pm-cart-product-preview');
+      prev.style.display='block';
+      document.getElementById('pm-cart-prev-name').textContent=ci.name||'—';
+      document.getElementById('pm-cart-prev-cat').textContent=ci.category||'';
+      document.getElementById('pm-cart-prev-price').textContent=(ci.price||0)+' ₺';
+      if(ci.image){document.getElementById('pm-cart-prev-img').src=ci.image;document.getElementById('pm-cart-prev-img').style.display='block';}
+      else document.getElementById('pm-cart-prev-img').style.display='none';
+      window.pmUpdateDiscountInfo();
+    } else {
+      document.getElementById('pm-btntext').value=p.buttonText||'Harika!';
+      document.getElementById('pm-btnlink').value=p.buttonLink||'';
+    }
+
     window.pmStatusChange();window.pmPreview();
     document.querySelector('#popup-manager').scrollIntoView({behavior:'smooth'});
     toast('Düzenleme moduna geçildi');
@@ -4670,6 +4858,315 @@ window.saveAllMfPrices=async function(){
   }catch(e){toast('Toplu güncelleme hatası: '+e.message,true);}
 };
 /* ── MENÜ FİYAT SONU ── */
+
+/* ══════════════════════════════════════════════════════
+   CİRO TAKİBİ — Manuel Veri Girişi & Analiz
+   Firestore koleksiyonu: cirolar/{YYYY-MM-DD}
+   { tarih, ciro, siparisSayisi, notlar, guncellendi }
+══════════════════════════════════════════════════════ */
+
+window.ciroInit = async function() {
+  // Bugünü varsayılan yap
+  const today = new Date().toISOString().split('T')[0];
+  const el = document.getElementById('ciro-tarih');
+  if (el && !el.value) el.value = today;
+  await Promise.all([ciroLoadList(), ciroLoadAnaliz()]);
+};
+
+// ── Tekil kayıt kaydet / güncelle ──
+window.ciroSave = async function() {
+  const tarih    = document.getElementById('ciro-tarih').value;
+  const ciro     = parseFloat(document.getElementById('ciro-tutar').value);
+  const siparis  = parseInt(document.getElementById('ciro-siparis').value) || 0;
+  const notlar   = document.getElementById('ciro-notlar').value.trim();
+  if (!tarih)       { toast('Tarih seçin!', true); return; }
+  if (isNaN(ciro) || ciro < 0) { toast('Geçerli bir ciro girin!', true); return; }
+  try {
+    await setDoc(doc(db, 'cirolar', tarih), {
+      tarih, ciro, siparisSayisi: siparis, notlar,
+      guncellendi: serverTimestamp()
+    }, { merge: true });
+    toast(`✅ ${tarih} → ${ciro.toLocaleString('tr-TR')} ₺ kaydedildi`);
+    document.getElementById('ciro-tutar').value   = '';
+    document.getElementById('ciro-siparis').value = '';
+    document.getElementById('ciro-notlar').value  = '';
+    await Promise.all([ciroLoadList(), ciroLoadAnaliz()]);
+  } catch(e) { toast('Kayıt hatası: ' + e.message, true); }
+};
+
+// ── Toplu TXT/metin import ──
+window.ciroImport = async function() {
+  const raw = document.getElementById('ciro-bulk-text').value.trim();
+  if (!raw) { toast('Metin girin!', true); return; }
+
+  // Format örnekleri:
+  // 2024-01-15: 4500
+  // 15.01.2024 4500 120
+  // 15/01/2024 - 4500₺ - 120 sipariş - not buraya
+  const satirlar = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  const batch = writeBatch(db);
+  let ok = 0, skip = 0;
+  const hatalar = [];
+
+  for (const satir of satirlar) {
+    // Tarih bul: YYYY-MM-DD veya DD.MM.YYYY veya DD/MM/YYYY
+    let tarih = null;
+    const isoMatch = satir.match(/(\d{4}-\d{2}-\d{2})/);
+    const trMatch  = satir.match(/(\d{2})[.\/](\d{2})[.\/](\d{4})/);
+    if (isoMatch) {
+      tarih = isoMatch[1];
+    } else if (trMatch) {
+      tarih = `${trMatch[3]}-${trMatch[2]}-${trMatch[1]}`;
+    }
+    if (!tarih) { hatalar.push(`Tarih bulunamadı: "${satir}"`); skip++; continue; }
+
+    // Sayıları bul (TL işareti, boşluk, virgül görmezden gel)
+    const sayilar = satir.replace(/[₺,]/g, '').match(/\d+(?:\.\d+)?/g) || [];
+    // İlk büyük sayı ciro, sonraki daha küçük olan sipariş sayısı
+    let ciro = null, siparis = 0;
+    const numerics = sayilar.map(Number).filter(n => n > 0);
+    // Tarih rakamlarını çıkar
+    for (const n of numerics) {
+      if (n > 1900 && n < 2100) continue; // yıl
+      if (n >= 1 && n <= 31 && ciro === null) continue; // gün
+      if (n >= 1 && n <= 12 && ciro === null) continue; // ay
+      if (ciro === null && n >= 50) { ciro = n; continue; }
+      if (ciro !== null && n < ciro && siparis === 0) { siparis = n; }
+    }
+    if (ciro === null) { hatalar.push(`Ciro bulunamadı: "${satir}"`); skip++; continue; }
+
+    // Not: tarih ve sayılardan arta kalan metin
+    const notlar = satir
+      .replace(/(\d{4}-\d{2}-\d{2})|(\d{2}[.\/]\d{2}[.\/]\d{4})/g, '')
+      .replace(/[\d₺,.:\/\-]/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+
+    batch.set(doc(db, 'cirolar', tarih), {
+      tarih, ciro, siparisSayisi: siparis, notlar,
+      guncellendi: serverTimestamp()
+    }, { merge: true });
+    ok++;
+  }
+
+  if (ok === 0) { toast('Hiç veri işlenemedi! Format: "2024-01-15: 4500"', true); return; }
+
+  try {
+    await batch.commit();
+    document.getElementById('ciro-bulk-text').value = '';
+    document.getElementById('ciro-import-result').innerHTML =
+      `<div style="color:#27ae60;font-size:13px;margin-top:8px;">✅ ${ok} kayıt eklendi${skip ? `, ${skip} satır atlandı` : ''}</div>` +
+      (hatalar.length ? `<div style="color:#e67e22;font-size:12px;margin-top:4px;">${hatalar.slice(0,5).join('<br>')}</div>` : '');
+    toast(`✅ ${ok} gün verisi aktarıldı`);
+    await Promise.all([ciroLoadList(), ciroLoadAnaliz()]);
+  } catch(e) { toast('Toplu kayıt hatası: ' + e.message, true); }
+};
+
+// ── Kayıt sil ──
+window.ciroDelete = async function(tarih) {
+  if (!confirm(`${tarih} tarihli ciro silinsin mi?`)) return;
+  try {
+    await deleteDoc(doc(db, 'cirolar', tarih));
+    toast('Silindi'); ciroLoadList(); ciroLoadAnaliz();
+  } catch(e) { toast('Hata: ' + e.message, true); }
+};
+
+// ── Kayıt düzenleme formuna yükle ──
+window.ciroEdit = function(tarih, ciro, siparis, notlar) {
+  document.getElementById('ciro-tarih').value   = tarih;
+  document.getElementById('ciro-tutar').value   = ciro;
+  document.getElementById('ciro-siparis').value = siparis;
+  document.getElementById('ciro-notlar').value  = notlar;
+  document.querySelector('#ciro-takip .ciro-form-card').scrollIntoView({behavior:'smooth'});
+  toast('Düzenleme moduna geçildi');
+};
+
+// ── Liste yükle ──
+async function ciroLoadList() {
+  const el = document.getElementById('ciro-list-body');
+  if (!el) return;
+  el.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;color:#aaa;">Yükleniyor...</td></tr>';
+  try {
+    const snap = await getDocs(query(collection(db,'cirolar'), orderBy('tarih','desc')));
+    if (snap.empty) {
+      el.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#bbb;">Henüz kayıt yok.</td></tr>';
+      return;
+    }
+    el.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const tarihFmt = r.tarih ? new Date(r.tarih + 'T00:00:00').toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+      const gun = r.tarih ? ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][new Date(r.tarih + 'T00:00:00').getDay()] : '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:700;">${tarihFmt} <span style="font-size:11px;color:#95a5a6;font-weight:400;">${gun}</span></td>
+        <td style="font-weight:800;color:var(--primary);font-size:15px;">${(r.ciro||0).toLocaleString('tr-TR')} ₺</td>
+        <td style="color:#7f8c8d;">${r.siparisSayisi||'—'}</td>
+        <td style="font-size:12px;color:#95a5a6;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.notlar||''}">${r.notlar||'—'}</td>
+        <td>
+          <div style="display:flex;gap:5px;">
+            <button class="btn" onclick="window.ciroEdit('${r.tarih}',${r.ciro||0},${r.siparisSayisi||0},'${(r.notlar||'').replace(/'/g,"\\'")}')" style="background:#3498db;width:auto;padding:5px 10px;font-size:11px;"><i class="fas fa-edit"></i></button>
+            <button class="btn" onclick="window.ciroDelete('${r.tarih}')" style="background:#c0392b;width:auto;padding:5px 10px;font-size:11px;"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>`;
+      el.appendChild(tr);
+    });
+  } catch(e) { el.innerHTML = `<tr><td colspan="5" style="color:#c0392b;padding:14px;">Hata: ${e.message}</td></tr>`; }
+}
+
+// ── ANALİZ ──
+async function ciroLoadAnaliz() {
+  const el = document.getElementById('ciro-analiz');
+  if (!el) return;
+  try {
+    const snap = await getDocs(query(collection(db,'cirolar'), orderBy('tarih','asc')));
+    if (snap.empty) { el.innerHTML = '<div style="color:#bbb;font-size:13px;text-align:center;padding:20px;">Kayıt yok.</div>'; return; }
+
+    const kayitlar = [];
+    snap.forEach(d => kayitlar.push(d.data()));
+
+    const bugun = new Date(); bugun.setHours(0,0,0,0);
+    const haftaBasi = new Date(bugun); haftaBasi.setDate(bugun.getDate() - bugun.getDay() + (bugun.getDay()===0?-6:1));
+    const ayCek = new Date(bugun); ayCek.setDate(1);
+    const yilBasi = new Date(bugun.getFullYear(), 0, 1);
+
+    const filtrele = (baslangic, bitis) => kayitlar.filter(k => {
+      const t = new Date(k.tarih + 'T00:00:00');
+      return t >= baslangic && t <= (bitis || bugun);
+    });
+
+    const ozet = (liste) => {
+      const ciro = liste.reduce((s,k) => s+(k.ciro||0), 0);
+      const siparis = liste.reduce((s,k) => s+(k.siparisSayisi||0), 0);
+      const ort = liste.length > 0 ? ciro / liste.length : 0;
+      return { ciro, siparis, ort, gun: liste.length };
+    };
+
+    const bugunData  = filtrele(bugun);
+    const haftaData  = filtrele(haftaBasi);
+    const ayData     = filtrele(ayCek);
+    const yilData    = filtrele(yilBasi);
+    const tumData    = kayitlar;
+
+    const b = ozet(bugunData), h = ozet(haftaData), a = ozet(ayData), y = ozet(yilData), t = ozet(tumData);
+
+    // En iyi / en kötü gün
+    const sirali = [...kayitlar].sort((a,b)=>(b.ciro||0)-(a.ciro||0));
+    const enIyi = sirali[0];
+    const enKotu = sirali[sirali.length-1];
+
+    // Son 30 gün chart verisi
+    const son30 = [...kayitlar].slice(-30);
+
+    // Haftanın günlerine göre ortalama
+    const gunOrt = Array(7).fill(0).map(()=>({toplam:0,sayac:0}));
+    kayitlar.forEach(k => {
+      const gun = new Date(k.tarih+'T00:00:00').getDay();
+      gunOrt[gun].toplam += k.ciro||0; gunOrt[gun].sayac++;
+    });
+    const gunLabels = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+    const maxGunOrt = Math.max(...gunOrt.map(g=>g.sayac>0?g.toplam/g.sayac:0)) || 1;
+
+    // Aylık özet (son 12 ay)
+    const ayMap = {};
+    kayitlar.forEach(k => {
+      const ay = k.tarih.substring(0,7);
+      if (!ayMap[ay]) ayMap[ay] = {ciro:0, gun:0};
+      ayMap[ay].ciro += k.ciro||0; ayMap[ay].gun++;
+    });
+    const aylar = Object.entries(ayMap).sort((a,b)=>a[0].localeCompare(b[0])).slice(-12);
+    const maxAy = Math.max(...aylar.map(a=>a[1].ciro)) || 1;
+    const maxSon30 = Math.max(...son30.map(k=>k.ciro||0)) || 1;
+
+    el.innerHTML = `
+    <!-- ÖZET KARTLAR -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;">
+      ${[
+        {lbl:'Bugün', val:b.ciro, sub:b.gun>0?b.siparis+' sipariş':'Kayıt yok', color:'#27ae60'},
+        {lbl:'Bu Hafta', val:h.ciro, sub:h.gun+' gün', color:'#3498db'},
+        {lbl:'Bu Ay', val:a.ciro, sub:a.gun+' gün · Ort '+(a.ort|0).toLocaleString('tr-TR')+'₺', color:'#9b59b6'},
+        {lbl:'Bu Yıl', val:y.ciro, sub:y.gun+' gün', color:'#e67e22'},
+        {lbl:'Tüm Zamanlar', val:t.ciro, sub:t.gun+' gün kaydı', color:'#e63946'},
+        {lbl:'Günlük Ort.', val:Math.round(t.ort), sub:'Tüm kayıtlar', color:'#1abc9c'},
+      ].map(c=>`
+        <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:4px solid ${c.color};">
+          <div style="font-size:11px;font-weight:700;color:#95a5a6;text-transform:uppercase;letter-spacing:.5px;">${c.lbl}</div>
+          <div style="font-size:26px;font-weight:800;color:#2c3e50;margin:6px 0 2px;">${c.val.toLocaleString('tr-TR')} ₺</div>
+          <div style="font-size:12px;color:#7f8c8d;">${c.sub}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- EN İYİ / EN KÖTÜ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+      <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid #27ae60;">
+        <div style="font-size:11px;font-weight:700;color:#95a5a6;margin-bottom:6px;">🏆 EN İYİ GÜN</div>
+        <div style="font-size:18px;font-weight:800;color:#27ae60;">${(enIyi.ciro||0).toLocaleString('tr-TR')} ₺</div>
+        <div style="font-size:13px;color:#7f8c8d;margin-top:3px;">${enIyi.tarih ? new Date(enIyi.tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'}) : '—'}</div>
+        ${enIyi.notlar?`<div style="font-size:11px;color:#aaa;margin-top:3px;font-style:italic;">${enIyi.notlar}</div>`:''}
+      </div>
+      <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid #e74c3c;">
+        <div style="font-size:11px;font-weight:700;color:#95a5a6;margin-bottom:6px;">📉 EN DÜŞÜK GÜN</div>
+        <div style="font-size:18px;font-weight:800;color:#e74c3c;">${(enKotu.ciro||0).toLocaleString('tr-TR')} ₺</div>
+        <div style="font-size:13px;color:#7f8c8d;margin-top:3px;">${enKotu.tarih ? new Date(enKotu.tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'}) : '—'}</div>
+        ${enKotu.notlar?`<div style="font-size:11px;color:#aaa;margin-top:3px;font-style:italic;">${enKotu.notlar}</div>`:''}
+      </div>
+    </div>
+
+    <!-- SON 30 GÜN GRAFİĞİ -->
+    <div style="background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;">
+      <div style="font-weight:700;color:#2c3e50;margin-bottom:14px;font-size:14px;">📈 Son ${son30.length} Gün Ciro</div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:100px;overflow-x:auto;padding-bottom:4px;">
+        ${son30.map(k=>{
+          const h=Math.max(4,Math.round(((k.ciro||0)/maxSon30)*96));
+          const tarih=new Date(k.tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'});
+          return `<div style="flex:1;min-width:18px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:default;" title="${tarih}: ${(k.ciro||0).toLocaleString('tr-TR')}₺">
+            <div style="width:100%;height:${h}px;background:linear-gradient(180deg,#e63946,#c0392b);border-radius:3px 3px 0 0;transition:.3s;"></div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-top:4px;">
+        <span>${son30[0]?.tarih ? new Date(son30[0].tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'}) : ''}</span>
+        <span>${son30[son30.length-1]?.tarih ? new Date(son30[son30.length-1].tarih+'T00:00:00').toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'}) : ''}</span>
+      </div>
+    </div>
+
+    <!-- AYLIK CHART -->
+    ${aylar.length > 1 ? `
+    <div style="background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;">
+      <div style="font-weight:700;color:#2c3e50;margin-bottom:14px;font-size:14px;">📅 Aylık Ciro</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:100px;">
+        ${aylar.map(([ay,v])=>{
+          const h=Math.max(4,Math.round((v.ciro/maxAy)*96));
+          const ayAd=new Date(ay+'-01').toLocaleDateString('tr-TR',{month:'short',year:'2-digit'});
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default;" title="${ayAd}: ${v.ciro.toLocaleString('tr-TR')}₺ (${v.gun} gün)">
+            <div style="width:100%;height:${h}px;background:linear-gradient(180deg,#3498db,#2980b9);border-radius:3px 3px 0 0;"></div>
+            <div style="font-size:9px;color:#aaa;white-space:nowrap;">${ayAd}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- HAFTANIN GÜNLERİ ORTALAMALARI -->
+    <div style="background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;">
+      <div style="font-weight:700;color:#2c3e50;margin-bottom:14px;font-size:14px;">📊 Haftanın Günlerine Göre Ortalama</div>
+      <div style="display:flex;gap:8px;">
+        ${gunOrt.map((g,i)=>{
+          const ort = g.sayac>0 ? Math.round(g.toplam/g.sayac) : 0;
+          const h = Math.max(4, Math.round((ort/maxGunOrt)*80));
+          const renk = i===5||i===6 ? '#e63946' : '#27ae60';
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="font-size:10px;font-weight:700;color:#7f8c8d;">${ort>0?ort.toLocaleString('tr-TR'):''}</div>
+            <div style="width:100%;height:${h}px;background:${renk};border-radius:4px 4px 0 0;opacity:${g.sayac>0?1:0.2};"></div>
+            <div style="font-size:11px;font-weight:700;color:${renk};">${gunLabels[i]}</div>
+            <div style="font-size:10px;color:#bbb;">${g.sayac}x</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="color:#c0392b;font-size:13px;padding:20px;">Analiz hatası: ${e.message}</div>`;
+  }
+}
+/* ── CİRO TAKİP SONU ── */
 </script>
 
 <!-- ŞİKAYETLER SEKMESİ -->
@@ -4867,9 +5364,85 @@ input:checked+.pm-big-slider:before{transform:translateX(26px);}
         <div style="text-align:right;font-size:11px;color:#aaa;margin-top:2px;"><span id="pm-char">0</span>/200</div>
       </div>
       <div class="pm-row"><label class="pm-label">Görsel URL <span style="font-weight:400;text-transform:none;">(opsiyonel)</span></label><input type="url" id="pm-image" class="pm-input" placeholder="https://..." oninput="window.pmPreview()"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+      <!-- Aksiyon Modu -->
+      <div class="pm-row">
+        <label class="pm-label">Buton Aksiyonu</label>
+        <div style="display:flex;gap:8px;">
+          <label style="flex:1;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;transition:.2s;" id="pm-mode-btn-normal" onclick="pmSetMode('normal')">
+            <input type="radio" name="pm-action-mode" value="normal" checked style="display:none;">
+            <span style="font-size:16px;">🔗</span> Link / Kapat
+          </label>
+          <label style="flex:1;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;transition:.2s;" id="pm-mode-btn-cart" onclick="pmSetMode('add_to_cart')">
+            <input type="radio" name="pm-action-mode" value="add_to_cart" style="display:none;">
+            <span style="font-size:16px;">🛒</span> Sepete Ekle
+          </label>
+        </div>
+      </div>
+
+      <!-- Normal mod alanları -->
+      <div id="pm-normal-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="pm-row"><label class="pm-label">Buton Metni</label><input type="text" id="pm-btntext" class="pm-input" value="Harika!" maxlength="25" oninput="window.pmPreview()"></div>
         <div class="pm-row"><label class="pm-label">Buton Linki</label><input type="url" id="pm-btnlink" class="pm-input" placeholder="https://..."></div>
+      </div>
+
+      <!-- Sepete ekle modu alanları -->
+      <div id="pm-cart-fields" style="display:none;background:#f0fff4;border-radius:10px;padding:14px;border:1.5px solid #a8e6b8;">
+        <div style="font-size:12px;font-weight:700;color:#27ae60;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+          🛒 Sepete Ekle Kampanyası — Müşteri "Hemen Al" butonuna basınca ürün sepete gider
+        </div>
+
+        <!-- Ürün seç (campaigns veya products) -->
+        <div class="pm-row">
+          <label class="pm-label">Kaynak</label>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <button onclick="pmCartSource('campaigns')" id="pm-src-camp-btn" style="flex:1;padding:8px;border:2px solid var(--primary);border-radius:8px;background:#fff8f5;color:var(--primary);font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">🏷️ Kampanyalar</button>
+            <button onclick="pmCartSource('products')" id="pm-src-prod-btn" style="flex:1;padding:8px;border:2px solid #ddd;border-radius:8px;background:white;color:#888;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">🍽️ Menü Ürünleri</button>
+          </div>
+        </div>
+
+        <div class="pm-row">
+          <label class="pm-label">Ürün Seç *</label>
+          <select id="pm-cart-product-select" class="pm-input" onchange="pmCartProductSelected(this)" style="margin-bottom:6px;">
+            <option value="">— Yükleniyor... —</option>
+          </select>
+          <div id="pm-cart-product-preview" style="display:none;background:white;border-radius:8px;padding:10px 12px;border:1px solid #ddd;margin-top:6px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img id="pm-cart-prev-img" src="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+              <div style="flex:1;">
+                <div id="pm-cart-prev-name" style="font-weight:700;font-size:13px;"></div>
+                <div id="pm-cart-prev-cat" style="font-size:11px;color:#999;"></div>
+              </div>
+              <div style="text-align:right;">
+                <div id="pm-cart-prev-price" style="font-size:15px;font-weight:800;color:var(--primary);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="pm-row">
+            <label class="pm-label">Normal Fiyat (₺)</label>
+            <input type="number" id="pm-cart-price" class="pm-input" placeholder="Otomatik dolar" min="0" style="background:#f9f9f9;" oninput="window.pmUpdateDiscountInfo()">
+          </div>
+          <div class="pm-row">
+            <label class="pm-label" style="color:#e63946;">Kampanya Fiyatı (₺) *</label>
+            <input type="number" id="pm-cart-campprice" class="pm-input" placeholder="İndirimli fiyat" min="0" style="border-color:#e63946;" oninput="window.pmUpdateDiscountInfo()">
+          </div>
+        </div>
+
+        <!-- İndirim göstergesi -->
+        <div id="pm-cart-discount-info" style="display:none;background:#fff0f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#e63946;text-align:center;"></div>
+
+        <div class="pm-row">
+          <label class="pm-label">Buton Metni</label>
+          <input type="text" id="pm-cart-btntext" class="pm-input" value="🛒 Hemen Al" maxlength="30">
+        </div>
+
+        <!-- Hidden fields - otomatik dolduruluyor -->
+        <input type="hidden" id="pm-cart-name">
+        <input type="hidden" id="pm-cart-category">
+        <input type="hidden" id="pm-cart-image">
       </div>
     </div>
     <div class="pm-card">
@@ -4974,6 +5547,78 @@ input:checked+.pm-big-slider:before{transform:translateX(26px);}
       <tbody id="mf-body"><tr><td colspan="3" style="text-align:center;padding:20px;color:#bbb;">Sekme açılınca otomatik yüklenir.</td></tr></tbody>
     </table>
   </div>
+</div>
+<!-- CİRO TAKİBİ -->
+<div id="ciro-takip" class="tab">
+<style>
+.ciro-card{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:16px;}
+.ciro-card h4{margin:0 0 14px;color:var(--dark);font-size:14px;display:flex;align-items:center;gap:7px;border-bottom:2px solid #f0f0f0;padding-bottom:10px;}
+.ciro-lbl{font-size:11px;font-weight:700;color:#7f8c8d;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.ciro-inp{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;}
+.ciro-inp:focus{border-color:var(--primary);outline:none;}
+.ciro-row{margin-bottom:12px;}
+.ciro-layout{display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start;}
+@media(max-width:1100px){.ciro-layout{grid-template-columns:1fr;}}
+</style>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+  <h3 style="margin:0;">💰 Ciro Takibi & Analiz</h3>
+  <button onclick="window.ciroInit()" class="btn" style="width:auto;background:#3498db;padding:8px 14px;flex:none;"><i class="fas fa-sync-alt"></i> Yenile</button>
+</div>
+
+<div class="ciro-layout">
+  <!-- SOL: GİRİŞ -->
+  <div>
+    <!-- TEKİL GİRİŞ -->
+    <div class="ciro-card ciro-form-card">
+      <h4><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Günlük Ciro Girişi</h4>
+      <div class="ciro-row"><label class="ciro-lbl">Tarih *</label><input type="date" id="ciro-tarih" class="ciro-inp"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="ciro-row"><label class="ciro-lbl">Ciro (₺) *</label><input type="number" id="ciro-tutar" class="ciro-inp" placeholder="0" min="0" step="1"></div>
+        <div class="ciro-row"><label class="ciro-lbl">Sipariş Sayısı</label><input type="number" id="ciro-siparis" class="ciro-inp" placeholder="0" min="0"></div>
+      </div>
+      <div class="ciro-row"><label class="ciro-lbl">Not <span style="font-weight:400;text-transform:none;">(opsiyonel)</span></label><input type="text" id="ciro-notlar" class="ciro-inp" placeholder="Ramazan, hava kötüydü, özel gün..."></div>
+      <button onclick="window.ciroSave()" class="btn" style="background:var(--primary);width:100%;height:42px;font-size:14px;"><i class="fas fa-save"></i> Kaydet</button>
+    </div>
+
+    <!-- TOPLU IMPORT -->
+    <div class="ciro-card">
+      <h4><i class="fas fa-file-import" style="color:#3498db;"></i> Toplu Veri Aktarımı (TXT)</h4>
+      <div style="background:#f0f7ff;border:1px solid #cde;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#2980b9;line-height:1.7;">
+        <b>Desteklenen formatlar:</b><br>
+        2024-01-15: 4500<br>
+        15.01.2024 4500 120<br>
+        15/01/2024 - 4500₺ - 120 sipariş - Cuma yoğundu<br>
+        2024-01-17 6200 145 Cumartesi rekoru
+      </div>
+      <div class="ciro-row">
+        <label class="ciro-lbl">Veriler (her satır bir gün)</label>
+        <textarea id="ciro-bulk-text" class="ciro-inp" style="resize:vertical;min-height:120px;font-family:monospace;font-size:13px;" placeholder="2024-01-15: 4500&#10;2024-01-16: 5200 120&#10;15.01.2024 4800"></textarea>
+      </div>
+      <button onclick="window.ciroImport()" class="btn" style="background:#3498db;width:100%;height:40px;"><i class="fas fa-file-import"></i> Aktar</button>
+      <div id="ciro-import-result"></div>
+    </div>
+
+    <!-- GEÇMİŞ KAYITLAR -->
+    <div class="ciro-card">
+      <h4><i class="fas fa-history" style="color:#7f8c8d;"></i> Geçmiş Kayıtlar</h4>
+      <div style="overflow-x:auto;">
+        <table class="dtbl">
+          <thead><tr><th>Tarih</th><th>Ciro</th><th>Sipariş</th><th>Not</th><th style="width:80px;">İşlem</th></tr></thead>
+          <tbody id="ciro-list-body"><tr><td colspan="5" style="text-align:center;padding:16px;color:#aaa;">Yükleniyor...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAĞ: ANALİZ -->
+  <div>
+    <div class="ciro-card">
+      <h4><i class="fas fa-chart-line" style="color:#e63946;"></i> Satış Analizleri</h4>
+      <div id="ciro-analiz"><div style="text-align:center;color:#bbb;font-size:13px;padding:30px;">Yükleniyor...</div></div>
+    </div>
+  </div>
+</div>
 </div>
 
 </main>
