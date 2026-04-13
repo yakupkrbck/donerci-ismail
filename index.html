@@ -1043,121 +1043,158 @@ const app  = initializeApp(fbCfg);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-// ── KAMPANYA / DUYURU POPUP ────────────────────────────────────────
-const KP_GRADIENTS = {
-  'gradient-fire':   'linear-gradient(135deg,#e63946,#f39c12)',
-  'gradient-purple': 'linear-gradient(135deg,#667eea,#764ba2)',
-  'gradient-green':  'linear-gradient(135deg,#11998e,#38ef7d)',
-};
-let kpAutoTimer = null;
+// ── KAMPANYA POPUP ────────────────────────────────────────────────
+const _KP_GRAD={'gradient-fire':'linear-gradient(135deg,#e63946,#f39c12)','gradient-purple':'linear-gradient(135deg,#667eea,#764ba2)','gradient-green':'linear-gradient(135deg,#11998e,#38ef7d)'};
 
-async function loadKampanyaPopup() {
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'popups'),
-      where('active', '==', true),
-      where('targets.siparis', '==', true)
-    ));
-    if (snap.empty) return;
-
-    const now = Date.now();
-    let secilenDoc = null;
-
-    snap.forEach(d => {
-      const data = d.data();
-      // until_date kontrolü
-      if (data.frequency === 'until_date' && data.untilDate) {
-        const bitis = new Date(data.untilDate).getTime();
-        if (now > bitis) return;
+async function loadKampanyaPopup(){
+  try{
+    // ── URL parametresi: ?popup=ID — dış linkten direkt popup aç ──
+    const urlParams=new URLSearchParams(window.location.search);
+    const forceId=urlParams.get('popup');
+    if(forceId){
+      const directSnap=await getDoc(doc(db,'popups',forceId));
+      if(directSnap.exists()){
+        // URL param'dan açılan popup'ta gösterim kaydı TUTMA (her link tıklamasında açılsın)
+        setTimeout(()=>showKampanyaPopup(forceId,directSnap.data(),null),500);
+        return;
       }
-      // Gösterim sıklığı kontrolü
-      const storageKey = 'kp_seen_' + d.id;
-      const freq = data.frequency || 'once_per_day';
-      if (freq === 'once_ever') {
-        if (localStorage.getItem(storageKey)) return;
-      } else if (freq === 'once_per_day' || freq === 'until_date') {
-        const lastSeen = localStorage.getItem(storageKey);
-        if (lastSeen) {
-          const diff = now - parseInt(lastSeen);
-          if (diff < 86400000) return; // 24 saat geçmemiş
-        }
-      } else if (freq === 'once_per_session') {
-        if (sessionStorage.getItem(storageKey)) return;
-      }
-      // first match
-      if (!secilenDoc) secilenDoc = { id: d.id, data };
+    }
+
+    const snap=await getDocs(query(collection(db,'popups'),where('active','==',true)));
+    if(snap.empty)return;
+    const now=Date.now(); let picked=null;
+    snap.forEach(d=>{
+      if(picked)return;
+      const data=d.data();
+      if(!data.targets?.siparis)return;
+      const freq=data.frequency||'once_per_day';
+      if(freq==='until_date'&&data.untilDate&&now>new Date(data.untilDate).getTime())return;
+      const updTs=data.updatedAt?.seconds||0;
+      const key='kp_'+d.id+'_'+updTs;
+      if(freq==='once_ever'&&localStorage.getItem(key))return;
+      if((freq==='once_per_day'||freq==='until_date')&&localStorage.getItem(key)&&(now-parseInt(localStorage.getItem(key)))<86400000)return;
+      if(freq==='once_per_session'&&sessionStorage.getItem(key))return;
+      picked={id:d.id,data,key};
     });
-
-    if (!secilenDoc) return;
-
-    const delay = (secilenDoc.data.delaySeconds || 1) * 1000;
-    setTimeout(() => gosterKampanyaPopup(secilenDoc.id, secilenDoc.data), delay);
-  } catch(e) {
-    console.warn('Popup yüklenemedi:', e.message);
-  }
+    if(!picked)return;
+    setTimeout(()=>showKampanyaPopup(picked.id,picked.data,picked.key),(picked.data.delaySeconds||1)*1000);
+  }catch(e){console.warn('Popup:',e.message);}
 }
 
-function gosterKampanyaPopup(id, data) {
-  const overlay = document.getElementById('kp-overlay');
-  if (!overlay) return;
+function showKampanyaPopup(id,d,storageKey){
+  const bg=_KP_GRAD[d.bgColor]||d.bgColor||'#e63946';
 
-  // İçerikleri doldur
-  document.getElementById('kp-emoji').textContent   = data.emoji || '📢';
-  document.getElementById('kp-title').textContent   = data.title || '';
-  document.getElementById('kp-message').textContent = data.message || '';
+  // Header
+  document.getElementById('kp-header').style.background=bg;
+  document.getElementById('kp-emoji').textContent=d.emoji||'📢';
+  document.getElementById('kp-title').textContent=d.title||'';
+  document.getElementById('kp-msg').textContent=d.message||'';
+  document.getElementById('kp-added-msg').style.display='none';
 
-  // Görsel
-  const imgWrap = document.getElementById('kp-image-wrap');
-  if (data.imageUrl) {
-    document.getElementById('kp-image').src = data.imageUrl;
-    imgWrap.style.display = 'block';
-  } else {
-    imgWrap.style.display = 'none';
+  const btn=document.getElementById('kp-btn');
+  btn.style.background=bg; btn.disabled=false;
+
+  // ── Sepete Ekle Modu ──
+  const priceBand=document.getElementById('kp-price-band');
+  const prodDetail=document.getElementById('kp-product-detail');
+  const heroWrap=document.getElementById('kp-hero-img-wrap');
+  const smallImgWrap=document.getElementById('kp-img-wrap');
+
+  if(d.action==='add_to_cart'&&d.cartItem?.name){
+    const item=d.cartItem;
+    const kampFiyat=item.campPrice||item.price;
+    const normalFiyat=item.price;
+
+    // Fiyat bandı
+    priceBand.style.display='block';
+    document.getElementById('kp-new-price').textContent=kampFiyat.toLocaleString('tr-TR')+' ₺';
+    if(normalFiyat&&normalFiyat>kampFiyat){
+      document.getElementById('kp-old-price').textContent=normalFiyat+' ₺';
+      document.getElementById('kp-old-price').style.display='inline';
+      const indirim=Math.round((1-kampFiyat/normalFiyat)*100);
+      document.getElementById('kp-discount-badge').textContent='%'+indirim+' İNDİRİM';
+      document.getElementById('kp-discount-badge').style.display='inline';
+    }else{
+      document.getElementById('kp-old-price').style.display='none';
+      document.getElementById('kp-discount-badge').style.display='none';
+    }
+
+    // Hero görsel (varsa büyük göster)
+    if(item.image){
+      document.getElementById('kp-hero-img').src=item.image;
+      heroWrap.style.display='block';
+    }else heroWrap.style.display='none';
+    smallImgWrap.style.display='none';
+
+    // Ürün detay kartı
+    prodDetail.style.display='block';
+    document.getElementById('kp-prod-thumb').src=item.image||'';
+    document.getElementById('kp-prod-thumb').style.display=item.image?'block':'none';
+    document.getElementById('kp-prod-name').textContent=item.name||'';
+    document.getElementById('kp-prod-cat').textContent=item.category||'';
+    document.getElementById('kp-prod-desc').textContent=d.message||'';
+    // İçindekiler / özellik tag'leri (message'dan veya features alanından)
+    const featEl=document.getElementById('kp-prod-features');
+    const features=d.features||item.features||[];
+    if(features.length){
+      featEl.innerHTML=features.map(f=>`<span style="background:#f0f0f0;color:#555;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${f}</span>`).join('');
+      featEl.style.display='flex';
+    }else featEl.style.display='none';
+
+    btn.textContent=d.buttonText||('🛒 Hemen Al — '+kampFiyat.toLocaleString('tr-TR')+' ₺');
+    btn.onclick=()=>{
+      if(typeof basket!=='undefined'){
+        basket.push({n:item.name,p:kampFiyat,note:'Popup Kampanyası',c:item.category||''});
+        if(typeof updateCart==='function')updateCart();
+      }
+      document.getElementById('kp-added-msg').style.display='block';
+      btn.textContent='✅ Eklendi!'; btn.disabled=true;
+      btn.style.background='#27ae60';
+      if(item.category)kpScrollToCategory(item.category);
+      setTimeout(()=>{
+        kpClose(); btn.disabled=false;
+        setTimeout(()=>{if(typeof openModal==='function')openModal('cart');},300);
+      },1400);
+    };
+
+  }else{
+    // Normal mod
+    priceBand.style.display='none';
+    prodDetail.style.display='none';
+    heroWrap.style.display='none';
+    if(d.imageUrl){
+      document.getElementById('kp-img').src=d.imageUrl;
+      smallImgWrap.style.display='block';
+    }else smallImgWrap.style.display='none';
+
+    btn.textContent=d.buttonText||'Harika!';
+    if(d.buttonLink){
+      btn.onclick=()=>{window.open(d.buttonLink,'_blank');kpClose();};
+    }else{
+      btn.onclick=kpClose;
+    }
   }
 
-  // Buton
-  const mainBtn = document.getElementById('kp-main-btn');
-  mainBtn.textContent = data.buttonText || 'Harika!';
-  if (data.buttonLink) {
-    mainBtn.onclick = () => { window.open(data.buttonLink, '_blank'); closeKampanyaPopup(); };
-  } else {
-    mainBtn.onclick = closeKampanyaPopup;
-  }
+  // Paylaşım linki
+  const shareDiv=document.getElementById('kp-share-link');
+  const shareUrl=document.getElementById('kp-share-url');
+  const baseUrl=window.location.origin+window.location.pathname;
+  const link=baseUrl+'?popup='+id;
+  shareUrl.textContent=link;
+  shareDiv.style.display='block';
 
-  // Arkaplan rengi
-  const bg = KP_GRADIENTS[data.bgColor] || data.bgColor || '#e63946';
-  document.getElementById('kp-header').style.background = bg;
-  mainBtn.style.background = bg;
-
-  // Göster
-  overlay.style.display = 'flex';
-
-  // Otomatik kapanma (8 saniye) + timer bar
-  const AUTO_CLOSE_MS = 8000;
-  const bar = document.getElementById('kp-timer-bar');
-  bar.style.width = '100%';
-  bar.style.transitionDuration = AUTO_CLOSE_MS + 'ms';
-  requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = '0%'; }));
-  kpAutoTimer = setTimeout(closeKampanyaPopup, AUTO_CLOSE_MS);
+  document.getElementById('kp-overlay').style.display='flex';
 
   // Gösterim kaydı
-  const freq = data.frequency || 'once_per_day';
-  const storageKey = 'kp_seen_' + id;
-  if (freq === 'once_ever') {
-    localStorage.setItem(storageKey, '1');
-  } else if (freq === 'once_per_day' || freq === 'until_date') {
-    localStorage.setItem(storageKey, String(Date.now()));
-  } else if (freq === 'once_per_session') {
-    sessionStorage.setItem(storageKey, '1');
+  if(storageKey){
+    const freq=d.frequency||'once_per_day';
+    const now=Date.now();
+    if(freq==='once_ever')localStorage.setItem(storageKey,'1');
+    else if(freq==='once_per_day'||freq==='until_date')localStorage.setItem(storageKey,String(now));
+    else if(freq==='once_per_session')sessionStorage.setItem(storageKey,'1');
   }
 }
-
-function closeKampanyaPopup() {
-  if (kpAutoTimer) { clearTimeout(kpAutoTimer); kpAutoTimer = null; }
-  const overlay = document.getElementById('kp-overlay');
-  if (overlay) overlay.style.display = 'none';
-}
-// ── KAMPANYA POPUP SONU ───────────────────────────────────────────
+// ── POPUP SONU ───────────────────────────────────────────────────
 
 // ── FCM PUSH BİLDİRİMLERİ ────────────────────────────────────────
 const VAPID_KEY = "BHMGM1tM7MeixLgJ10c53kzC9kyeH9sjWAVULWrkE8-wrj9eEFv9Rmii7-DZ6AdE8tnm7gas40ihdqpwKWnE9Fs";
@@ -1497,7 +1534,7 @@ function renderMenu(products) {
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
     document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
-        <div class="cat-title">${catEmojis[cat]||'🍽'} ${cat}</div>
+        <div class="cat-title" data-cat="${cat}">${catEmojis[cat]||'🍽'} ${cat}</div>
         ${cats[cat].map(item=>{
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
             if(shopOpen&&item.inStock&&(cat==='Pideler'||cat==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm')&&!bakeryOpen){btnTxt="12:00'DA";disabled=true;}
@@ -4489,34 +4526,90 @@ window.onload=()=>{
     </div>
   </div>
 
- <!-- KAMPANYA / DUYURU POPUP -->
- <div id="kp-overlay" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
-   <div id="kp-box" style="background:white;border-radius:22px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);animation:kpIn .4s cubic-bezier(.34,1.4,.64,1);position:relative;">
-     <!-- Üst renkli header -->
-     <div id="kp-header" style="padding:20px 20px 16px;position:relative;">
-       <!-- Otomatik kapanma çubuğu -->
-       <div id="kp-timer-bar" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,255,255,0.4);transition:width linear;"></div>
-       <!-- X butonu -->
-       <button onclick="closeKampanyaPopup()" id="kp-close-btn" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.25);border:none;color:white;width:28px;height:28px;border-radius:50%;font-size:16px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2;">×</button>
-       <div id="kp-emoji" style="font-size:32px;line-height:1;margin-bottom:10px;">🎉</div>
-       <div id="kp-title" style="color:white;font-size:17px;font-weight:800;line-height:1.3;padding-right:32px;"></div>
-     </div>
-     <!-- İçerik -->
-     <div style="padding:16px 20px 20px;">
-       <div id="kp-image-wrap" style="display:none;border-radius:12px;overflow:hidden;margin-bottom:14px;max-height:150px;">
-         <img id="kp-image" src="" alt="" style="width:100%;object-fit:cover;max-height:150px;display:block;" onerror="document.getElementById('kp-image-wrap').style.display='none'">
+ <!-- KAMPANYA POPUP -->
+ <div id="kp-overlay" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)kpClose()">
+   <div style="background:white;border-radius:24px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.5);animation:kpIn .4s cubic-bezier(.34,1.4,.64,1);max-height:90vh;overflow-y:auto;">
+
+     <!-- Header -->
+     <div id="kp-header" style="background:#e63946;padding:22px 20px 16px;position:relative;">
+       <button onclick="kpClose()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.25);border:none;color:white;width:32px;height:32px;border-radius:50%;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;z-index:2;">×</button>
+       <div id="kp-emoji" style="font-size:34px;line-height:1;margin-bottom:8px;">📢</div>
+       <div id="kp-title" style="color:white;font-size:18px;font-weight:800;line-height:1.3;padding-right:40px;font-family:'Poppins',sans-serif;"></div>
+       <!-- Fiyat bandı — sepete ekle modunda -->
+       <div id="kp-price-band" style="display:none;margin-top:12px;">
+         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+           <span id="kp-old-price" style="color:rgba(255,255,255,.55);font-size:15px;text-decoration:line-through;font-family:'Poppins',sans-serif;"></span>
+           <span id="kp-new-price" style="color:white;font-size:30px;font-weight:900;font-family:'Poppins',sans-serif;line-height:1;"></span>
+           <span id="kp-discount-badge" style="background:rgba(0,0,0,.2);color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;font-family:'Poppins',sans-serif;"></span>
+         </div>
        </div>
-       <div id="kp-message" style="font-size:14px;color:#444;line-height:1.55;margin-bottom:18px;"></div>
+     </div>
+
+     <!-- Ürün Görseli (büyük — sadece görsel varsa) -->
+     <div id="kp-hero-img-wrap" style="display:none;max-height:200px;overflow:hidden;">
+       <img id="kp-hero-img" src="" style="width:100%;object-fit:cover;max-height:200px;display:block;" onerror="this.parentElement.style.display='none'">
+     </div>
+
+     <!-- İçerik -->
+     <div style="padding:18px 20px 22px;">
+
+       <!-- Mesaj -->
+       <div id="kp-msg" style="font-size:14px;color:#444;line-height:1.6;margin-bottom:14px;font-family:'Poppins',sans-serif;"></div>
+
+       <!-- Ürün Detay Kartı (sepete ekle modunda) -->
+       <div id="kp-product-detail" style="display:none;background:#f8f9fa;border-radius:14px;padding:14px;margin-bottom:16px;border:1.5px solid #eee;">
+         <div style="display:flex;gap:12px;align-items:flex-start;">
+           <img id="kp-prod-thumb" src="" style="width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;border:2px solid #e0e0e0;" onerror="this.style.display='none'">
+           <div style="flex:1;min-width:0;">
+             <div id="kp-prod-name" style="font-weight:800;font-size:15px;color:#1a1a1a;margin-bottom:3px;"></div>
+             <div id="kp-prod-cat" style="font-size:11px;color:#999;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;"></div>
+             <div id="kp-prod-desc" style="font-size:12px;color:#666;line-height:1.5;"></div>
+           </div>
+         </div>
+         <!-- İçindekiler / Özellikler (satır satır) -->
+         <div id="kp-prod-features" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:5px;"></div>
+       </div>
+
+       <!-- Küçük görsel (ürün detay yokken) -->
+       <div id="kp-img-wrap" style="display:none;border-radius:12px;overflow:hidden;margin-bottom:14px;">
+         <img id="kp-img" src="" style="width:100%;max-height:140px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'">
+       </div>
+
+       <!-- Butonlar -->
        <div style="display:flex;gap:10px;">
-         <button id="kp-main-btn" onclick="closeKampanyaPopup()" style="flex:1;padding:13px;border:none;border-radius:14px;font-weight:800;font-size:14px;cursor:pointer;color:white;font-family:inherit;transition:opacity .2s;">Harika!</button>
-         <button onclick="closeKampanyaPopup()" style="padding:13px 16px;background:#f0f0f0;border:none;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;color:#888;font-family:inherit;">Kapat</button>
+         <button id="kp-btn" onclick="kpClose()" style="flex:1;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;color:white;background:#e63946;font-family:inherit;transition:all .2s;letter-spacing:.2px;">Harika!</button>
+         <button onclick="kpClose()" style="padding:15px 18px;background:#f0f0f0;border:none;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;color:#888;font-family:inherit;transition:background .2s;" onmouseover="this.style.background='#e5e5e5'" onmouseout="this.style.background='#f0f0f0'">Kapat</button>
+       </div>
+       <div id="kp-added-msg" style="display:none;text-align:center;margin-top:12px;font-size:14px;font-weight:700;color:#27ae60;animation:kpFadeIn .3s;">✅ Sepete eklendi! Sepet açılıyor...</div>
+
+       <!-- Dış link paylaşım notu -->
+       <div id="kp-share-link" style="display:none;margin-top:12px;text-align:center;">
+         <span style="font-size:11px;color:#bbb;">Bu kampanyayı paylaş: </span>
+         <span id="kp-share-url" style="font-size:11px;color:#3498db;font-weight:600;cursor:pointer;word-break:break-all;" onclick="navigator.clipboard?.writeText(this.textContent).then(()=>showToast('Link kopyalandı 📋'))"></span>
        </div>
      </div>
    </div>
  </div>
  <style>
- @keyframes kpIn{from{transform:scale(.75);opacity:0;}to{transform:scale(1);opacity:1;}}
+ @keyframes kpIn{from{transform:scale(.78) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+ @keyframes kpFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+ #kp-btn:hover{transform:scale(1.02);box-shadow:0 6px 20px rgba(0,0,0,.2);}
  </style>
+ <script>
+ function kpClose(){
+   document.getElementById('kp-overlay').style.display='none';
+ }
+ function kpScrollToCategory(catName) {
+   if (!catName) return;
+   const el = document.querySelector(`[data-cat="${catName}"]`);
+   if (el) {
+     setTimeout(() => {
+       el.scrollIntoView({behavior:'smooth', block:'start'});
+       setTimeout(() => window.scrollBy(0, -90), 400);
+     }, 350);
+   }
+ }
+ </script>
 
  <!-- BİLDİRİM İZİN POPUP -->
  <div id="notif-permission-popup" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;padding:16px;">
