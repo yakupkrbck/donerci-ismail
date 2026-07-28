@@ -429,6 +429,7 @@ input:checked+.slider:before{transform:translateX(24px);}
   <div class="mi" onclick="showTab('complaints',this)"><i class="fas fa-exclamation-circle"></i> Şikayetler</div>
 
   <div style="font-size:10px;color:rgba(255,255,255,.35);padding:10px 18px 4px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Ayarlar</div>
+  <div class="mi" onclick="showTab('settings-hub',this)"><i class="fas fa-cog"></i> ⚙️ Genel Ayarlar</div>
   <div class="mi" onclick="showTab('store-hours',this)"><i class="fas fa-clock"></i> Çalışma Saati</div>
   <div class="mi" onclick="showTab('printer-settings',this)"><i class="fas fa-print"></i> Yazıcı Ayarları</div>
   <div style="flex:1"></div>
@@ -2036,7 +2037,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence }
   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, query, orderBy, where, onSnapshot, doc,
-         updateDoc, getDocs, writeBatch, addDoc, deleteDoc, setDoc, getDoc, increment, serverTimestamp }
+         updateDoc, getDocs, writeBatch, addDoc, deleteDoc, setDoc, getDoc, increment, serverTimestamp, deleteField }
   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const fbCfg = {
@@ -2250,14 +2251,35 @@ window.toggleStoreWithMsg = () => {
         <textarea id="close-msg-input" rows="3" placeholder="Veya kendi mesajınızı yazın..."
           style="width:100%;padding:10px 12px;border:1.5px solid #e74c3c;border-radius:8px;font-size:13px;resize:none;box-sizing:border-box;background:#fff8f8;"></textarea>
       </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:#444;margin-bottom:6px;">Ne kadar süreyle kapatılsın?</div>
+        <div id="close-duration-group" style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button type="button" class="dur-chip" onclick="selectCloseDuration('15',this)"
+            style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #ddd;background:white;color:#555;">15 Dakika</button>
+          <button type="button" class="dur-chip" onclick="selectCloseDuration('30',this)"
+            style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #ddd;background:white;color:#555;">Yarım Saat</button>
+          <button type="button" class="dur-chip" onclick="selectCloseDuration('60',this)"
+            style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #ddd;background:white;color:#555;">1 Saat</button>
+          <button type="button" class="dur-chip" onclick="selectCloseDuration('tomorrow',this)"
+            style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #ddd;background:white;color:#555;">Yarına Kadar</button>
+          <button type="button" class="dur-chip" onclick="selectCloseDuration('indefinite',this)"
+            style="padding:6px 12px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e74c3c;background:#fff0f0;color:#e74c3c;">Süresiz</button>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;">
         <button onclick="document.getElementById('close-msg-modal').remove()"
           style="flex:1;padding:11px;border:1.5px solid #ddd;border-radius:8px;background:white;font-size:13px;font-weight:700;cursor:pointer;color:#666;">Vazgeç</button>
         <button onclick="confirmCloseStore()"
           style="flex:2;padding:11px;border:none;border-radius:8px;background:#c0392b;color:white;font-size:13px;font-weight:800;cursor:pointer;">⛔ Kapat</button>
       </div>
+      <div style="text-align:center;margin-top:12px;">
+        <a href="javascript:void(0)" onclick="openHolidayModal()"
+          style="font-size:12px;color:#e67e22;font-weight:700;text-decoration:none;">🏖️ Tatil Modu Ayarla (belirli tarihe kadar kapat)</a>
+      </div>
     </div>`;
   document.body.appendChild(modal);
+  // Süre seçimini sıfırla (varsayılan: süresiz)
+  window._closeDuration = 'indefinite';
   // Mevcut mesajı yükle
   getDoc(doc(db,'ayarlar','genel')).then(s=>{
     const inp = document.getElementById('close-msg-input');
@@ -2270,25 +2292,136 @@ window.setCloseMsg = (text) => {
   if(inp){ inp.value = text; inp.focus(); }
 };
 
+window._closeDuration = 'indefinite';
+window.selectCloseDuration = (val, btn) => {
+  window._closeDuration = val;
+  document.querySelectorAll('#close-duration-group .dur-chip').forEach(b=>{
+    b.style.border='1.5px solid #ddd'; b.style.background='white'; b.style.color='#555';
+  });
+  btn.style.border='1.5px solid #e74c3c'; btn.style.background='#fff0f0'; btn.style.color='#e74c3c';
+};
+
+async function getDefaultOpenTime(){
+  try{
+    const s = await getDoc(doc(db,'ayarlar','genel'));
+    if(s.exists() && s.data().openTime) return s.data().openTime;
+  }catch(e){}
+  return '10:30';
+}
+
 window.confirmCloseStore = async () => {
   const msg = document.getElementById('close-msg-input')?.value?.trim() || 'Şu an sipariş alamıyoruz.';
+  const dur = window._closeDuration || 'indefinite';
   document.getElementById('close-msg-modal')?.remove();
-  await setDoc(doc(db,'ayarlar','genel'), { isOpen: false, message: msg }, { merge: true });
+
+  let closedUntil = null;
+  if(dur==='15') closedUntil = new Date(Date.now()+15*60000);
+  else if(dur==='30') closedUntil = new Date(Date.now()+30*60000);
+  else if(dur==='60') closedUntil = new Date(Date.now()+60*60000);
+  else if(dur==='tomorrow'){
+    const openTime = await getDefaultOpenTime();
+    const [oh,om] = openTime.split(':').map(Number);
+    const t = new Date(Date.now()+86400000);
+    t.setHours(oh,om,0,0);
+    closedUntil = t;
+  }
+
+  const payload = { isOpen:false, message:msg, holidayMode:false };
+  payload.closedUntil = closedUntil ? closedUntil : deleteField();
+
+  await setDoc(doc(db,'ayarlar','genel'), payload, { merge: true });
   toast('⛔ İşletme kapatıldı');
 };
 
+// ── TATİL MODU ────────────────────────────────────────────────────────────
+window.openHolidayModal = () => {
+  document.getElementById('close-msg-modal')?.remove();
+  document.getElementById('holiday-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'holiday-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  const minDate = new Date(Date.now()+86400000).toISOString().slice(0,10);
+  modal.innerHTML = `
+    <div style="background:white;border-radius:16px;padding:24px;max-width:380px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+      <h3 style="margin:0 0 6px;color:#e67e22;font-size:17px;">🏖️ Tatil Modu</h3>
+      <p style="font-size:13px;color:#666;margin:0 0 16px;">İşletme seçtiğiniz tarihe kadar kapalı kalır ve o günkü normal açılış saatinde otomatik olarak açılır.</p>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#444;display:block;margin-bottom:5px;">Ne zaman geri dönülüyor?</label>
+        <input type="date" id="holiday-date" min="${minDate}"
+          style="width:100%;padding:10px 12px;border:1.5px solid #e67e22;border-radius:8px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <textarea id="holiday-msg-input" rows="3"
+          style="width:100%;padding:10px 12px;border:1.5px solid #e67e22;border-radius:8px;font-size:13px;resize:none;box-sizing:border-box;background:#fff8f2;">Tatildeyiz 🌴 Belirtilen tarihte tekrar hizmetinizdeyiz!</textarea>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('holiday-modal').remove()"
+          style="flex:1;padding:11px;border:1.5px solid #ddd;border-radius:8px;background:white;font-size:13px;font-weight:700;cursor:pointer;color:#666;">Vazgeç</button>
+        <button onclick="confirmHolidayClose()"
+          style="flex:2;padding:11px;border:none;border-radius:8px;background:#e67e22;color:white;font-size:13px;font-weight:800;cursor:pointer;">🏖️ Tatile Çıkar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+};
+
+window.confirmHolidayClose = async () => {
+  const dateVal = document.getElementById('holiday-date')?.value;
+  if(!dateVal){ toast('⚠️ Lütfen dönüş tarihi seçin'); return; }
+  const msg = document.getElementById('holiday-msg-input')?.value?.trim() || 'Tatildeyiz, en kısa sürede döneceğiz 🌴';
+  const openTime = await getDefaultOpenTime();
+  const [oh,om] = openTime.split(':').map(Number);
+  const returnDate = new Date(dateVal+'T00:00:00');
+  returnDate.setHours(oh,om,0,0);
+  document.getElementById('holiday-modal')?.remove();
+  await setDoc(doc(db,'ayarlar','genel'), { isOpen:false, message:msg, closedUntil:returnDate, holidayMode:true }, { merge:true });
+  toast('🏖️ Tatil modu aktifleştirildi');
+};
+
 window.toggleStore = async open => {
-  await setDoc(doc(db,"ayarlar","genel"),{isOpen:open},{merge:true});
+  const payload = open ? { isOpen:true, closedUntil:deleteField(), holidayMode:deleteField() } : { isOpen:false };
+  await setDoc(doc(db,"ayarlar","genel"),payload,{merge:true});
   toast(open ? "✅ Açıldı" : "⛔ Kapatıldı");
 };
+
+let _lastStoreDoc = null;
 function listenStore(){
   onSnapshot(doc(db,"ayarlar","genel"), s=>{
-    const open = s.exists() ? s.data().isOpen !== false : true;
-    const ind=document.getElementById('sysind'), txt=document.getElementById('systxt');
-    const bO=document.getElementById('btn-ac'), bC=document.getElementById('btn-kp');
-    if(open){ ind.className='sys-status open'; txt.innerText="SİSTEM AKTİF"; bO.classList.add('on'); bC.classList.remove('on'); }
-    else { ind.className='sys-status closed'; txt.innerText="MAĞAZA KAPALI"; bC.classList.add('on'); bO.classList.remove('on'); }
+    _lastStoreDoc = s.exists() ? s.data() : {};
+    renderStoreStatus(_lastStoreDoc);
   });
+  // closedUntil süresi dolduğunda yeni bir Firestore yazması olmasa bile
+  // panel açıkken otomatik yeniden değerlendirmek için periyodik kontrol
+  setInterval(()=>{ if(_lastStoreDoc) renderStoreStatus(_lastStoreDoc); }, 20000);
+}
+
+function renderStoreStatus(data){
+  const open = data.isOpen !== false;
+  const ind=document.getElementById('sysind'), txt=document.getElementById('systxt');
+  const bO=document.getElementById('btn-ac'), bC=document.getElementById('btn-kp');
+  const closedUntil = data.closedUntil?.toDate ? data.closedUntil.toDate()
+                      : (data.closedUntil ? new Date(data.closedUntil) : null);
+
+  // Süresi dolmuş otomatik kapatma varsa Firestore'u da güncelleyip aç
+  if(!open && closedUntil && new Date() >= closedUntil){
+    setDoc(doc(db,"ayarlar","genel"),{isOpen:true, closedUntil:deleteField(), holidayMode:deleteField()},{merge:true}).catch(()=>{});
+    return; // yeni snapshot geldiğinde UI zaten güncellenecek
+  }
+
+  if(open){
+    ind.className='sys-status open'; txt.innerText="SİSTEM AKTİF"; bO.classList.add('on'); bC.classList.remove('on');
+    return;
+  }
+
+  ind.className='sys-status closed'; bC.classList.add('on'); bO.classList.remove('on');
+  if(closedUntil){
+    const diffMin = Math.max(1, Math.round((closedUntil-new Date())/60000));
+    const timeStr = closedUntil.toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    if(data.holidayMode) txt.innerText = `🏖️ TATİL MODU — ${timeStr}'e kadar`;
+    else if(diffMin < 90) txt.innerText = `KAPALI — ${diffMin} dk sonra açılır`;
+    else txt.innerText = `KAPALI — ${timeStr}'de açılır`;
+  } else {
+    txt.innerText = "MAĞAZA KAPALI";
+  }
 }
 
 // ── SİPARİŞLER ─────────────────────────────────────────────────────────────
@@ -3942,6 +4075,118 @@ window.showTab=(id,el)=>{
   if(id==='popup-manager') window.pmLoadList();
   if(id==='menu-fiyat') window.loadMenuFiyatlar();
   if(id==='ciro-takip') window.ciroInit();
+  if(id==='settings-hub') { loadBusinessSettings(); loadOrderConfigSettings(); }
+};
+
+// ── GENEL AYARLAR (HUB) ──────────────────────────────────────────────────
+window.showSettingsSubTab = (key, btn) => {
+  document.querySelectorAll('.sh-section').forEach(s=>s.style.display='none');
+  document.getElementById('sh-'+key).style.display='block';
+  document.querySelectorAll('.sh-pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.loadBusinessSettings = async () => {
+  try{
+    const snap = await getDoc(doc(db,'settings','business'));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('bs-phone').value     = d.phone     || '';
+    document.getElementById('bs-whatsapp').value   = d.whatsapp || '';
+    document.getElementById('bs-address').value    = d.address  || '';
+    document.getElementById('bs-instagram').value  = d.instagram|| '';
+    document.getElementById('bs-facebook').value   = d.facebook || '';
+    document.getElementById('bs-iban').value       = d.iban     || '';
+    document.getElementById('bs-ibanname').value   = d.ibanName || '';
+  }catch(e){ console.warn('İşletme ayarları yüklenemedi', e); }
+};
+
+window.saveBusinessSettings = async () => {
+  const data = {
+    phone:     document.getElementById('bs-phone').value.trim(),
+    whatsapp:  document.getElementById('bs-whatsapp').value.trim().replace(/\D/g,''),
+    address:   document.getElementById('bs-address').value.trim(),
+    instagram: document.getElementById('bs-instagram').value.trim(),
+    facebook:  document.getElementById('bs-facebook').value.trim(),
+    iban:      document.getElementById('bs-iban').value.trim(),
+    ibanName:  document.getElementById('bs-ibanname').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+  const statusEl = document.getElementById('bs-status');
+  try{
+    await setDoc(doc(db,'settings','business'), data, { merge:true });
+    statusEl.style.display='block'; statusEl.style.background='#eafaf1'; statusEl.style.color='#27ae60';
+    statusEl.innerText='✅ İşletme bilgileri kaydedildi!';
+    toast('✅ İşletme bilgileri güncellendi');
+  }catch(e){
+    statusEl.style.display='block'; statusEl.style.background='#fdedec'; statusEl.style.color='#c0392b';
+    statusEl.innerText='❌ Kaydedilemedi: '+e.message;
+  }
+};
+
+window.loadOrderConfigSettings = async () => {
+  try{
+    const snap = await getDoc(doc(db,'settings','orderConfig'));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('oc-min-points-order').value = d.minPointsOrder ?? 200;
+    document.getElementById('or-tol-pct').value       = d.priceTolerancePercent ?? 5;
+    document.getElementById('or-tol-flat').value      = d.priceToleranceFlat ?? 5;
+    document.getElementById('or-single-active').checked = d.singleActiveOrderEnabled !== false;
+    document.getElementById('or-cantik-enabled').checked = d.minCategoryQtyEnabled !== false;
+    document.getElementById('or-cantik-min').value    = d.minCategoryQty ?? 2;
+  }catch(e){ console.warn('Sipariş ayarları yüklenemedi', e); }
+  try{
+    const csnap = await getDoc(doc(db,'ayarlar','counters'));
+    const cur = csnap.exists() ? (csnap.data().orderNumber||0) : 0;
+    document.getElementById('oc-current-counter').innerText = '#' + cur;
+  }catch(e){}
+};
+
+window.saveOrderConfigSettings = async () => {
+  const minPointsOrder = parseInt(document.getElementById('oc-min-points-order').value)||0;
+  const statusEl = document.getElementById('oc-status');
+  try{
+    await setDoc(doc(db,'settings','orderConfig'), { minPointsOrder, updatedAt:new Date().toISOString() }, { merge:true });
+    statusEl.style.display='block'; statusEl.style.background='#eafaf1'; statusEl.style.color='#27ae60';
+    statusEl.innerText='✅ Kaydedildi!';
+    toast('✅ Sipariş ayarları güncellendi');
+  }catch(e){
+    statusEl.style.display='block'; statusEl.style.background='#fdedec'; statusEl.style.color='#c0392b';
+    statusEl.innerText='❌ Kaydedilemedi: '+e.message;
+  }
+};
+
+window.saveOrderRulesSettings = async () => {
+  const data = {
+    priceTolerancePercent:   parseFloat(document.getElementById('or-tol-pct').value)||0,
+    priceToleranceFlat:      parseFloat(document.getElementById('or-tol-flat').value)||0,
+    singleActiveOrderEnabled: document.getElementById('or-single-active').checked,
+    minCategoryQtyEnabled:   document.getElementById('or-cantik-enabled').checked,
+    minCategoryQty:          parseInt(document.getElementById('or-cantik-min').value)||2,
+    updatedAt: new Date().toISOString()
+  };
+  const statusEl = document.getElementById('or-status');
+  try{
+    await setDoc(doc(db,'settings','orderConfig'), data, { merge:true });
+    statusEl.style.display='block'; statusEl.style.background='#eafaf1'; statusEl.style.color='#27ae60';
+    statusEl.innerText='✅ Sipariş kuralları kaydedildi!';
+    toast('✅ Sipariş kuralları güncellendi');
+  }catch(e){
+    statusEl.style.display='block'; statusEl.style.background='#fdedec'; statusEl.style.color='#c0392b';
+    statusEl.innerText='❌ Kaydedilemedi: '+e.message;
+  }
+};
+
+window.resetOrderCounter = async () => {
+  const val = document.getElementById('oc-new-counter').value;
+  if(val===''){ toast('⚠️ Bir değer girin', true); return; }
+  const num = parseInt(val)||0;
+  if(!confirm(`Sipariş sayacını ${num} olarak ayarlamak istediğinize emin misiniz?\n\nBir sonraki sipariş #${num+1} numarasını alacak.`)) return;
+  try{
+    await setDoc(doc(db,'ayarlar','counters'), { orderNumber:num }, { merge:true });
+    toast('✅ Sayaç güncellendi');
+    document.getElementById('oc-new-counter').value='';
+    loadOrderConfigSettings();
+  }catch(e){ toast('❌ Hata: '+e.message, true); }
 };
 
 // ── ÇALIŞMA SAATLERİ ────────────────────────────────────────────────────────
@@ -7313,6 +7558,160 @@ input:checked+.pm-big-slider:before{transform:translateX(26px);}
     </div>
   </div>
 </div>
+</div>
+
+<!-- GENEL AYARLAR (HUB) ──────────────────────────────────────────────────── -->
+<style>
+.sh-pill{padding:9px 18px;border-radius:20px;border:1.5px solid #ddd;background:white;color:#555;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;}
+.sh-pill.active{border-color:var(--primary);background:var(--primary);color:white;}
+.sh-card{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;border:1.5px solid transparent;transition:.15s;}
+.sh-card:hover{border-color:var(--primary);transform:translateY(-2px);}
+</style>
+<div id="settings-hub" class="tab">
+  <h3 style="margin-bottom:6px;">⚙️ Genel Ayarlar</h3>
+  <p style="font-size:12px;color:#aaa;margin:0 0 18px;">Sistemin tüm önemli ayarlarına buradan ulaşabilirsiniz.</p>
+
+  <!-- Alt sekme pilleri -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;">
+    <button type="button" class="sh-pill active" onclick="showSettingsSubTab('business',this)">🏢 İşletme Bilgileri</button>
+    <button type="button" class="sh-pill" onclick="showSettingsSubTab('order',this)">🛒 Sipariş & Puan</button>
+    <button type="button" class="sh-pill" onclick="showSettingsSubTab('rules',this)">📋 Sipariş Kuralları</button>
+    <button type="button" class="sh-pill" onclick="showSettingsSubTab('links',this)">🔗 Diğer Ayarlar</button>
+  </div>
+
+  <!-- İŞLETME BİLGİLERİ -->
+  <div id="sh-business" class="sh-section" style="max-width:620px;">
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <h4 style="margin:0 0 4px;color:var(--dark);">🏢 İşletme Bilgileri</h4>
+      <p style="font-size:12px;color:#aaa;margin:0 0 18px;">Burada girilen bilgiler müşteri uygulamasındaki telefon, WhatsApp ve sosyal medya alanlarında otomatik olarak kullanılır.</p>
+      <div class="mform" style="flex-direction:column;gap:14px;">
+        <div class="fg"><label>Sipariş Hattı (Telefon)</label>
+          <input type="tel" id="bs-phone" placeholder="0224 246 61 20" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+        <div class="fg"><label>WhatsApp Numarası (ülke kodlu, boşluksuz — ör: 905xxxxxxxxx)</label>
+          <input type="text" id="bs-whatsapp" placeholder="905xxxxxxxxx" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+        <div class="fg"><label>Adres</label>
+          <textarea id="bs-address" rows="2" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;resize:vertical;box-sizing:border-box;"></textarea></div>
+        <div style="display:flex;gap:14px;">
+          <div class="fg" style="flex:1;"><label>Instagram Linki</label>
+            <input type="text" id="bs-instagram" placeholder="https://instagram.com/..." style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+          <div class="fg" style="flex:1;"><label>Facebook Linki</label>
+            <input type="text" id="bs-facebook" placeholder="https://facebook.com/..." style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+        </div>
+        <div style="display:flex;gap:14px;">
+          <div class="fg" style="flex:2;"><label>IBAN (Havale ile ödeme için)</label>
+            <input type="text" id="bs-iban" placeholder="TR00 0000 0000 0000 0000 0000 00" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+          <div class="fg" style="flex:1;"><label>Hesap Sahibi</label>
+            <input type="text" id="bs-ibanname" placeholder="Ad Soyad" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+        </div>
+        <button onclick="saveBusinessSettings()" class="btn" style="background:var(--success);width:100%;"><i class="fas fa-save"></i> Kaydet</button>
+        <div id="bs-status" style="display:none;padding:12px;border-radius:8px;font-size:13px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SİPARİŞ & PUAN AYARLARI -->
+  <div id="sh-order" class="sh-section" style="display:none;max-width:620px;">
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:18px;">
+      <h4 style="margin:0 0 4px;color:var(--dark);">🛒 Puan Kullanım Ayarı</h4>
+      <p style="font-size:12px;color:#aaa;margin:0 0 18px;">Müşterinin biriktirdiği puanı sepette indirim olarak kullanabilmesi için gereken minimum sepet tutarı.</p>
+      <div class="mform" style="flex-direction:column;gap:14px;">
+        <div class="fg"><label>Puan Kullanımı İçin Minimum Sepet Tutarı (TL)</label>
+          <input type="number" id="oc-min-points-order" value="200" min="0" step="10" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+        <button onclick="saveOrderConfigSettings()" class="btn" style="background:var(--success);width:100%;"><i class="fas fa-save"></i> Kaydet</button>
+        <div id="oc-status" style="display:none;padding:12px;border-radius:8px;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <h4 style="margin:0 0 4px;color:var(--dark);">🔢 Sipariş Numarası Sayacı</h4>
+      <p style="font-size:12px;color:#aaa;margin:0 0 16px;">Bir sonraki siparişe verilecek numarayı elle ayarlayabilirsiniz (ör: yılbaşında sıfırlamak için).</p>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="font-size:13px;color:#555;">Şu anki sayaç:</span>
+        <strong id="oc-current-counter" style="font-size:16px;color:var(--primary);">—</strong>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <input type="number" id="oc-new-counter" placeholder="Yeni değer (ör: 0)" min="0" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <button onclick="resetOrderCounter()" class="btn" style="background:#e67e22;width:auto;padding:0 18px;flex-shrink:0;"><i class="fas fa-redo"></i> Ayarla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SİPARİŞ KURALLARI -->
+  <div id="sh-rules" class="sh-section" style="display:none;max-width:620px;">
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:18px;">
+      <h4 style="margin:0 0 4px;color:var(--dark);">🎯 Fiyat Doğrulama Toleransı</h4>
+      <p style="font-size:12px;color:#aaa;margin:0 0 18px;">Sipariş gönderilirken müşteri tarafındaki sepet tutarı, menüdeki güncel fiyatlarla karşılaştırılır. Ek malzeme/varyant farkları için izin verilen sapma payı.</p>
+      <div style="display:flex;gap:14px;">
+        <div class="fg" style="flex:1;"><label>Yüzde Toleransı (%)</label>
+          <input type="number" id="or-tol-pct" value="5" min="0" max="50" step="1" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+        <div class="fg" style="flex:1;"><label>Sabit Ek Pay (TL)</label>
+          <input type="number" id="or-tol-flat" value="5" min="0" step="1" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;"></div>
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:18px;">
+      <h4 style="margin:0 0 4px;color:var(--dark);">🔁 Tekli Aktif Sipariş Kuralı</h4>
+      <p style="font-size:12px;color:#aaa;margin:0 0 16px;">Açıksa, bir müşterinin "Onay Bekliyor / Hazırlanıyor / Yola Çıktı" durumunda siparişi varken yeni sipariş vermesi engellenir.</p>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#444;font-weight:600;">
+        <input type="checkbox" id="or-single-active" checked style="width:18px;height:18px;">
+        Aynı anda sadece 1 aktif sipariş kuralını uygula
+      </label>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <h4 style="margin:0 0 4px;color:var(--dark);">🌯 Cantık / Lahmacun Minimum Adet Kuralı</h4>
+      <p style="font-size:12px;color:#aaa;margin:0 0 16px;">Sepette sadece Cantık/Lahmacun varsa (başka yiyecek yoksa) uygulanacak minimum adet kuralı.</p>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#444;font-weight:600;margin-bottom:14px;">
+        <input type="checkbox" id="or-cantik-enabled" checked style="width:18px;height:18px;">
+        Minimum adet kuralını uygula
+      </label>
+      <div class="fg"><label>Minimum Adet</label>
+        <input type="number" id="or-cantik-min" value="2" min="1" max="10" step="1" style="padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;max-width:160px;"></div>
+      <button onclick="saveOrderRulesSettings()" class="btn" style="background:var(--success);width:100%;margin-top:18px;"><i class="fas fa-save"></i> Kaydet</button>
+      <div id="or-status" style="display:none;padding:12px;border-radius:8px;font-size:13px;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- DİĞER AYARLARA HIZLI ERİŞİM -->
+  <div id="sh-links" class="sh-section" style="display:none;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;max-width:960px;">
+      <div class="sh-card" onclick="showTab('store-hours', this)">
+        <div style="font-size:26px;margin-bottom:8px;">🕐</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">Çalışma Saati & Bölgeler</div>
+        <div style="font-size:12px;color:#aaa;">Açılış/kapanış saatleri, kapalı günler, mahalle min. tutarları</div>
+      </div>
+      <div class="sh-card" onclick="showTab('printer-settings', this)">
+        <div style="font-size:26px;margin-bottom:8px;">🖨️</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">Yazıcı Ayarları</div>
+        <div style="font-size:12px;color:#aaa;">Fiş yazdırma düzeni ve yazı tipi ayarları</div>
+      </div>
+      <div class="sh-card" onclick="showTab('notif-settings', this)">
+        <div style="font-size:26px;margin-bottom:8px;">🔔</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">Bildirim Ayarları</div>
+        <div style="font-size:12px;color:#aaa;">Yeni sipariş sesi/uyarı tercihleri</div>
+      </div>
+      <div class="sh-card" onclick="showTab('vip-settings', this)">
+        <div style="font-size:26px;margin-bottom:8px;">👑</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">VIP & Puan Oranları</div>
+        <div style="font-size:12px;color:#aaa;">Bronz/Gümüş/Altın eşikleri ve puan kazanım oranları</div>
+      </div>
+      <div class="sh-card" onclick="showTab('menu-fiyat', this)">
+        <div style="font-size:26px;margin-bottom:8px;">💰</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">Menü Fiyatları</div>
+        <div style="font-size:12px;color:#aaa;">Toplu fiyat güncelleme</div>
+      </div>
+      <div class="sh-card" onclick="showTab('coupons', this)">
+        <div style="font-size:26px;margin-bottom:8px;">🎟️</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">Kuponlar</div>
+        <div style="font-size:12px;color:#aaa;">İndirim kuponu oluştur ve yönet</div>
+      </div>
+      <div class="sh-card" onclick="showTab('popup-manager', this)">
+        <div style="font-size:26px;margin-bottom:8px;">📣</div>
+        <div style="font-weight:700;color:var(--dark);margin-bottom:4px;">Duyuru & Popup</div>
+        <div style="font-size:12px;color:#aaa;">Müşteri uygulamasında gösterilecek duyurular</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </main>
