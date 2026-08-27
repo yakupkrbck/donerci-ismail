@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dönerci İsmail Menü | Bursa Döner, Cantık ve Pide Fiyatları</title>
+    <meta name="description" content="Dönerci İsmail güncel menüsü: Tavuk döner, lahmacun, cantık ve pide çeşitleri. 1998'den beri değişmeyen lezzet.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0b0b0b; color: #ffffff; }
+        .section-pill { background-color: #ffffff; color: #000000; padding: 8px 30px; border-radius: 50px; font-weight: 800; display: inline-block; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); }
+        .food-img-container { width: 130px; height: 130px; border: 4px solid #e63946; border-radius: 50%; overflow: hidden; margin: 0 auto -35px auto; position: relative; z-index: 10; background-color: #1a1a1a; box-shadow: 0 8px 20px rgba(230, 57, 70, 0.3); cursor: pointer; transition: transform 0.3s ease; }
+        .food-img-container:hover { transform: scale(1.05); }
+        .food-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .info-card { background-color: #ffffff; color: #333333; border-radius: 20px; padding: 45px 10px 15px 10px; width: 155px; text-align: center; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between; min-height: 155px; }
+        .item-name { font-size: 0.8rem; font-weight: 700; line-height: 1.2; color: #111; margin-bottom: 4px; text-transform: uppercase; }
+        .item-description { font-size: 0.58rem; color: #555; font-weight: 600; line-height: 1.2; margin-bottom: 6px; }
+        .item-price { color: #e63946; font-size: 1.35rem; font-weight: 800; }
+        .sub-price { font-size: 0.7rem; color: #444; font-weight: 700; margin-top: 2px; }
+        .drink-item { background-color: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 20px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
+        #imageModal { display: none; position: fixed; inset: 0; z-index: 100; background-color: rgba(0, 0, 0, 0.9); backdrop-filter: blur(5px); align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { max-width: 90%; max-height: 80vh; border: 6px solid #e63946; border-radius: 20px; box-shadow: 0 0 30px rgba(230, 57, 70, 0.5); animation: modalZoom 0.3s ease-out; }
+        .price-note { font-size: 0.52rem; color: #999; font-weight: 600; margin-top: 3px; letter-spacing: 0.2px; }
+
+        /* HAMBURGER - SADECE BU EKLENDİ */
+        #hamburger-menu { display:none; position:fixed; top:0; left:0; width:100%; z-index:9999; background:#111; padding:60px 0 20px; box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+        #hamburger-menu.open { display:block; animation:slideDown 0.2s ease; }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        #hamburger-menu a { display:flex; align-items:center; gap:12px; padding:14px 24px; color:white; text-decoration:none; font-size:15px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.07); transition:background 0.2s; }
+        #hamburger-menu a:hover { background:rgba(230,57,70,0.15); }
+        #hamburger-menu a.active { color:#e63946; }
+        #hamburger-overlay { display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.5); }
+        #hamburger-overlay.open { display:block; }
+        #close-hbg { background:none; border:none; cursor:pointer; color:white; font-size:26px; position:absolute; top:14px; right:18px; z-index:10000; line-height:1; }
+        #hbg-btn { position:fixed; top:12px; left:12px; z-index:200; background:rgba(0,0,0,0.6); border:none; cursor:pointer; display:flex; flex-direction:column; gap:5px; padding:8px; border-radius:8px; }
+        #hbg-btn span { display:block; width:22px; height:2.5px; background:white; border-radius:3px; }
+    </style>
+</head>
+<body class="pb-10">
+
+    <!-- HAMBURGER BUTONU (SOL ÜST SABİT) -->
+    <button id="hbg-btn" onclick="toggleHamburger()">
+        <span></span><span></span><span></span>
+    </button>
+
+    <!-- HAMBURGER OVERLAY & MENU -->
+    <div id="hamburger-overlay" onclick="toggleHamburger()"></div>
+    <div id="hamburger-menu">
+        <button id="close-hbg" onclick="toggleHamburger()">×</button>
+        <a href="/menü/" class="active">🍽️ Menü</a>
+        <a href="/bizeulasın/">📞 Bize Ulaşın</a>
+        <a href="/yonetimpaneli">⚙️ Yönetim Paneli</a>
+        <a href="/">🛒 Online Sipariş</a>
+    </div>
+
+    <div id="imageModal" onclick="closeModal()"><span class="absolute top-5 right-5 text-white text-4xl cursor-pointer font-bold">×</span><img id="modalImage" class="modal-content" src="" alt="Dönerci İsmail"></div>
+
+    <header class="py-10 text-center bg-gradient-to-b from-red-900/30 to-transparent">
+        <h1 class="text-5xl font-extrabold tracking-tighter text-white uppercase italic">Dönerci <span class="text-red-500">İsmail</span></h1>
+        <div class="mt-2 flex justify-center items-center gap-2 mb-6"><span class="h-px w-8 bg-red-600"></span><p class="text-gray-400 text-xs font-bold tracking-[0.3em]">GELENEKSEL LEZZET</p><span class="h-px w-8 bg-red-600"></span></div>
+    </header>
+
+    <main class="px-4 max-w-5xl mx-auto" id="menu-main">
+      <!-- Firebase'den yükleniyor... -->
+      <div id="menu-loading" style="text-align:center;padding:60px 20px;">
+        <div style="width:48px;height:48px;border:4px solid rgba(230,57,70,.2);border-top-color:#e63946;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;"></div>
+        <p style="color:#888;font-size:14px;">Menü yükleniyor...</p>
+      </div>
+    </main>
+    <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+    <footer class="text-center border-t border-gray-800 pt-10 mt-10">
+        <p class="text-red-500 font-bold tracking-widest uppercase mb-4">Afiyet Olsun!</p>
+        <div class="flex justify-center space-x-6 text-gray-400">
+             <a href="tel:02242466120" class="footer-link flex flex-col items-center"><span>📞</span><span class="text-[10px]">SİPARİŞ</span></a>
+             <a href="http://googleusercontent.com/maps.google.com/3" target="_blank" class="footer-link flex flex-col items-center"><span>📍</span><span class="text-[10px]">KONUM</span></a>
+        </div>
+    </footer>
+
+    <script>
+        function openModal(src){
+            const o=document.getElementById("imageModal"),n=document.getElementById("modalImage");
+            n.src=src; o.style.display="flex"; document.body.style.overflow="hidden";
+        }
+        function closeModal(){document.getElementById("imageModal").style.display="none";document.body.style.overflow="auto";}
+        function toggleHamburger(){
+            document.getElementById('hamburger-menu').classList.toggle('open');
+            document.getElementById('hamburger-overlay').classList.toggle('open');
+        }
+        /* Popup kapat */
+        var _kpTimer=null;
+        function kpClose(){clearTimeout(_kpTimer);_kpTimer=null;document.getElementById('kp-overlay').style.display='none';}
+    </script>
+
+    <!-- KAMPANYA POPUP -->
+    <div id="kp-overlay" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:20px;">
+      <div style="background:white;border-radius:22px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45);animation:kpIn .4s cubic-bezier(.34,1.4,.64,1);">
+        <div id="kp-header" style="background:#e63946;padding:20px 20px 14px;position:relative;">
+          <div id="kp-bar" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,255,255,.35);width:100%;transition:width linear;"></div>
+          <button onclick="kpClose()" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">×</button>
+          <div id="kp-emoji" style="font-size:32px;line-height:1;margin-bottom:8px;">📢</div>
+          <div id="kp-title" style="color:white;font-size:17px;font-weight:800;line-height:1.3;padding-right:36px;font-family:'Poppins',sans-serif;"></div>
+        </div>
+        <div style="padding:16px 20px 20px;">
+          <div id="kp-img-wrap" style="display:none;border-radius:12px;overflow:hidden;margin-bottom:12px;"><img id="kp-img" src="" style="width:100%;max-height:140px;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>
+          <div id="kp-msg" style="font-size:14px;color:#444;line-height:1.55;margin-bottom:16px;font-family:'Poppins',sans-serif;"></div>
+          <div style="display:flex;gap:10px;">
+            <button id="kp-btn" onclick="kpClose()" style="flex:1;padding:12px;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;color:white;background:#e63946;font-family:'Poppins',sans-serif;">Harika!</button>
+            <button onclick="kpClose()" style="padding:12px 16px;background:#f0f0f0;border:none;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;color:#777;font-family:'Poppins',sans-serif;">Kapat</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>@keyframes kpIn{from{transform:scale(.75);opacity:0}to{transform:scale(1);opacity:1}}</style>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, query, where, orderBy, getDocs, onSnapshot }
+        from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const fbCfg = {
+        apiKey:"AIzaSyBNpz1_e4eqKCsdTQJSOxBg4O9gF9qOWX8",
+        authDomain:"donerci-ismail-siparis.firebaseapp.com",
+        projectId:"donerci-ismail-siparis",
+        storageBucket:"donerci-ismail-siparis.firebasestorage.app",
+        messagingSenderId:"641245277881",
+        appId:"1:641245277881:web:1faaac95dbb2fcd1abb568"
+    };
+    const app = initializeApp(fbCfg, 'menu-app');
+    const db  = getFirestore(app);
+
+    const GRAD = {'gradient-fire':'linear-gradient(135deg,#e63946,#f39c12)','gradient-purple':'linear-gradient(135deg,#667eea,#764ba2)','gradient-green':'linear-gradient(135deg,#11998e,#38ef7d)'};
+
+    /* ── FİYAT GÜNCELLEME NOTU ── */
+    function priceNoteHTML(p) {
+        const ts = p.priceUpdatedAt || p.priceUpdated || p.price_updated_at || p.priceDate || p.updatedAt;
+        if (!ts) return '';
+        let d;
+        if (typeof ts.toDate === 'function') d = ts.toDate();
+        else if (typeof ts.seconds === 'number') d = new Date(ts.seconds * 1000);
+        else d = new Date(ts);
+        if (isNaN(d.getTime())) return '';
+        const formatted = d.toLocaleDateString('tr-TR', { day:'numeric', month:'short', year:'numeric' });
+        return `<div class="price-note">Fiyat güncel • ${formatted}</div>`;
+    }
+
+    /* ── MENÜ RENDER ── */
+    function makeCard(p) {
+        const imgSrc = p.image || p.i || '';
+        const name   = p.name || p.n || '—';
+        const price  = p.price ?? p.p ?? 0;
+        const desc   = p.description || '';
+        const sub    = p.subPrice || '';
+        const inStock = p.inStock !== false;
+        return `<div class="menu-item" style="${!inStock?'opacity:.45;pointer-events:none;':''}" >
+          <div class="food-img-container" onclick="openModal('${imgSrc.replace(/'/g,"\\'")}')">
+            <img src="${imgSrc}" alt="${name}" onerror="this.src='https://via.placeholder.com/130x130/1a1a1a/e63946?text=🍽'">
+            ${!inStock?'<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;border-radius:50%;">TÜKENDI</div>':''}
+          </div>
+          <div class="info-card">
+            <div class="item-name">${name}</div>
+            <div>
+              ${desc?`<div class="item-description">${desc}</div>`:''}
+              <div class="item-price">${price} ₺</div>
+              ${sub?`<div class="sub-price">${sub}</div>`:''}
+              ${priceNoteHTML(p)}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function makeDrinkRow(p) {
+        const inStock = p.inStock !== false;
+        return `<div class="drink-item" style="${!inStock?'opacity:.45;':''}" >
+          <span>${p.name||'—'} ${!inStock?'<span style="font-size:10px;color:#c0392b;font-weight:700;">(Tükendi)</span>':''}</span>
+          <div style="text-align:right;">
+            <span class="text-red-500 font-bold">${p.price||0} ₺</span>
+            ${priceNoteHTML(p)}
+          </div>
+        </div>`;
+    }
+
+    // Canlı veri önbelleği — panelden değişiklik gelince anında güncellenir, sayfa yenilemeye gerek yok
+    let categoriesCache = [];
+    let productsCache = [];
+    let catsReady = false;
+    let prodsReady = false;
+
+    function buildAndRenderMenu() {
+        const main = document.getElementById('menu-main');
+        try {
+            let cats = categoriesCache;
+            const allProds = productsCache;
+
+            // Eğer menuCategories boşsa products'taki category'den üret
+            if (cats.length === 0) {
+                const catNames = [...new Set(allProds.map(p => p.menuCategory || p.category || 'Diğer'))];
+                const emojiMap = {'Dönerler':'🌯','Cantıklar & Lahmacun':'🍕','Cantıklar':'🍕','Pideler':'🥖','İçecekler':'🥤'};
+                cats = catNames.map((name,i) => ({name, emoji:emojiMap[name]||'📋', order:i, active:true}));
+            }
+
+            // Kategori → ürün haritası
+            const grouped = {};
+            cats.forEach(c => { grouped[c.name] = []; });
+            allProds.forEach(p => {
+                const cat = p.menuCategory || p.category || 'Diğer';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(p);
+            });
+
+            // Render
+            let html = '';
+            cats.forEach(cat => {
+                const prods = grouped[cat.name] || [];
+                if (prods.length === 0) return;
+                const isIcecek = cat.name.toLowerCase().includes('içecek');
+                html += `<section class="mb-16 text-center">
+                  <h2 class="section-pill">${cat.emoji||''} ${cat.name.toUpperCase()}</h2>`;
+                if (isIcecek) {
+                    html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 text-left">`;
+                    prods.forEach(p => { html += makeDrinkRow(p); });
+                    html += `</div>`;
+                } else {
+                    html += `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-12 gap-x-4">`;
+                    prods.forEach(p => { html += makeCard(p); });
+                    html += `</div>`;
+                }
+                html += `</section>`;
+            });
+
+            main.innerHTML = html || '<p style="text-align:center;color:#888;padding:40px;">Menü bulunamadı.</p>';
+        } catch(e) {
+            main.innerHTML = `<p style="text-align:center;color:#e63946;padding:40px;">Menü yüklenemedi: ${e.message}</p>`;
+        }
+    }
+
+    function startMenuListeners() {
+        // Kategorileri canlı dinle (menuCategories koleksiyonu)
+        try {
+            onSnapshot(query(collection(db,'menuCategories'), orderBy('order')), snap => {
+                categoriesCache = [];
+                snap.forEach(d => { if (d.data().active!==false) categoriesCache.push({id:d.id, ...d.data()}); });
+                catsReady = true;
+                if (prodsReady) buildAndRenderMenu();
+            }, () => { catsReady = true; if (prodsReady) buildAndRenderMenu(); });
+        } catch(e) { catsReady = true; }
+
+        // Ürünleri canlı dinle — fiyat panelde değişir değişmez burada da anında değişir
+        onSnapshot(query(collection(db,'products'), orderBy('order')), snap => {
+            productsCache = [];
+            snap.forEach(d => productsCache.push({id:d.id, ...d.data()}));
+            prodsReady = true;
+            if (catsReady) buildAndRenderMenu();
+        }, e => {
+            document.getElementById('menu-main').innerHTML = `<p style="text-align:center;color:#e63946;padding:40px;">Menü yüklenemedi: ${e.message}</p>`;
+        });
+    }
+
+    /* ── POPUP ── */
+    async function loadPopup() {
+        try {
+            const snap = await getDocs(query(collection(db,'popups'), where('active','==',true)));
+            if (snap.empty) return;
+            const now = Date.now(); let picked = null;
+            snap.forEach(d => {
+                if (picked) return;
+                const data = d.data();
+                if (!data.targets?.menu) return;
+                const freq = data.frequency || 'once_per_day';
+                if (freq==='until_date' && data.untilDate && now > new Date(data.untilDate).getTime()) return;
+                const updTs = data.updatedAt?.seconds || 0;
+                const key = 'kp_'+d.id+'_'+updTs;
+                if (freq==='once_ever' && localStorage.getItem(key)) return;
+                if ((freq==='once_per_day'||freq==='until_date') && localStorage.getItem(key) && (now-parseInt(localStorage.getItem(key)))<86400000) return;
+                if (freq==='once_per_session' && sessionStorage.getItem(key)) return;
+                picked = {id:d.id, data, key};
+            });
+            if (!picked) return;
+            setTimeout(() => showPopup(picked.id, picked.data, picked.key), (picked.data.delaySeconds||1)*1000);
+        } catch(e) { console.warn('Popup:', e.message); }
+    }
+
+    function showPopup(id, d, storageKey) {
+        const bg = GRAD[d.bgColor] || d.bgColor || '#e63946';
+        document.getElementById('kp-header').style.background = bg;
+        document.getElementById('kp-emoji').textContent = d.emoji   || '📢';
+        document.getElementById('kp-title').textContent = d.title   || '';
+        document.getElementById('kp-msg').textContent   = d.message || '';
+        const btn = document.getElementById('kp-btn');
+        btn.textContent = d.buttonText || 'Harika!'; btn.style.background = bg;
+        if (d.buttonLink) btn.onclick = () => { window.open(d.buttonLink,'_blank'); kpClose(); };
+        const iw = document.getElementById('kp-img-wrap');
+        if (d.imageUrl) { document.getElementById('kp-img').src = d.imageUrl; iw.style.display='block'; }
+        else iw.style.display = 'none';
+        document.getElementById('kp-overlay').style.display = 'flex';
+        const ms=8000, bar=document.getElementById('kp-bar');
+        bar.style.transitionDuration=ms+'ms';
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{ bar.style.width='0%'; }));
+        _kpTimer = setTimeout(kpClose, ms);
+        const freq=d.frequency||'once_per_day';
+        if (freq==='once_ever') localStorage.setItem(storageKey,'1');
+        else if (freq==='once_per_day'||freq==='until_date') localStorage.setItem(storageKey,String(Date.now()));
+        else if (freq==='once_per_session') sessionStorage.setItem(storageKey,'1');
+    }
+
+    startMenuListeners();
+    loadPopup();
+    </script>
+</body>
+</html>
