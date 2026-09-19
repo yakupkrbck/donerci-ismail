@@ -477,6 +477,15 @@
         #campaigns-section { margin-bottom:20px; }
 
         /* ── BANNER SLIDER ── */
+        /* ── KATEGORİ HIZLI ERİŞİM ŞERİDİ ── */
+        #cat-quick-nav { margin-bottom:16px; }
+        .cqn-scroll { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .cqn-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; padding:14px 4px; background:#fdece0; border-radius:16px; transition:transform 0.15s, background 0.2s; }
+        .cqn-item:active { transform:scale(0.95); background:#fbdcc4; }
+        .cqn-icon { width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+        .cqn-label { font-size:11px; font-weight:700; color:#5a4634; text-align:center; line-height:1.2; }
+        @media (max-width:340px){ .cqn-scroll{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; } .cqn-label{ font-size:10px; } }
+
         #banner-slider-section { margin-bottom:16px; position:relative; overflow:hidden; border-radius:14px; }
         .bs-track-wrap { overflow:hidden; border-radius:14px; }
         .bs-track { display:flex; transition:transform 0.45s cubic-bezier(0.25,1,0.5,1); will-change:transform; }
@@ -1092,6 +1101,25 @@ const app  = initializeApp(fbCfg);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
+// ── TEMA AYARLARI (panelden yönetilir: ayarlar/tema) ──────────────────
+async function loadTemaAyarlari(){
+    try{
+        const snap = await getDoc(doc(db,'ayarlar','tema'));
+        if(snap.exists()){
+            const t = snap.data();
+            const root = document.documentElement.style;
+            if(t.renkPrimary)     root.setProperty('--primary', t.renkPrimary);
+            if(t.renkPrimaryKoyu) root.setProperty('--primary-dark', t.renkPrimaryKoyu);
+            if(t.renkHeader)      root.setProperty('--dark', t.renkHeader);
+            if(t.renkArkaplan)    root.setProperty('--grey', t.renkArkaplan);
+            if(Array.isArray(t.kategoriSirasi) && t.kategoriSirasi.length) window.CUSTOM_CAT_ORDER = t.kategoriSirasi;
+            window._catNavEnabled = t.kategoriNavAktif !== false;
+            if(t.kategoriIkonlari && typeof t.kategoriIkonlari==='object') window._catNavIcons = t.kategoriIkonlari;
+        }
+    }catch(e){ console.log('Tema ayarları yüklenemedi, varsayılanlar kullanılıyor.', e); }
+    loadMenu();
+}
+
 // ── KAMPANYA POPUP ────────────────────────────────────────────────
 const _KP_GRAD={'gradient-fire':'linear-gradient(135deg,#e63946,#f39c12)','gradient-purple':'linear-gradient(135deg,#667eea,#764ba2)','gradient-green':'linear-gradient(135deg,#11998e,#38ef7d)'};
 
@@ -1251,6 +1279,9 @@ let messaging = null;
 
 const CAT_ORDER  = ["Dönerler","Cantıklar & Lahmacun","Pideler","İçecekler","Diğer"];
 const catEmojis  = {"Dönerler":"🥙","Cantıklar & Lahmacun":"🫓","Pideler":"🍕","İçecekler":"🥤"};
+// ── TEMA / GÖRÜNÜM AYARLARI (panelden yönetilir) ──
+window.CUSTOM_CAT_ORDER = null;   // panelden özel kategori sırası gelirse burada tutulur
+window._catNavEnabled = true;     // kategori hızlı erişim şeridi açık/kapalı
 const itemEmojis = {"Pideler":"🍕","İçecekler":"🥤","Cantıklar & Lahmacun":"🫓","Dönerler":"🥙"};
 
 function normCat(raw) {
@@ -1740,10 +1771,11 @@ function renderMenu(products) {
     Object.keys(cats).forEach(c=>{ cats[c].sort((a,b)=>a.order-b.order); });
     // Kategori sıralaması: CAT_ORDER önce, sonra diğerleri (paneldeki kategori order'ına göre)
     const catOrderMap={}; norm.forEach(x=>{ if(catOrderMap[x.c]===undefined) catOrderMap[x.c]=x.order; else catOrderMap[x.c]=Math.min(catOrderMap[x.c],x.order); });
-    const sorted=[...CAT_ORDER.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CAT_ORDER.includes(c)).sort((a,b)=>(catOrderMap[a]||999)-(catOrderMap[b]||999))];
+    const ORDER_LIST = (window.CUSTOM_CAT_ORDER && window.CUSTOM_CAT_ORDER.length) ? window.CUSTOM_CAT_ORDER : CAT_ORDER;
+    const sorted=[...ORDER_LIST.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!ORDER_LIST.includes(c)).sort((a,b)=>(catOrderMap[a]||999)-(catOrderMap[b]||999))];
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
-    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="banner-slider-section" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
+    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="banner-slider-section" style="display:none;"></div><div id="cat-quick-nav" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
         <div class="cat-title" data-cat="${cat}">${catEmojis[cat]||'🍽'} ${cat}</div>
         ${cats[cat].map(item=>{
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
@@ -1783,9 +1815,32 @@ function renderMenu(products) {
     }
     // Eğer countdown zaten çalışıyorsa yeniden başlatma
     if(!_cdInterval) startClosingCountdown();
+    // Kategori hızlı erişim şeridi
+    renderCatQuickNav(sorted);
     // Değerlendirme puanlarını yükle, sonra popüler ürünleri render et
     loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); loadBannerSliders(); });
 }
+
+// ── KATEGORİ HIZLI ERİŞİM ŞERİDİ ────────────────────────────────────────
+function renderCatQuickNav(sorted){
+    const el = document.getElementById('cat-quick-nav');
+    if(!el) return;
+    if(!window._catNavEnabled || !sorted || sorted.length < 2){ el.style.display='none'; el.innerHTML=''; return; }
+    const customIcons = window._catNavIcons || {};
+    el.innerHTML = `<div class="cqn-scroll">${sorted.map(cat=>`
+        <div class="cqn-item" onclick="scrollToCat('${cat.replace(/'/g,"\\'")}')">
+            <div class="cqn-icon">${customIcons[cat] || catEmojis[cat] || '🍽️'}</div>
+            <div class="cqn-label">${cat}</div>
+        </div>`).join('')}</div>`;
+    el.style.display = 'block';
+}
+window.scrollToCat = function(catName){
+    const target = document.querySelector(`.cat-title[data-cat="${CSS.escape(catName)}"]`);
+    if(target){
+        const y = target.getBoundingClientRect().top + window.pageYOffset - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height'))||75) - 55;
+        window.scrollTo({top:y, behavior:'smooth'});
+    }
+};
 
 window.openItemDetail = n => {
     const products = window._menuProducts || [];
@@ -5060,7 +5115,7 @@ window.onload=()=>{
         navigator.serviceWorker.register('/sw.js').catch(()=>{});
     }
 
-    checkStore(); updateStoreUI(); renderFooterWorkHours(); loadMenu(); updateCart(); updateUserDisplay(); loadDeliveryZones();
+    checkStore(); updateStoreUI(); renderFooterWorkHours(); loadTemaAyarlari(); updateCart(); updateUserDisplay(); loadDeliveryZones();
     cumaVaktiYukle().then(updateStoreUI);
     loadKampanyaPopup();
     // Sepet draft'ını geri yükle (sayfa yenileme / offline koruması)
