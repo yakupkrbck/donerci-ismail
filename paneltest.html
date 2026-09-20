@@ -6418,7 +6418,7 @@ window.delSlider = async (id) => {
 };
 
 // ── SİPARİŞ UYGULAMASI TEMA AYARLARI ──────────────────────────────────
-const TEMA_VARSAYILAN = { renkPrimary:'#FF6600', renkPrimaryKoyu:'#CC5200', renkHeader:'#1a1a1a', renkArkaplan:'#f4f4f4', kategoriNavAktif:true, kategoriSirasi:[], temaMod:'klasik', logoUrl:'', isletmeAdi1:'Dönerci', isletmeAdi2:'İsmail', slogan:'Lezzet Durağınız' };
+const TEMA_VARSAYILAN = { renkPrimary:'#FF6600', renkPrimaryKoyu:'#CC5200', renkHeader:'#1a1a1a', renkArkaplan:'#f4f4f4', kategoriNavAktif:true, kategoriSirasi:[], temaMod:'klasik', logoUrl:'', isletmeAdi1:'Dönerci', isletmeAdi2:'İsmail', slogan:'Lezzet Durağınız', listeDuzeni:'tek', reklamKenarBosluksuz:false };
 let _temaKategoriSirasi = [];
 
 window.temaTabInit = async () => {
@@ -6430,6 +6430,8 @@ window.temaTabInit = async () => {
     document.getElementById('tema-header').value = t.renkHeader;
     document.getElementById('tema-arkaplan').value = t.renkArkaplan;
     document.getElementById('tema-nav-aktif').checked = t.kategoriNavAktif !== false;
+    document.getElementById('tema-liste-duzeni').value = t.listeDuzeni === 'iki' ? 'iki' : 'tek';
+    document.getElementById('tema-reklam-kenarsiz').checked = t.reklamKenarBosluksuz === true;
     document.getElementById('tema-mod').value = t.temaMod || 'klasik';
     document.getElementById('tema-logo-url').value = t.logoUrl || '';
     document.getElementById('tema-isim1').value = t.isletmeAdi1 || 'Dönerci';
@@ -6449,7 +6451,7 @@ window.temaTabInit = async () => {
 };
 window.temaModDegisti = function temaModDegisti(){
   const vitrinAlanlari = document.getElementById('tema-vitrin-alanlari');
-  if(vitrinAlanlari) vitrinAlanlari.style.display = document.getElementById('tema-mod').value !== 'klasik' ? 'block' : 'none';
+  if(vitrinAlanlari) vitrinAlanlari.style.display = document.getElementById('tema-mod').value === 'vitrin' ? 'block' : 'none';
 };
 temaModDegisti = window.temaModDegisti;
 
@@ -6486,6 +6488,8 @@ window.temaKaydet = async () => {
       renkHeader: document.getElementById('tema-header').value,
       renkArkaplan: document.getElementById('tema-arkaplan').value,
       kategoriNavAktif: document.getElementById('tema-nav-aktif').checked,
+      listeDuzeni: document.getElementById('tema-liste-duzeni').value,
+      reklamKenarBosluksuz: document.getElementById('tema-reklam-kenarsiz').checked,
       kategoriSirasi: _temaKategoriSirasi,
       temaMod: document.getElementById('tema-mod').value,
       logoUrl: document.getElementById('tema-logo-url').value.trim(),
@@ -6504,6 +6508,8 @@ window.temaVarsayilanaDon = () => {
   document.getElementById('tema-header').value = TEMA_VARSAYILAN.renkHeader;
   document.getElementById('tema-arkaplan').value = TEMA_VARSAYILAN.renkArkaplan;
   document.getElementById('tema-nav-aktif').checked = true;
+  document.getElementById('tema-liste-duzeni').value = 'tek';
+  document.getElementById('tema-reklam-kenarsiz').checked = false;
   document.getElementById('tema-mod').value = 'klasik';
   document.getElementById('tema-logo-url').value = '';
   document.getElementById('tema-isim1').value = 'Dönerci';
@@ -7048,6 +7054,20 @@ input:checked+.pm-big-slider:before{transform:translateX(26px);}
       </div>
       <div style="font-size:11.5px;color:#999;line-height:1.6;">Açıkken, sipariş uygulamasının en üstünde kategorilere tek dokunuşla gitmeyi sağlayan ikon şeridi gösterilir (Döner, Pide & Cantık, Lahmacun, İçecekler...).</div>
     </div>
+
+    <div class="tema-card">
+      <h4><i class="fas fa-list" style="color:#16a085;"></i> Ürün Listesi Düzeni</h4>
+      <select id="tema-liste-duzeni" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:6px;">
+        <option value="tek">Tek Sütun (mevcut liste görünümü)</option>
+        <option value="iki">İki Sütun (2'li liste)</option>
+      </select>
+      <div style="font-size:11.5px;color:#999;line-height:1.6;margin-bottom:14px;">Ürünler alt alta tek sütun yerine, yan yana iki sütun halinde gösterilir. Ürün bilgisi ve sepete ekleme mantığı değişmez.</div>
+      <div class="tema-switch-row">
+        <label style="font-size:13px;font-weight:600;color:#444;">Üst Reklam Alanı Kenar Boşluksuz</label>
+        <label class="switch"><input type="checkbox" id="tema-reklam-kenarsiz"><span class="slider"></span></label>
+      </div>
+      <div style="font-size:11.5px;color:#999;line-height:1.6;">Açıkken, en üstteki banner/reklam görseli ekranın iki kenarına kadar (boşluksuz) uzanır.</div>
+    </div>
   </div>
 
   <div>
@@ -7055,12 +7075,9 @@ input:checked+.pm-big-slider:before{transform:translateX(26px);}
       <h4><i class="fas fa-magic" style="color:#8e44ad;"></i> Tema Modu</h4>
       <select id="tema-mod" onchange="temaModDegisti()" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:6px;">
         <option value="klasik">Klasik (mevcut liste görünümü)</option>
-        <option value="vitrin">Vitrin — Fast-Food Enerjik (turuncu/siyah/beyaz, kare foto, 2 sütun grid)</option>
-        <option value="koyu">Dark Food — Koyu & Sinematik Premium</option>
-        <option value="minimal">Clean — Sade, Ferah, İnce Çizgili</option>
-        <option value="renkli">Premium Restaurant — Krem/Kahve, Zarif Tipografi</option>
+        <option value="vitrin">Vitrin — yüklediğiniz görsele birebir üst şerit</option>
       </select>
-      <div style="font-size:11.5px;color:#999;line-height:1.6;">Her tema; kart köşeleri, fotoğraf oranı, gölge/çerçeve, buton şekli, yazı tipi ve boşlukları birlikte değiştirir — sadece renk değil. Seçtiğiniz vitrin yalnızca <b>görünümü</b> değiştirir; sepet, sipariş, bildirim gibi hiçbir sistem ayarı etkilenmez. İstediğiniz zaman "Klasik"e geri dönebilirsiniz.</div>
+      <div style="font-size:11.5px;color:#999;line-height:1.6;">Vitrin modunda üst şerit; logonuz, işletme adınız ve sloganınızla, gönderdiğiniz görseldeki gibi yeniden tasarlanır.</div>
 
       <div id="tema-vitrin-alanlari" style="display:none;margin-top:14px;border-top:1px dashed #eee;padding-top:14px;">
         <div class="tema-color-row" style="display:block;">
