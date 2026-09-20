@@ -13,11 +13,16 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
         :root {
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
             --grey:#f4f4f4; --white:#FFFFFF; --header-height:75px; --cart-bar-height:72px; --status-bar-height:44px; --bottom-nav-height:56px;
+            /* ── TEMA TASARIM TOKENLARI (varsayılan = Klasik/Vitrin hissi) ── */
+            --card-radius:18px; --card-img-radius:14px; --card-shadow:0 4px 14px rgba(0,0,0,0.07); --card-border:none;
+            --card-pad:10px; --card-gap:12px; --img-ratio:1/1; --img-fit:cover; --img-bg:#f0f0f0;
+            --btn-radius:10px; --btn-pad:8px 14px; --name-weight:700; --font-heading:'Poppins',sans-serif;
+            --section-gap:22px; --card-bg:#FFFFFF; --card-text:#1a1a1a; --card-desc-text:#999;
         }
         body { font-family:'Poppins',sans-serif; font-size:14px; margin:0; background:var(--grey); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
 
@@ -111,13 +116,26 @@
         #main-content.status-visible    { margin-top:calc(var(--header-height) + var(--status-bar-height) + 10px); }
         #main-content.status-cart-visible { margin-top:calc(var(--header-height) + var(--status-bar-height) + var(--cart-bar-height) + 5px); }
 
-        .cat-title { font-size:13px; font-weight:700; color:var(--dark); margin:25px 0 12px; border-left:4px solid var(--primary); padding-left:12px; text-transform:uppercase; }
-        .item-card { background:var(--white); padding:15px; border-radius:16px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
-        .item-card.out-of-stock { opacity:0.5; }
-        .item-left { display:flex; align-items:center; gap:12px; }
-        .item-img  { width:60px; height:60px; border-radius:10px; object-fit:cover; background:#eee; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
-        .add-btn   { background:var(--dark); color:white; border:none; padding:8px 16px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:13px; transition:all 0.3s; }
+        .cat-title { font-size:15px; font-weight:800; color:var(--card-text); margin:var(--section-gap) 0 12px; border-left:4px solid var(--primary); padding-left:12px; text-transform:uppercase; letter-spacing:.3px; }
+        .items-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--card-gap); margin-bottom:6px; }
+        @media (min-width:640px){ .items-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+        @media (min-width:1000px){ .items-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+        .item-card { background:var(--card-bg); border-radius:var(--card-radius); box-shadow:var(--card-shadow); border:var(--card-border); overflow:hidden; display:flex; flex-direction:column; cursor:pointer; transition:transform .12s ease; }
+        .item-card:active { transform:scale(0.97); }
+        .item-card.out-of-stock { opacity:0.55; }
+        .item-card-imgwrap { width:100%; aspect-ratio:var(--img-ratio); background:var(--img-bg); overflow:hidden; position:relative; flex-shrink:0; }
+        .item-card-imgwrap img { width:100%; height:100%; object-fit:var(--img-fit); display:block; }
+        .item-card-imgwrap .img-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:34px; }
+        .item-card-body { padding:var(--card-pad); display:flex; flex-direction:column; gap:3px; flex:1; }
+        .item-card-name { font-size:13.5px; font-weight:var(--name-weight); font-family:var(--font-heading); color:var(--card-text); line-height:1.25; }
+        .item-card-desc { font-size:10.5px; color:var(--card-desc-text); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:14px; }
+        .item-card-bottom { display:flex; align-items:flex-end; justify-content:space-between; margin-top:auto; padding-top:6px; gap:6px; }
+        .item-card-price { font-size:14px; color:var(--primary); font-weight:800; line-height:1.2; }
+        .item-card-price .old-price { display:block; font-size:10px; color:#aaa; text-decoration:line-through; font-weight:500; }
+        .item-card-camp-badge { background:var(--primary); color:#fff; font-size:8.5px; font-weight:700; padding:1px 6px; border-radius:6px; display:inline-block; margin-bottom:2px; }
+        .add-btn   { background:var(--dark); color:white; border:none; width:34px; height:34px; min-width:34px; border-radius:var(--btn-radius); font-weight:800; cursor:pointer; font-size:18px; line-height:1; transition:all 0.2s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .add-btn:disabled { background:#ccc !important; color:#666; cursor:not-allowed; pointer-events:none; }
+        .add-btn.add-btn-text { width:auto; min-width:auto; padding:var(--btn-pad); font-size:11.5px; }
 
         .skeleton-cat  { height:22px; width:140px; background:#e0e0e0; border-radius:8px; margin:25px 0 12px; animation:shimmer 1.4s infinite; }
         .skeleton-card { background:white; padding:15px; border-radius:16px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; }
@@ -392,8 +410,8 @@
         .popular-scroll::-webkit-scrollbar { display:none; }
         .pop-card {
             flex-shrink:0; width:148px;
-            background:white; border-radius:18px;
-            overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.08);
+            background:var(--card-bg); border-radius:var(--card-radius);
+            overflow:hidden; box-shadow:var(--card-shadow);
             cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;
             border:1.5px solid #f0f0f0;
             position:relative;
@@ -417,7 +435,7 @@
         }
         .pop-img-wrap img { width:100%; height:100%; object-fit:cover; }
         .pop-body { padding:10px 11px 11px; }
-        .pop-name { font-size:12px; font-weight:700; color:var(--dark); line-height:1.3; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .pop-name { font-size:12px; font-weight:700; font-family:var(--font-heading); color:var(--card-text); line-height:1.3; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .pop-stars { display:flex; align-items:center; gap:3px; margin-bottom:6px; }
         .pop-star  { color:#f39c12; font-size:11px; }
         .pop-star-count { font-size:10px; color:#999; font-weight:600; margin-left:2px; }
@@ -501,18 +519,20 @@
         .vitrin-hamburger { width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; }
         .vitrin-hamburger svg { width:20px; height:20px; }
         body.tema-vitrin .cqn-item { background:#fdece0; }
+        /* Vitrin: enerjik fast-food — kare foto, yuvarlak belirgin + buton, güçlü gölge */
+        body.tema-vitrin { --card-radius:20px; --img-ratio:1/1; --card-shadow:0 8px 20px rgba(0,0,0,0.12); --btn-radius:50%; --name-weight:800; --card-pad:12px; --card-gap:14px; }
 
-        /* ── KOYU MOD (dark) ── */
-        body.tema-koyu { background:#141414; }
-        body.tema-koyu #main-content, body.tema-koyu .cat-title, body.tema-koyu .item-card { color:#eaeaea; }
-        body.tema-koyu .item-card { background:#1e1e1e; box-shadow:none; border:1px solid #2a2a2a; }
-        body.tema-koyu .item-img { background:#2a2a2a; }
+        /* ── TEMA 2: DARK FOOD (koyu, premium, sinematik) ── */
+        body.tema-koyu { --card-bg:#1e1e1e; --card-text:#f0f0f0; --card-desc-text:#999; --img-bg:#2a2a2a; --card-border:1px solid #2a2a2a; --card-shadow:0 10px 26px rgba(0,0,0,0.5); --card-radius:16px; --img-ratio:4/3; --btn-radius:10px; --name-weight:700; }
+        body.tema-koyu { background:#121212; }
+        body.tema-koyu .popular-title, body.tema-koyu .camp-items, body.tema-koyu .camp-body { color:#eee; }
         body.tema-koyu .cqn-item { background:#1e1e1e; border:1px solid #2a2a2a; }
         body.tema-koyu .cqn-label { color:#ddd; }
         body.tema-koyu .vitrin-logo-icon { background:rgba(255,255,255,0.08); }
         body.tema-koyu .vitrin-tagline { color:#777; }
+        body.tema-koyu #cart-modal, body.tema-koyu .cart-modal-body { background:#181818; color:#eee; }
 
-        /* ── MİNİMAL BEYAZ ── */
+        /* ── TEMA 3: CLEAN (minimal beyaz, sade, ferah) ── */
         body.tema-minimal .header { background:#ffffff !important; border-bottom:1px solid #eee; box-shadow:none; }
         body.tema-minimal .minimal-logo { display:flex; flex-direction:column; cursor:pointer; }
         body.tema-minimal .minimal-name { font-size:16px; font-weight:800; color:#1a1a1a; letter-spacing:.3px; }
@@ -524,23 +544,27 @@
         body.tema-minimal .cqn-item { flex:0 0 auto; flex-direction:row; background:#fff; border:1.5px solid #eee; border-radius:30px; padding:9px 16px; gap:7px; }
         body.tema-minimal .cqn-icon { width:18px; height:18px; }
         body.tema-minimal .cqn-label { font-weight:600; color:#333; }
-        body.tema-minimal .item-card { box-shadow:none; border:1px solid #eee; }
+        body.tema-minimal { --card-radius:12px; --card-shadow:none; --card-border:1px solid #ececec; --img-ratio:1/1; --card-pad:11px; --card-gap:10px; --btn-radius:8px; --name-weight:600; }
+        body.tema-minimal { background:#fff; }
+        body.tema-minimal .cat-title { border-left:2px solid var(--primary); font-weight:600; letter-spacing:.5px; }
 
-        /* ── RENKLİ KART (bold, tek renk header) ── */
-        body.tema-renkli .header { background:linear-gradient(135deg,var(--primary),var(--primary-dark)) !important; }
+        /* ── TEMA 4: PREMIUM RESTAURANT (krem/kahve, zarif, geniş boşluk) ── */
+        body.tema-renkli .header { background:linear-gradient(135deg,#2b1c14,#1a110c) !important; }
         body.tema-renkli .header.kapali, body.tema-renkli .header.hazirlaniyor, body.tema-renkli .header.yolacikti { background:inherit !important; }
-        body.tema-renkli .vitrin-name1 { color:#fff; }
-        body.tema-renkli .vitrin-name2 { color:rgba(255,255,255,0.85); }
-        body.tema-renkli .vitrin-tagline { color:rgba(255,255,255,0.6); }
-        body.tema-renkli .vitrin-logo-icon { background:rgba(255,255,255,0.2); }
-        body.tema-renkli .vitrin-logo-icon svg { color:#fff; }
-        body.tema-renkli .vitrin-hamburger { background:rgba(255,255,255,0.2); }
+        body.tema-renkli .vitrin-name1 { color:var(--primary); font-family:'Playfair Display',serif; font-size:16px; }
+        body.tema-renkli .vitrin-name2 { color:#f3e9de; font-family:'Playfair Display',serif; }
+        body.tema-renkli .vitrin-tagline { color:#a89684; }
+        body.tema-renkli .vitrin-logo-icon { background:rgba(255,255,255,0.1); }
+        body.tema-renkli .vitrin-logo-icon svg { color:var(--primary); }
+        body.tema-renkli .vitrin-hamburger { background:rgba(255,255,255,0.1); }
         body.tema-renkli .cqn-scroll { display:flex; overflow-x:auto; gap:8px; scrollbar-width:none; }
         body.tema-renkli .cqn-scroll::-webkit-scrollbar { display:none; }
-        body.tema-renkli .cqn-item { flex:0 0 auto; flex-direction:row; background:#fff; border:1.5px solid #ffe0cc; border-radius:30px; padding:9px 16px; gap:7px; }
+        body.tema-renkli .cqn-item { flex:0 0 auto; flex-direction:row; background:#fbf6f0; border:1.5px solid #ecdfd0; border-radius:10px; padding:10px 16px; gap:7px; }
         body.tema-renkli .cqn-icon { width:18px; height:18px; }
-        body.tema-renkli .cqn-label { color:#333; font-weight:700; }
-        body.tema-renkli .item-card { border-left:4px solid var(--primary); }
+        body.tema-renkli .cqn-label { color:#3a2a1c; font-weight:700; font-family:'Playfair Display',serif; }
+        body.tema-renkli { background:#faf6f1; --card-bg:#fffdfb; --card-text:#2b1c14; --card-radius:6px; --card-shadow:0 6px 18px rgba(43,28,20,0.10); --card-border:1px solid #ecdfd0; --img-ratio:5/4; --card-pad:14px; --card-gap:16px; --section-gap:32px; --name-weight:700; --font-heading:'Playfair Display',serif; --btn-radius:6px; --btn-pad:9px 16px; }
+        body.tema-renkli .cat-title { font-family:'Playfair Display',serif; border-left:2px solid var(--primary); text-transform:none; font-size:17px; }
+        body.tema-renkli .add-btn { width:auto; min-width:34px; padding:0 12px; font-size:15px; }
 
         #banner-slider-section { margin-bottom:16px; position:relative; overflow:hidden; border-radius:14px; }
         .bs-track-wrap { overflow:hidden; border-radius:14px; }
@@ -572,22 +596,22 @@
         .camp-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; -ms-overflow-style:none; }
         .camp-scroll::-webkit-scrollbar { display:none; }
         .camp-card {
-            flex-shrink:0; width:280px; background:white; border-radius:18px; overflow:hidden;
+            flex-shrink:0; width:280px; background:white; border-radius:var(--card-radius); overflow:hidden;
             box-shadow:0 6px 20px rgba(255,102,0,0.15); border:1.5px solid rgba(255,102,0,0.1);
             display:flex; flex-direction:row; min-height:120px; transition:transform 0.2s;
         }
         .camp-card:active { transform:scale(0.98); }
         .camp-card-header {
-            background:linear-gradient(160deg,#FF6600,#CC5200); padding:14px 16px; position:relative;
+            background:linear-gradient(160deg,var(--primary),var(--primary-dark)); padding:14px 16px; position:relative;
             display:flex; flex-direction:column; justify-content:center; min-width:140px; max-width:140px; flex-shrink:0;
         }
-        .camp-card-name { font-size:13px; font-weight:800; color:white; line-height:1.3; }
+        .camp-card-name { font-size:13px; font-weight:800; color:white; line-height:1.3; font-family:var(--font-heading); }
         .camp-card-desc { font-size:10px; color:rgba(255,255,255,.75); margin-top:3px; line-height:1.4; }
         .camp-price-row { margin-top:10px; }
         .camp-old-price { font-size:11px; color:rgba(255,255,255,.55); text-decoration:line-through; display:block; }
         .camp-new-price { font-size:22px; font-weight:900; color:white; line-height:1; }
         .camp-new-price small { font-size:12px; font-weight:600; }
-        .camp-badge { position:absolute; top:8px; right:-1px; background:white; color:#FF6600; font-size:9px; font-weight:800; padding:3px 7px 3px 8px; border-radius:20px 0 0 20px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+        .camp-badge { position:absolute; top:8px; right:-1px; background:white; color:var(--primary); font-size:9px; font-weight:800; padding:3px 7px 3px 8px; border-radius:20px 0 0 20px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
         .camp-body { padding:12px 14px; flex:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0; }
         .camp-items { margin-bottom:10px; flex:1; overflow:hidden; }
         .camp-item-row { font-size:11px; color:#666; display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid #f5f5f5; }
@@ -1880,33 +1904,34 @@ function renderMenu(products) {
     const cdEl = document.getElementById('closing-countdown');
     document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="banner-slider-section" style="display:none;"></div><div id="cat-quick-nav" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
         <div class="cat-title" data-cat="${cat}">${catEmojis[cat]||'🍽'} ${cat}</div>
+        <div class="items-grid">
         ${cats[cat].map(item=>{
-            let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
-            if(shopOpen&&item.inStock&&(cat==='Pideler'||cat==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm')&&!bakeryOpen){btnTxt="12:00'DA";disabled=true;}
+            let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'✕':shopOpen?'+':'🔒';
+            let btnIsText=false;
+            if(!item.inStock){ btnTxt='TÜKENDI'; btnIsText=true; }
+            else if(!shopOpen){ btnTxt='KAPALI'; btnIsText=true; }
+            if(shopOpen&&item.inStock&&(cat==='Pideler'||cat==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm')&&!bakeryOpen){btnTxt="12:00'DA";disabled=true;btnIsText=true;}
             const safeN=item.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-            const imgHtml=cat!=='İçecekler'?(item.i?`<img src="${item.i}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;flex-shrink:0;cursor:pointer;" onclick="openItemDetail('${safeN}')" onerror="this.style.display='none'">`:`<div class="item-img" style="cursor:pointer;" onclick="openItemDetail('${safeN}')">${catEmojis[cat]||'🍽'}</div>`):'';
+            const imgHtml=item.i?`<img src="${item.i}" alt="${item.n}" onerror="this.parentElement.innerHTML='<div class=&quot;img-placeholder&quot;>${catEmojis[cat]||'🍽'}</div>'">`:`<div class="img-placeholder">${catEmojis[cat]||'🍽'}</div>`;
             const rev=window._itemRatings?.[item.n]; const revHtml=rev&&rev.count>0?`<div class="item-rating"><span class="item-rating-stars">${'★'.repeat(Math.round(rev.avg))}${'☆'.repeat(5-Math.round(rev.avg))}</span><span class="item-rating-count">${rev.avg.toFixed(1)} (${rev.count})</span></div>`:'';
-            return `<div class="item-card${!item.inStock?' out-of-stock':''}">
-                <div class="item-left">${imgHtml}
-                <div>
-                    <div style="font-size:14px;font-weight:700;cursor:pointer;" onclick="openItemDetail('${safeN}')">${item.n}</div>
-                    ${item.desc?`<div style="font-size:11px;color:#999;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.desc}</div>`:''}
+            const priceHtml=item.campPrice
+                ? `<div class="item-card-price"><span class="item-card-camp-badge">${item.campLabel}</span><span class="old-price">${item.p} TL</span>${item.campPrice} TL</div>`
+                : `<div class="item-card-price">${item.p} TL</div>`;
+            return `<div class="item-card${!item.inStock?' out-of-stock':''}" onclick="openItemDetail('${safeN}')">
+                <div class="item-card-imgwrap">${imgHtml}</div>
+                <div class="item-card-body">
+                    <div class="item-card-name">${item.n}</div>
+                    ${item.desc?`<div class="item-card-desc">${item.desc}</div>`:''}
                     ${revHtml}
-                    ${!item.inStock?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-top:2px;">Şu an mevcut değil</div>':''}
-                </div></div>
-                <div style="text-align:right;min-width:72px;">
-                    ${item.campPrice
-                      ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;margin-bottom:4px;">
-                           <span style="background:#FF6600;color:white;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;">${item.campLabel}</span>
-                           <span style="font-size:11px;color:#aaa;text-decoration:line-through;font-weight:500;line-height:1.2;">${item.p} TL</span>
-                           <span style="font-size:15px;color:#FF6600;font-weight:900;line-height:1.2;">${item.campPrice} TL</span>
-                         </div>`
-                      : `<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>`
-                    }
-                    <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.campPrice||item.p},'${cat}')">${btnTxt}</button>
+                    ${!item.inStock?'<div style="font-size:10px;color:#e74c3c;font-weight:600;">Şu an mevcut değil</div>':''}
+                    <div class="item-card-bottom">
+                        ${priceHtml}
+                        <button class="add-btn${btnIsText?' add-btn-text':''}" ${disabled?'disabled':''} onclick="event.stopPropagation();checkAndAdd('${safeN}',${item.campPrice||item.p},'${cat}')">${btnTxt}</button>
+                    </div>
                 </div>
             </div>`;
-        }).join('')}`).join('');
+        }).join('')}
+        </div>`).join('');
     // Countdown DOM'dan silinmiş olabilir, geri ekle
     const mc = document.getElementById('main-content');
     if(!document.getElementById('closing-countdown')) {
