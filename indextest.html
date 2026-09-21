@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dönerci İsmail | Online Sipariş</title>
-  <meta name="theme-color" content="#FF6600">
+  <meta name="theme-color" content="#FF6B00">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,13 +13,29 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <style>
         :root {
-            --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
-            --grey:#f4f4f4; --white:#FFFFFF; --header-height:75px; --cart-bar-height:72px; --status-bar-height:44px; --bottom-nav-height:56px;
+            /* ── MARKA PALETİ ── */
+            --primary:#FF6B00;        /* marka turuncusu */
+            --primary-light:#FF8A24;  /* açık turuncu */
+            --primary-dark:#E85F00;   /* buton hover / gradient koyu ucu */
+            --dark:#111315;           /* koyu antrasit */
+            --dark-2:#080909;         /* premium siyah */
+            --grey:#F2F3F4;           /* açık gri */
+            --bg-page:#FAFAF8;        /* kırık beyaz — sayfa zemini */
+            --white:#FFFFFF;          /* kart zemini */
+            --text-dark:#191919;      /* ana metin */
+            --text-muted:#767a80;     /* ikincil metin */
+            --success:#20A464;        /* başarı yeşili */
+            --danger:#E5484D;         /* uyarı kırmızısı */
+            /* ── ORTAK RADIUS/BOŞLUK ── */
+            --radius-card:18px;
+            --radius-btn:14px;
+            --radius-pill:999px;
+            --header-height:75px; --cart-bar-height:72px; --status-bar-height:44px; --bottom-nav-height:56px;
         }
-        body { font-family:'Poppins',sans-serif; font-size:14px; margin:0; background:var(--grey); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
+        body { font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; margin:0; color:var(--text-dark); background:var(--bg-page); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
 
         .header { position:fixed; top:0; left:0; right:0; height:var(--header-height); background:var(--dark); padding:0 15px; display:flex; justify-content:space-between; align-items:center; z-index:9000; box-shadow:0 2px 10px rgba(0,0,0,0.3); transition:background 0.5s; }
         .header.kapali       { background:#555 !important; border-bottom:3px solid #333; }
@@ -27,12 +43,12 @@
         .header.yolacikti    { background:#7d6008 !important; }
 
         #order-status-bar { display:none; position:fixed; top:var(--header-height); left:0; right:0; z-index:8998; padding:9px 15px; text-align:center; font-size:13px; font-weight:700; color:white; letter-spacing:0.3px; }
-        #order-status-bar.hazirlaniyor { background:#27ae60; display:block; }
-        #order-status-bar.yolacikti    { background:#f39c12; display:block; color:#1a1a1a; }
+        #order-status-bar.hazirlaniyor { background:#20A464; display:block; }
+        #order-status-bar.yolacikti    { background:#f39c12; display:block; color:#111315; }
 
         .logo { font-size:13px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; line-height:1.25; display:flex; align-items:center; gap:9px; }
         .logo span  { color:var(--white); display:block; }
-        .hdr-badge { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; flex-shrink:0; }
+        .hdr-badge { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; letter-spacing:-0.5px; flex-shrink:0; }
         .hdr-wordmark { line-height:1.2; }
         .hdr-icon-btn { position:relative; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.08); border:none; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; flex-shrink:0; }
         #header-cart-badge { position:absolute; top:-4px; right:-4px; background:var(--primary); color:#fff; font-size:9px; font-weight:800; min-width:16px; height:16px; border-radius:10px; display:flex; align-items:center; justify-content:center; padding:0 3px; border:1.5px solid var(--dark); }
@@ -48,17 +64,17 @@
             display:flex; align-items:center;
             background:rgba(255,255,255,0.07);
             padding:0 11px; border-radius:22px;
-            border:1.5px solid rgba(255,102,0,0.45);
+            border:1.5px solid rgba(255,107,0,0.45);
             cursor:pointer; height:42px; box-sizing:border-box;
             gap:7px; transition:all 0.25s; max-width:160px;
             position:relative;
         }
-        .user-panel:hover { border-color:var(--primary); background:rgba(255,102,0,0.1); }
-        .user-panel.logged-in { background:rgba(255,102,0,0.13); border-color:rgba(255,102,0,0.65); }
+        .user-panel:hover { border-color:var(--primary); background:rgba(255,107,0,0.1); }
+        .user-panel.logged-in { background:rgba(255,107,0,0.13); border-color:rgba(255,107,0,0.65); }
 
         .user-avatar {
             width:26px; height:26px; border-radius:50%;
-            background:rgba(255,102,0,0.2); border:1.5px solid rgba(255,102,0,0.45);
+            background:rgba(255,107,0,0.2); border:1.5px solid rgba(255,107,0,0.45);
             display:flex; align-items:center; justify-content:center;
             font-size:13px; flex-shrink:0; transition:all 0.25s;
         }
@@ -70,7 +86,7 @@
         .user-sub.pts { color:rgba(255,200,80,0.9); }
 
         /* CART BAR */
-        .cart-bar-top { display:none; position:fixed; top:var(--header-height); left:0; right:0; z-index:8999; box-shadow:0 4px 20px rgba(255,102,0,0.35); animation:slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+        .cart-bar-top { display:none; position:fixed; top:var(--header-height); left:0; right:0; z-index:8999; box-shadow:0 4px 20px rgba(255,107,0,0.35); animation:slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1); }
         .cart-bar-top.normal  { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
         .cart-bar-top.warning { background:linear-gradient(135deg,#c0392b,#922b21); }
         @keyframes slideDown { from{transform:translateY(-100%);opacity:0;} to{transform:translateY(0);opacity:1;} }
@@ -111,6 +127,22 @@
         .sb-menu li:hover { background:#fafafa; }
 
         .container   { padding:15px; max-width:600px; margin:0 auto; }
+        .home-hero { background:linear-gradient(160deg,var(--dark) 0%,var(--dark-2) 60%); border-radius:22px; padding:16px 16px 16px; margin:2px 0 0; }
+        .home-hero .hg-title { color:#fff; font-size:19px; font-weight:800; line-height:1.25; }
+        .home-hero .hg-sub { color:rgba(255,255,255,0.55); font-size:12.5px; font-weight:500; margin-top:3px; }
+        .hero-banner { position:relative; margin-top:14px; border-radius:16px; overflow:hidden; min-height:130px; background:linear-gradient(135deg,#2b1a10,#4a2a12); display:flex; align-items:flex-end; }
+        .hero-banner::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 20% 30%, rgba(255,107,0,0.35), transparent 60%); }
+        .hero-banner-text { position:relative; z-index:2; padding:14px; width:100%; display:flex; justify-content:space-between; align-items:flex-end; gap:10px; }
+        .hero-banner-title { color:#fff; font-size:18px; font-weight:800; line-height:1.15; text-shadow:0 2px 10px rgba(0,0,0,0.45); }
+        .hero-banner-title small { display:block; font-size:10.5px; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.5px; }
+        .hero-banner-cta { background:var(--primary); color:#fff; font-size:11.5px; font-weight:700; padding:9px 14px; border-radius:999px; white-space:nowrap; border:none; cursor:pointer; }
+        .home-search { display:flex; align-items:center; gap:10px; background:var(--white); border-radius:999px; padding:12px 16px; margin:16px 0 18px; box-shadow:0 2px 10px rgba(0,0,0,0.05); color:var(--text-muted); }
+        .home-search input { border:none; outline:none; flex:1; font-size:13.5px; font-family:inherit; background:transparent; color:var(--text-dark); }
+        .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px 6px; margin-bottom:20px; }
+        .cat-grid-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+        .cat-grid-icon { width:54px; height:54px; border-radius:16px; background:var(--grey); display:flex; align-items:center; justify-content:center; font-size:23px; transition:all 0.15s; }
+        .cat-grid-item.active .cat-grid-icon { background:var(--primary); box-shadow:0 4px 14px rgba(255,107,0,0.35); }
+        .cat-grid-label { font-size:10.5px; font-weight:700; color:var(--text-dark); text-align:center; line-height:1.2; }
         #main-content { margin-top:calc(var(--header-height) + 10px); transition:margin-top 0.25s ease; }
         #main-content.cart-visible      { margin-top:calc(var(--header-height) + var(--cart-bar-height) + 5px); }
         #main-content.cart-warn-visible { margin-top:calc(var(--header-height) + var(--cart-bar-height) + 36px + 5px); }
@@ -122,7 +154,7 @@
         .cat-tabs { display:flex; gap:8px; overflow-x:auto; padding:2px 0 14px; margin-bottom:4px; scrollbar-width:none; }
         .cat-tabs::-webkit-scrollbar { display:none; }
         .cat-tab { flex:0 0 auto; padding:8px 16px; border-radius:20px; background:#fff; border:1.5px solid #eee; font-size:12.5px; font-weight:700; color:#555; cursor:pointer; white-space:nowrap; transition:all .15s; }
-        .cat-tab.active { background:var(--primary); border-color:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(255,102,0,0.3); }
+        .cat-tab.active { background:var(--primary); border-color:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(255,107,0,0.3); }
         .item-card { background:var(--white); padding:15px; border-radius:16px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
         .item-card.out-of-stock { opacity:0.5; }
         .item-left { display:flex; align-items:center; gap:12px; }
@@ -182,7 +214,7 @@
         .cart-qty-btn  { width:28px; height:28px; border-radius:8px; border:none; font-size:16px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
         .cart-qty-btn.minus { background:#fee; color:#c0392b; }
         .cart-qty-btn.minus:hover { background:#fcc; }
-        .cart-qty-btn.plus  { background:#e8f8f5; color:#27ae60; }
+        .cart-qty-btn.plus  { background:#e8f8f5; color:#20A464; }
         .cart-qty-btn.plus:hover  { background:#d5f0ea; }
         .cart-qty-num  { font-size:15px; font-weight:800; color:var(--dark); min-width:18px; text-align:center; }
 
@@ -192,16 +224,16 @@
         .coupon-input:focus { outline:none; border-color:var(--primary); }
         .coupon-apply-btn { padding:9px 14px; background:var(--dark); color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:12px; flex-shrink:0; }
         .coupon-result { margin-top:6px; font-size:12px; font-weight:600; padding:6px 10px; border-radius:8px; display:none; }
-        .coupon-result.success { background:#e8f8f5; color:#27ae60; border:1px solid #d4efdf; }
+        .coupon-result.success { background:#e8f8f5; color:#20A464; border:1px solid #d4efdf; }
         .coupon-result.error   { background:#fdedec; color:#c0392b; border:1px solid #fadbd8; }
 
-        .cart-summary-box { margin-top:10px; background:linear-gradient(135deg,#fff8f2,#fff3eb); border:1px solid rgba(255,102,0,0.15); border-radius:12px; padding:12px 14px; }
+        .cart-summary-box { margin-top:10px; background:linear-gradient(135deg,#fff8f2,#fff3eb); border:1px solid rgba(255,107,0,0.15); border-radius:12px; padding:12px 14px; }
         .cart-summary-row { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#666; margin-bottom:6px; }
-        .cart-summary-row.total-row { border-top:1px dashed rgba(255,102,0,0.25); padding-top:8px; margin-top:4px; margin-bottom:0; }
+        .cart-summary-row.total-row { border-top:1px dashed rgba(255,107,0,0.25); padding-top:8px; margin-top:4px; margin-bottom:0; }
         .cart-summary-row.total-row span:first-child { font-size:14px; font-weight:700; color:var(--dark); }
         .cart-summary-row.total-row span:last-child  { font-size:20px; font-weight:800; color:var(--primary); }
-        .cart-summary-row.discount-row { color:#27ae60; font-weight:700; }
-        .cart-checkout-btn { width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; font-size:15px; margin-top:12px; box-shadow:0 6px 16px rgba(255,102,0,0.35); transition:all 0.2s; }
+        .cart-summary-row.discount-row { color:#20A464; font-weight:700; }
+        .cart-checkout-btn { width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; font-size:15px; margin-top:12px; box-shadow:0 6px 16px rgba(255,107,0,0.35); transition:all 0.2s; }
         .cart-checkout-btn:hover { transform:translateY(-1px); }
         .cart-empty-state { text-align:center; padding:40px 20px; color:#bbb; }
         .cart-empty-state .empty-icon { font-size:50px; margin-bottom:10px; }
@@ -211,7 +243,7 @@
         .option-btn { display:flex; width:100%; padding:15px; margin-bottom:10px; background:#f8f8f8; border:2px solid #eee; border-radius:12px; text-align:left; font-weight:600; cursor:pointer; justify-content:space-between; align-items:center; box-sizing:border-box; }
         .option-btn:hover { background:#fff5eb; border-color:#ffd6b3; }
         input, textarea, select { width:100%; padding:14px; margin-bottom:15px; border:1px solid #ddd; border-radius:12px; box-sizing:border-box; font-family:inherit; font-size:15px; background:#fbfbfb; }
-        .action-btn  { width:100%; padding:16px; border:none; border-radius:14px; font-weight:bold; cursor:pointer; background:var(--primary); color:white; font-size:16px; box-shadow:0 6px 15px rgba(255,102,0,0.3); margin-top:10px; }
+        .action-btn  { width:100%; padding:16px; border:none; border-radius:14px; font-weight:bold; cursor:pointer; background:var(--primary); color:white; font-size:16px; box-shadow:0 6px 15px rgba(255,107,0,0.3); margin-top:10px; }
         .phone-wrapper { display:flex; align-items:center; background:#fbfbfb; border:1px solid #ddd; border-radius:12px; padding:0 15px; margin-bottom:15px; }
         .phone-prefix  { font-weight:bold; color:#333; border-right:1px solid #ddd; padding-right:10px; margin-right:10px; font-size:16px; }
         .phone-input   { border:none; background:transparent; margin-bottom:0; font-size:16px; padding:14px 0; width:100%; }
@@ -220,20 +252,20 @@
 
         /* PIN DOTS */
         .pin-dot { width:18px; height:18px; border-radius:50%; border:2px solid #ddd; background:white; transition:all .2s; }
-        .pin-dot.filled { background:var(--primary); border-color:var(--primary); transform:scale(1.15); box-shadow:0 2px 8px rgba(255,102,0,0.4); }
+        .pin-dot.filled { background:var(--primary); border-color:var(--primary); transform:scale(1.15); box-shadow:0 2px 8px rgba(255,107,0,0.4); }
         .pin-dot.shake { animation:pinShake .4s ease; }
         @keyframes pinShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
 
         /* NUMPAD */
         .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:300px; margin:0 auto; }
-        .np-btn { position:relative; height:64px; border-radius:16px; border:none; background:white; box-shadow:0 2px 8px rgba(0,0,0,.08); cursor:pointer; font-family:'Poppins',sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; transition:all .15s; user-select:none; -webkit-tap-highlight-color:transparent; }
+        .np-btn { position:relative; height:64px; border-radius:16px; border:none; background:white; box-shadow:0 2px 8px rgba(0,0,0,.08); cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; transition:all .15s; user-select:none; -webkit-tap-highlight-color:transparent; }
         .np-btn:active { transform:scale(.93); background:#fff3ec; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-        .np-btn span, .np-btn:not(:has(span)) { font-size:22px; font-weight:700; color:#1a1a1a; line-height:1; }
+        .np-btn span, .np-btn:not(:has(span)) { font-size:22px; font-weight:700; color:#111315; line-height:1; }
         .np-btn small { font-size:9px; font-weight:600; color:#aaa; letter-spacing:1px; }
         .np-back { font-size:22px; color:#555; background:#f8f8f8; }
         .np-back:active { background:#fee; color:#c0392b; }
         .otp-box { width:56px; height:64px; text-align:center; font-size:26px; font-weight:800; border:2px solid #ddd; border-radius:14px; background:#f8f8f8; outline:none; transition:.2s; }
-        .otp-box:focus { border-color:var(--primary); background:#fff; box-shadow:0 0 0 3px rgba(255,102,0,.15); }
+        .otp-box:focus { border-color:var(--primary); background:#fff; box-shadow:0 0 0 3px rgba(255,107,0,.15); }
         .otp-box.filled { border-color:var(--primary); background:#fff8f0; }
         .address-item { padding:15px; border:2px solid #eee; border-radius:12px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; }
         .address-item.selected { border-color:var(--primary); background:#fff8f4; }
@@ -340,20 +372,20 @@
         .my-coupon-cond { font-size:11px; color:#999; margin-bottom:8px; }
         .coupon-copy-btn { position:absolute; top:12px; right:12px; background:var(--dark); color:white; border:none; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s; }
         .coupon-copy-btn:hover  { background:var(--primary); }
-        .coupon-copy-btn.copied { background:#27ae60; }
-        .elig-badge   { display:inline-block; background:#e8f8f5; color:#27ae60; font-size:10px; font-weight:700; padding:2px 8px; border-radius:8px; border:1px solid #d4efdf; }
+        .coupon-copy-btn.copied { background:#20A464; }
+        .elig-badge   { display:inline-block; background:#e8f8f5; color:#20A464; font-size:10px; font-weight:700; padding:2px 8px; border-radius:8px; border:1px solid #d4efdf; }
         .inelig-badge { display:inline-block; background:#f5f5f5; color:#bbb; font-size:10px; font-weight:700; padding:2px 8px; border-radius:8px; }
 
         /* ── İLK SİPARİŞ BANNERI ── */
         #first-order-banner {
             display:block;
-            background:linear-gradient(135deg,#FF6600,#CC5200);
+            background:linear-gradient(135deg,#FF6B00,#E85F00);
             border-radius:18px;
             padding:16px 18px;
             margin-bottom:18px;
             position:relative;
             overflow:hidden;
-            box-shadow:0 6px 20px rgba(255,102,0,0.3);
+            box-shadow:0 6px 20px rgba(255,107,0,0.3);
             cursor:pointer;
             animation:bannerIn 0.5s cubic-bezier(0.34,1.2,0.64,1);
         }
@@ -537,12 +569,12 @@
         .camp-scroll::-webkit-scrollbar { display:none; }
         .camp-card {
             flex-shrink:0; width:280px; background:white; border-radius:18px; overflow:hidden;
-            box-shadow:0 6px 20px rgba(255,102,0,0.15); border:1.5px solid rgba(255,102,0,0.1);
+            box-shadow:0 6px 20px rgba(255,107,0,0.15); border:1.5px solid rgba(255,107,0,0.1);
             display:flex; flex-direction:row; min-height:120px; transition:transform 0.2s;
         }
         .camp-card:active { transform:scale(0.98); }
         .camp-card-header {
-            background:linear-gradient(160deg,#FF6600,#CC5200); padding:14px 16px; position:relative;
+            background:linear-gradient(160deg,#FF6B00,#E85F00); padding:14px 16px; position:relative;
             display:flex; flex-direction:column; justify-content:center; min-width:140px; max-width:140px; flex-shrink:0;
         }
         .camp-card-name { font-size:13px; font-weight:800; color:white; line-height:1.3; }
@@ -551,13 +583,13 @@
         .camp-old-price { font-size:11px; color:rgba(255,255,255,.55); text-decoration:line-through; display:block; }
         .camp-new-price { font-size:22px; font-weight:900; color:white; line-height:1; }
         .camp-new-price small { font-size:12px; font-weight:600; }
-        .camp-badge { position:absolute; top:8px; right:-1px; background:white; color:#FF6600; font-size:9px; font-weight:800; padding:3px 7px 3px 8px; border-radius:20px 0 0 20px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+        .camp-badge { position:absolute; top:8px; right:-1px; background:white; color:#FF6B00; font-size:9px; font-weight:800; padding:3px 7px 3px 8px; border-radius:20px 0 0 20px; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
         .camp-body { padding:12px 14px; flex:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0; }
         .camp-items { margin-bottom:10px; flex:1; overflow:hidden; }
         .camp-item-row { font-size:11px; color:#666; display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid #f5f5f5; }
         .camp-item-row:last-child { border-bottom:none; }
-        .camp-item-qty { background:#fff5eb; color:#FF6600; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; margin-right:4px; flex-shrink:0; }
-        .camp-add-btn { width:100%; padding:9px 6px; background:linear-gradient(135deg,#FF6600,#CC5200); color:white; border:none; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; transition:all 0.2s; box-shadow:0 3px 10px rgba(255,102,0,0.35); }
+        .camp-item-qty { background:#fff5eb; color:#FF6B00; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; margin-right:4px; flex-shrink:0; }
+        .camp-add-btn { width:100%; padding:9px 6px; background:linear-gradient(135deg,#FF6B00,#E85F00); color:white; border:none; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; transition:all 0.2s; box-shadow:0 3px 10px rgba(255,107,0,0.35); }
         .camp-add-btn:active { transform:scale(0.97); }
         .camp-add-btn:disabled { background:#ddd; color:#999; cursor:not-allowed; box-shadow:none; }
         /* Camp kart görsel */
@@ -598,7 +630,7 @@
             z-index:8500;
             height:calc(64px + env(safe-area-inset-bottom));
             padding-bottom:env(safe-area-inset-bottom);
-            background:linear-gradient(180deg,#111111,#0d0d0d);
+            background:linear-gradient(180deg,var(--dark),var(--dark-2));
             border-top:1px solid rgba(255,255,255,0.07);
             display:flex; justify-content:space-around; align-items:stretch;
             box-shadow:0 -8px 30px rgba(0,0,0,0.4);
@@ -608,23 +640,32 @@
             justify-content:center; gap:4px; cursor:pointer;
             transition:all 0.2s; padding:8px 0;
             position:relative; overflow:hidden;
+            color:rgba(255,255,255,0.45);
         }
+        .bn-item .bn-icon { color:inherit; }
+        .bn-item.active { color:var(--primary); }
+        .bn-item.active::after { width:60%; }
+        .bn-item.active .bn-label { color:var(--primary); }
         .bn-item::after {
             content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
             width:0; height:2px; background:var(--primary);
             border-radius:0 0 3px 3px; transition:width 0.25s ease;
         }
         .bn-item:active::after { width:60%; }
-        .bn-item:active { background:rgba(255,102,0,0.08); }
+        .bn-item:active { background:rgba(255,107,0,0.08); }
         .bn-icon { font-size:20px; line-height:1; transition:transform 0.2s; }
         .bn-item:active .bn-icon { transform:scale(0.88); }
         .bn-label { font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; transition:color 0.2s; }
         .bn-item:active .bn-label { color:var(--primary); }
-        .bn-item.wa-btn { background:rgba(37,211,102,0.08); border-left:1px solid rgba(37,211,102,0.15); }
-        .bn-item.wa-btn:active { background:rgba(37,211,102,0.18); }
-        .bn-item.wa-btn .bn-label { color:rgba(37,211,102,0.7); }
-        .bn-item.wa-btn:active .bn-label { color:#25D366; }
-        .points-card { background:linear-gradient(135deg,#1a1a1a,#2c2c2c); border-radius:16px; padding:20px; color:white; margin-bottom:16px; }
+        #wa-fab {
+            position:fixed; right:14px;
+            bottom:calc(64px + env(safe-area-inset-bottom) + 14px);
+            z-index:8600; width:50px; height:50px; border-radius:50%;
+            background:#25D366; border:none; box-shadow:0 6px 18px rgba(37,211,102,0.45);
+            display:flex; align-items:center; justify-content:center; cursor:pointer;
+        }
+        #wa-fab:active { transform:scale(0.92); }
+        .points-card { background:linear-gradient(135deg,#111315,#2c2c2c); border-radius:16px; padding:20px; color:white; margin-bottom:16px; }
         .points-big   { font-size:42px; font-weight:800; color:var(--primary); line-height:1; }
         .points-lbl   { font-size:12px; color:rgba(255,255,255,0.5); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
         .pts-bar-wrap { background:rgba(255,255,255,0.1); border-radius:10px; height:8px; margin:14px 0 5px; overflow:hidden; }
@@ -651,7 +692,7 @@
         @keyframes slideUpReview { from{transform:translateY(100%);} to{transform:translateY(0);} }
         .review-handle { width:40px; height:4px; background:#e0e0e0; border-radius:4px; margin:0 auto 20px; }
         .review-progress { font-size:11px; color:#aaa; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
-        .review-item-name { font-size:18px; font-weight:800; color:#1a1a1a; text-align:center; margin-bottom:18px; line-height:1.3; }
+        .review-item-name { font-size:18px; font-weight:800; color:#111315; text-align:center; margin-bottom:18px; line-height:1.3; }
         .review-emoji-wrap { font-size:48px; text-align:center; margin-bottom:14px; }
         .star-row { display:flex; justify-content:center; gap:10px; margin-bottom:24px; }
         .star-btn {
@@ -663,9 +704,9 @@
         .star-btn:hover  { transform:scale(1.25); filter:none; }
         .review-submit-btn {
             width:100%; padding:16px; border:none; border-radius:14px;
-            background:linear-gradient(135deg,#FF6600,#CC5200);
+            background:linear-gradient(135deg,#FF6B00,#E85F00);
             color:white; font-size:15px; font-weight:800; cursor:pointer;
-            box-shadow:0 8px 20px rgba(255,102,0,0.3); margin-bottom:8px;
+            box-shadow:0 8px 20px rgba(255,107,0,0.3); margin-bottom:8px;
             transition:all 0.2s; opacity:0.4; pointer-events:none;
         }
         .review-submit-btn.ready { opacity:1; pointer-events:auto; }
@@ -685,10 +726,10 @@
   <div id="service-unavailable-overlay">
    <div style="max-width:360px;width:90%;">
     <div style="font-size:72px;margin-bottom:16px;animation:pulse 2s infinite;">🔒</div>
-    <h2 style="color:#1a1a1a;font-size:22px;font-weight:900;margin:0 0 10px;">Şu An Kapalıyız</h2>
+    <h2 style="color:#111315;font-size:22px;font-weight:900;margin:0 0 10px;">Şu An Kapalıyız</h2>
     <div id="unavailable-message" style="font-size:15px;color:#555;line-height:1.6;margin-bottom:24px;font-weight:500;">Sizlere daha iyi hizmet verebilmek için kısa bir ara verdik.</div>
-    <div style="background:#fff8f2;border:1.5px solid rgba(255,102,0,.2);border-radius:14px;padding:16px;margin-bottom:20px;">
-      <div style="font-size:12px;font-weight:700;color:#FF6600;margin-bottom:8px;letter-spacing:.5px;">ÇALIŞMA SAATLERİ</div>
+    <div style="background:#fff8f2;border:1.5px solid rgba(255,107,0,.2);border-radius:14px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:#FF6B00;margin-bottom:8px;letter-spacing:.5px;">ÇALIŞMA SAATLERİ</div>
       <div id="ov-hours" style="font-size:14px;color:#333;font-weight:600;"></div>
     </div>
     <div style="font-size:13px;color:#aaa;">Açık olduğumuzda sipariş verebilirsiniz 🛵</div>
@@ -696,7 +737,7 @@
   </div>
   <div class="header" id="main-header">
    <div class="logo" id="header-logo">
-    <div class="hdr-badge">D</div>
+    <div class="hdr-badge">Dİ</div>
     <div class="hdr-wordmark">DÖNERCİ <span>İSMAİL</span></div>
    </div>
    <div class="nav-icons">
@@ -792,7 +833,7 @@
     <li onclick="closeSidebar();openModal('history')">🕒 Siparişlerim</li>
     <li onclick="closeSidebar();openModal('points')">⭐ Sadakat Puanım</li>
     <li onclick="closeSidebar();openModal('mycoupons')">🎟 Kuponlarım</li>
-    <li onclick="handleLogout()" id="logout-menu-item" style="color:#e74c3c;border-top:8px solid #f4f4f4;display:none;">🚪 Oturumu Kapat</li>
+    <li onclick="handleLogout()" id="logout-menu-item" style="color:#e74c3c;border-top:8px solid #F2F3F4;display:none;">🚪 Oturumu Kapat</li>
    </ul>
   </div>
   <div id="modal" class="modal">
@@ -818,7 +859,7 @@
       </div>
 
       <!-- PUAN KULLANIM -->
-      <div id="points-offer-box" style="display:none;background:linear-gradient(135deg,#1a1a1a,#2c2c2c);border-radius:12px;padding:10px 13px;margin-top:8px;">
+      <div id="points-offer-box" style="display:none;background:linear-gradient(135deg,#111315,#2c2c2c);border-radius:12px;padding:10px 13px;margin-top:8px;">
        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div>
          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.65);">⭐ Puanlarım</div>
@@ -832,7 +873,7 @@
        <div class="cart-summary-row"><span>Ara Toplam</span><span id="cart-subtotal">0 TL</span></div>
        <div class="cart-summary-row discount-row" id="discount-row" style="display:none;"><span id="discount-label">İndirim</span><span id="discount-amount">-0 TL</span></div>
        <div class="cart-summary-row discount-row" id="points-discount-row" style="display:none;"><span>⭐ Puan İndirimi</span><span id="points-discount-amount">-0 TL</span></div>
-       <div class="cart-summary-row"><span>Teslimat</span><span style="color:#27ae60;font-weight:600;">Ücretsiz</span></div>
+       <div class="cart-summary-row"><span>Teslimat</span><span style="color:#20A464;font-weight:600;">Ücretsiz</span></div>
        <div class="cart-summary-row total-row"><span>Toplam</span><span id="cart-total">0 TL</span></div>
       </div>
       <button class="cart-checkout-btn" id="cart-checkout-btn" onclick="handleCheckout()" style="display:none;">✅ Siparişi Tamamla</button>
@@ -845,8 +886,8 @@
      <div id="login-step-phone">
       <!-- Logo & başlık -->
       <div style="text-align:center;margin-bottom:16px;">
-        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#FF6600,#CC5200);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 6px 20px rgba(255,102,0,0.35);">🌯</div>
-        <h3 style="margin:0 0 3px;font-size:18px;color:#1a1a1a;">Dönerci İsmail</h3>
+        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#FF6B00,#E85F00);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 6px 20px rgba(255,107,0,0.35);">🌯</div>
+        <h3 style="margin:0 0 3px;font-size:18px;color:#111315;">Dönerci İsmail</h3>
         <p style="font-size:12px;color:#999;margin:0;">Siparişe başlamak için giriş yapın</p>
       </div>
 
@@ -854,7 +895,7 @@
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px;">
         <div style="background:#fff8f0;border:1.5px solid #ffe0cc;border-radius:12px;padding:8px 4px;text-align:center;">
           <div style="font-size:18px;margin-bottom:2px;">⭐</div>
-          <div style="font-size:9.5px;font-weight:700;color:#cc5200;line-height:1.2;">Puan<br>Kazan</div>
+          <div style="font-size:9.5px;font-weight:700;color:#e85f00;line-height:1.2;">Puan<br>Kazan</div>
         </div>
         <div style="background:#f0faf4;border:1.5px solid #c8edd8;border-radius:12px;padding:8px 4px;text-align:center;">
           <div style="font-size:18px;margin-bottom:2px;">🎟</div>
@@ -877,7 +918,7 @@
        <input type="tel" id="login-phone-input" class="phone-input" placeholder="5XX XXX XX XX" maxlength="13" oninput="formatPhoneInput(this)" onkeydown="if(event.key==='Enter')sendOtp()">
       </div>
       <div id="phone-error" style="display:none;color:#c0392b;font-size:12px;font-weight:600;text-align:center;margin:-6px 0 10px;background:#fdedec;padding:8px;border-radius:10px;">❌ Lütfen geçerli bir telefon numarası girin</div>
-      <button class="action-btn" style="background:linear-gradient(135deg,#FF6600,#CC5200);font-size:15px;font-weight:800;" onclick="sendOtp()">
+      <button class="action-btn" style="background:linear-gradient(135deg,#FF6B00,#E85F00);font-size:15px;font-weight:800;" onclick="sendOtp()">
        <span id="otp-send-txt">Giriş Yap</span>
       </button>
       <p style="text-align:center;font-size:11px;color:#aaa;margin:10px 0 0;line-height:1.6;">İlk kayıt işlemi için telefon numaranızı yazın<br>ve <b>Giriş Yap</b> butonuna tıklayın.</p>
@@ -926,7 +967,7 @@
      <div id="login-step-register" style="display:none;">
       <div style="background:linear-gradient(135deg,#fff8f0,#fff3e6);border:1px solid #ffe0cc;border-radius:14px;padding:14px;margin-bottom:16px;text-align:center;">
        <div style="font-size:22px;margin-bottom:4px;">👋</div>
-       <div style="font-size:14px;font-weight:700;color:#cc5200;">İlk defa giriş yapıyorsunuz!</div>
+       <div style="font-size:14px;font-weight:700;color:#e85f00;">İlk defa giriş yapıyorsunuz!</div>
        <div style="font-size:12px;color:#aa4400;margin-top:4px;">Lütfen bir seferlik bilgilerinizi girin</div>
       </div>
       <input type="text" id="reg-name" placeholder="Ad Soyad">
@@ -960,10 +1001,10 @@
        <div id="success-phone" style="font-size:13px;color:#2ecc71;margin-top:4px;font-weight:600;"></div>
       </div>
       <!-- BİLDİRİM İZİN KARTI (kayıt sonrası) -->
-      <div id="notif-inline-card" style="background:linear-gradient(135deg,#fff8f2,#fff3e8);border:1.5px solid rgba(255,102,0,0.2);border-radius:14px;padding:16px;margin:0 0 14px;display:flex;align-items:flex-start;gap:12px;">
+      <div id="notif-inline-card" style="background:linear-gradient(135deg,#fff8f2,#fff3e8);border:1.5px solid rgba(255,107,0,0.2);border-radius:14px;padding:16px;margin:0 0 14px;display:flex;align-items:flex-start;gap:12px;">
        <div style="font-size:28px;flex-shrink:0;">🔔</div>
        <div style="flex:1;">
-        <div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:4px;">Bildirim izni ver</div>
+        <div style="font-weight:700;font-size:14px;color:#111315;margin-bottom:4px;">Bildirim izni ver</div>
         <div style="font-size:12px;color:#666;line-height:1.5;">Siparişin hazır olduğunda ve yola çıktığında anında haber al.</div>
         <div id="notif-inline-status" style="font-size:11px;margin-top:6px;color:#aaa;"></div>
        </div>
@@ -1008,7 +1049,7 @@
      <div id="location-permission-card" style="display:none;background:linear-gradient(135deg,#f0f8ff,#e8f4fd);border:1.5px solid rgba(52,152,219,0.25);border-radius:14px;padding:14px 16px;margin:16px 0 4px;align-items:flex-start;gap:12px;">
        <div style="font-size:26px;flex-shrink:0;margin-top:2px;">📍</div>
        <div style="flex:1;">
-         <div style="font-weight:700;font-size:14px;color:#1a1a1a;margin-bottom:4px;">Konumunu paylaş</div>
+         <div style="font-weight:700;font-size:14px;color:#111315;margin-bottom:4px;">Konumunu paylaş</div>
          <div style="font-size:12px;color:#555;line-height:1.5;margin-bottom:10px;">Kurye seni daha kolay bulsun. Konum sadece teslimat için kullanılır.</div>
          <div id="location-card-btns" style="display:flex;gap:8px;">
            <button onclick="requestLocationPermission()" id="loc-allow-btn"
@@ -1031,7 +1072,7 @@
     <!-- BAŞARI -->
     <div id="sec-success" class="section modal-padded" style="text-align:center;">
      <div style="font-size:60px;">✅</div>
-     <h3 style="color:#27ae60;">Sipariş Onaylandı!</h3>
+     <h3 style="color:#20A464;">Sipariş Onaylandı!</h3>
      <p id="success-order-num-display" style="font-size:16px;font-weight:700;color:var(--primary);margin:8px 0;display:none;"></p>
      <p style="font-size:14px;color:#666;">Mutfağımız hazırlıklara başladı.</p>
      <div id="success-delivery-est" style="display:none;"></div>
@@ -1152,7 +1193,7 @@ async function loadGorunumAyarlari(){
 }
 
 // ── KAMPANYA POPUP ────────────────────────────────────────────────
-const _KP_GRAD={'gradient-fire':'linear-gradient(135deg,#e63946,#f39c12)','gradient-purple':'linear-gradient(135deg,#667eea,#764ba2)','gradient-green':'linear-gradient(135deg,#11998e,#38ef7d)'};
+const _KP_GRAD={'gradient-fire':'linear-gradient(135deg,#E5484D,#f39c12)','gradient-purple':'linear-gradient(135deg,#667eea,#764ba2)','gradient-green':'linear-gradient(135deg,#11998e,#38ef7d)'};
 
 async function loadKampanyaPopup(){
   try{
@@ -1190,7 +1231,7 @@ async function loadKampanyaPopup(){
 }
 
 function showKampanyaPopup(id,d,storageKey){
-  const bg=_KP_GRAD[d.bgColor]||d.bgColor||'#e63946';
+  const bg=_KP_GRAD[d.bgColor]||d.bgColor||'#E5484D';
 
   // Header
   document.getElementById('kp-header').style.background=bg;
@@ -1257,7 +1298,7 @@ function showKampanyaPopup(id,d,storageKey){
       }
       document.getElementById('kp-added-msg').style.display='block';
       btn.textContent='✅ Eklendi!'; btn.disabled=true;
-      btn.style.background='#27ae60';
+      btn.style.background='#20A464';
       if(item.category)kpScrollToCategory(item.category);
       setTimeout(()=>{
         kpClose(); btn.disabled=false;
@@ -1348,10 +1389,10 @@ function buildIngGrid() {
             on = ingState[ing.id] !== false; // normal malzeme: varsayılan dahil
         }
         const addOnlyStyle = isAddOnly
-            ? `border:2px dashed ${on?'#FF6600':'#ccc'};background:${on?'#fff6ee':'#fafafa'};`
+            ? `border:2px dashed ${on?'#FF6B00':'#ccc'};background:${on?'#fff6ee':'#fafafa'};`
             : '';
         const labelExtra = isAddOnly
-            ? `<span style="font-size:9px;font-weight:700;color:${on?'#FF6600':'#aaa'};display:block;margin-top:1px;">${on?'EKLENECEK':'EKLE'}</span>`
+            ? `<span style="font-size:9px;font-weight:700;color:${on?'#FF6B00':'#aaa'};display:block;margin-top:1px;">${on?'EKLENECEK':'EKLE'}</span>`
             : '';
         return `<div class="ing-card ${on?'on':'off'}" id="ic-${ing.id}" onclick="toggleIng('${ing.id}')" style="${addOnlyStyle}">
             <span class="ing-emoji">${ing.emoji}</span>
@@ -1369,7 +1410,7 @@ function refreshIngSummary() {
     let parts = [];
     if(removed.length) parts.push(`<span style="color:#e74c3c;">❌ Çıkarılanlar: ${removed.join(', ')}</span>`);
     if(added.length)   parts.push(`<span style="color:#e74c3c;">🌶️ Eklenecek: ${added.join(', ')}</span>`);
-    el.innerHTML = parts.length ? parts.join('<br>') : '<span style="color:#27ae60;">✅ Tüm malzemeler dahil</span>';
+    el.innerHTML = parts.length ? parts.join('<br>') : '<span style="color:#20A464;">✅ Tüm malzemeler dahil</span>';
 }
 
 window.toggleIng = id => {
@@ -1385,10 +1426,10 @@ window.toggleIng = id => {
         const on = ingState[id] === true || (!(ing&&ing.addOnly) && ingState[id] !== false);
         card.className = 'ing-card '+(on?'on':'off');
         if(ing&&ing.addOnly){
-            card.style.border = on ? '2px dashed #FF6600' : '2px dashed #ccc';
+            card.style.border = on ? '2px dashed #FF6B00' : '2px dashed #ccc';
             card.style.background = on ? '#fff6ee' : '#fafafa';
             const lbl = card.querySelector('.ing-label span');
-            if(lbl){ lbl.textContent = on ? 'EKLENECEK' : 'EKLE'; lbl.style.color = on ? '#FF6600' : '#aaa'; }
+            if(lbl){ lbl.textContent = on ? 'EKLENECEK' : 'EKLE'; lbl.style.color = on ? '#FF6B00' : '#aaa'; }
         }
     }
     refreshIngSummary();
@@ -1674,8 +1715,8 @@ function renderFooterWorkHours() {
             if (timeEl) { timeEl.textContent = 'Kapalı'; timeEl.style.color = '#c0392b'; }
         } else {
             row.style.background = '';
-            if (labelEl) labelEl.style.color = '#1a1a1a';
-            if (timeEl) { timeEl.textContent = `${open} - ${close}`; timeEl.style.color = '#FF6600'; }
+            if (labelEl) labelEl.style.color = '#111315';
+            if (timeEl) { timeEl.textContent = `${open} - ${close}`; timeEl.style.color = '#FF6B00'; }
         }
     });
 }
@@ -1733,7 +1774,7 @@ function checkStore() {
 
 // ── MENÜ ──
 function showSkeleton() {
-    let h='<div style="text-align:center;padding:18px 0 6px;color:var(--primary);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;"><span style="display:inline-block;width:14px;height:14px;border:2px solid var(--primary);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span>Menü yükleniyor...</div><style>@keyframes spin{to{transform:rotate(360deg);}}</style>';
+    let h=homeHeroHTML()+'<div style="text-align:center;padding:18px 0 6px;color:var(--primary);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;"><span style="display:inline-block;width:14px;height:14px;border:2px solid var(--primary);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span>Menü yükleniyor...</div><style>@keyframes spin{to{transform:rotate(360deg);}}</style>';
     for(let c=0;c<3;c++){ h+=`<div class="skeleton-cat"></div>`; for(let i=0;i<3;i++) h+=`<div class="skeleton-card"><div style="display:flex;align-items:center;gap:12px;flex:1"><div class="skeleton-img"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div><div class="skeleton-btn"></div></div>`; }
     document.getElementById('main-content').innerHTML=h;
 }
@@ -1802,7 +1843,7 @@ function renderMenu(products) {
     const sorted=[...CAT_ORDER.filter(c=>cats[c]),...Object.keys(cats).filter(c=>!CAT_ORDER.includes(c)).sort((a,b)=>(catOrderMap[a]||999)-(catOrderMap[b]||999))];
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
-    document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="banner-slider-section" style="display:none;"></div><div id="cat-tabs" class="cat-tabs" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
+    document.getElementById('main-content').innerHTML=homeHeroHTML()+`<div id="fob-placeholder"></div><div id="banner-slider-section" style="display:none;"></div><div id="cat-tabs" class="cat-tabs" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
         <div class="cat-title" data-cat="${cat}">${catEmojis[cat]||'🍽'} ${cat}</div>
         <div class="items-wrap${window._listeDuzeni==='iki'?' items-wrap-2col':''}" data-cat="${cat}">
         ${cats[cat].map(item=>{
@@ -1822,9 +1863,9 @@ function renderMenu(products) {
                 <div style="text-align:right;min-width:72px;">
                     ${item.campPrice
                       ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;margin-bottom:4px;">
-                           <span style="background:#FF6600;color:white;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;">${item.campLabel}</span>
+                           <span style="background:#FF6B00;color:white;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;">${item.campLabel}</span>
                            <span style="font-size:11px;color:#aaa;text-decoration:line-through;font-weight:500;line-height:1.2;">${item.p} TL</span>
-                           <span style="font-size:15px;color:#FF6600;font-weight:900;line-height:1.2;">${item.campPrice} TL</span>
+                           <span style="font-size:15px;color:#FF6B00;font-weight:900;line-height:1.2;">${item.campPrice} TL</span>
                          </div>`
                       : `<div style="font-size:14px;color:var(--primary);font-weight:800;margin-bottom:5px;">${item.p} TL</div>`
                     }
@@ -1846,8 +1887,11 @@ function renderMenu(products) {
     if(!_cdInterval) startClosingCountdown();
     // Kategori sekmelerini render et ve varsayılan (Tümü) filtreyi uygula
     renderCatTabs(sorted);
+    renderCatGrid(sorted);
     // Değerlendirme puanlarını yükle, sonra popüler ürünleri render et
     loadItemRatings().then(()=>{ renderMenuStars(); loadPopularProducts(); loadCampaigns(); loadBannerSliders(); });
+    // Ana sayfa karşılama metni (main-content yeniden çizildiği için tazele)
+    if(typeof updateUserDisplay==='function') updateUserDisplay();
 }
 
 // ── KATEGORİ SEKMELERİ (görseldeki gibi: sekmeye basınca sadece o kategori gösterilir) ──
@@ -1860,8 +1904,29 @@ function renderCatTabs(sorted){
     el.style.display = 'flex';
     filterByCat('__all__');
 }
+function homeHeroHTML(){
+  return '<div class="home-hero"><div class="hg-title" id="hg-title">Hoş geldiniz 👋</div><div class="hg-sub" id="hg-sub">En sevdiğiniz lezzetler birkaç dokunuş uzağınızda.</div>'
+    + '<div class="hero-banner"><div class="hero-banner-text"><div class="hero-banner-title"><small>Tadına</small>Pide &amp; Cantık</div>'
+    + '<button class="hero-banner-cta" onclick="document.getElementById(\'cat-tabs\')?.scrollIntoView({behavior:\'smooth\',block:\'start\'})">Hemen Keşfet →</button></div></div></div>'
+    + '<div class="home-search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    + '<input type="text" id="home-search-input" placeholder="Ne aramıştınız? (Döner, pide, lahmacun...)" oninput="applyMenuSearch(this.value)"></div>'
+    + '<div id="cat-grid" class="cat-grid" style="display:none;"></div>';
+}
+const CAT_ICONS = { 'pide':'🫓','cantık':'🥙','lahmacun':'🍕','döner':'🌯','dürüm':'🌯','i̇çecekler':'🥤','icecekler':'🥤','tatlılar':'🍰','yan ürünler':'🍟','yan urunler':'🍟' };
+function catIcon(name){ return CAT_ICONS[(name||'').toLocaleLowerCase('tr')] || '🍽️'; }
+function renderCatGrid(sorted){
+    const el = document.getElementById('cat-grid');
+    if(!el) return;
+    if(!sorted || sorted.length < 2){ el.style.display='none'; el.innerHTML=''; return; }
+    el.style.display='grid';
+    el.innerHTML = sorted.map(cat=>`<div class="cat-grid-item" data-tab="${cat}" onclick="filterByCat('${cat.replace(/'/g,"\\'")}');document.getElementById('cat-tabs')?.scrollIntoView({behavior:'smooth',block:'start'});">
+        <div class="cat-grid-icon">${catIcon(cat)}</div>
+        <div class="cat-grid-label">${cat}</div>
+    </div>`).join('');
+}
 window.filterByCat = function(cat){
     document.querySelectorAll('#cat-tabs .cat-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===cat));
+    document.querySelectorAll('#cat-grid .cat-grid-item').forEach(t=>t.classList.toggle('active', t.dataset.tab===cat));
     document.querySelectorAll('.cat-title').forEach(t=>{ t.style.display = (cat==='__all__') ? 'none' : (t.dataset.cat===cat ? '' : 'none'); });
     document.querySelectorAll('.items-wrap').forEach(w=>{ w.style.display = (cat==='__all__' || w.dataset.cat===cat) ? '' : 'none'; });
     window._activeMenuCat = cat;
@@ -1932,12 +1997,12 @@ window.openItemDetail = n => {
         }
         <div style="padding:20px 22px 22px;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px;">
-                <h3 style="margin:0;font-size:18px;color:#1a1a1a;flex:1;">${item.n}</h3>
+                <h3 style="margin:0;font-size:18px;color:#111315;flex:1;">${item.n}</h3>
                 <div style="text-align:right;margin-left:12px;flex-shrink:0;">
                   ${item.campPrice
-                    ? `<div><span style="font-size:11px;background:#FF6600;color:white;padding:1px 7px;border-radius:6px;font-weight:700;">${item.campLabel}</span></div>
+                    ? `<div><span style="font-size:11px;background:#FF6B00;color:white;padding:1px 7px;border-radius:6px;font-weight:700;">${item.campLabel}</span></div>
                        <div style="font-size:13px;color:#bbb;text-decoration:line-through;font-weight:500;">${item.p} TL</div>
-                       <div style="font-size:22px;color:#FF6600;font-weight:900;line-height:1.1;">${item.campPrice} TL</div>`
+                       <div style="font-size:22px;color:#FF6B00;font-weight:900;line-height:1.1;">${item.campPrice} TL</div>`
                     : `<span style="font-size:22px;font-weight:800;color:var(--primary);">${item.p} TL</span>`
                   }
                 </div>
@@ -1945,7 +2010,7 @@ window.openItemDetail = n => {
             ${ratingHtml}
             ${item.desc?`<p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.6;">${item.desc}</p>`:'<p style="font-size:13px;color:#bbb;margin:0 0 16px;">Taze malzemelerle hazırlanır.</p>'}
             <button ${disabled?'disabled':''} onclick="document.getElementById('item-detail-overlay').remove(); checkAndAdd('${item.n.replace(/'/g,"\\'")}',${item.campPrice||item.p},'${item.c}');"
-                style="width:100%;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;${disabled?'background:#ddd;color:#999;cursor:not-allowed;':'background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;box-shadow:0 8px 20px rgba(255,102,0,0.3);'}">
+                style="width:100%;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;${disabled?'background:#ddd;color:#999;cursor:not-allowed;':'background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;box-shadow:0 8px 20px rgba(255,107,0,0.3);'}">
                 ${disabled?btnTxt:'🛒 '+btnTxt}
             </button>
         </div>
@@ -1979,6 +2044,7 @@ function updateCart() {
     const count=basket.length,{sub,discount,ptsDis,total}=calcTotal();
     const topBar=document.getElementById('cart-bar-top'),mainC=document.getElementById('main-content'),warnB=document.getElementById('min-order-bar');
     const hcb=document.getElementById('header-cart-badge'); if(hcb){ hcb.innerText=count; hcb.style.display=count>0?'flex':'none'; }
+    const bncb=document.getElementById('bn-cart-badge'); if(bncb){ bncb.innerText=count; bncb.style.display=count>0?'flex':'none'; }
     if(count>0){
         topBar.style.display='block';
         document.getElementById('cart-bar-count-text').innerText=`${count} ürün`;
@@ -2013,7 +2079,7 @@ function updateCart() {
         } else if(usingPoints){
             document.getElementById('points-offer-text').innerText=`✓ ${totalPtsDis} TL puan indirimi uygulandı`;
             const btn=document.getElementById('points-use-btn');
-            btn.innerText='✓ Uygulandı'; btn.style.background='#27ae60'; btn.disabled=false;
+            btn.innerText='✓ Uygulandı'; btn.style.background='#20A464'; btn.disabled=false;
         } else {
             document.getElementById('points-offer-text').innerText=`⭐ ${loyaltyPoints} puan = ${totalPtsDis} TL indirim hakkınız var!`;
             const btn=document.getElementById('points-use-btn');
@@ -2410,9 +2476,9 @@ function listenApproval(orderId, orderNum){
             const estEl = document.getElementById('success-delivery-est');
             if(estEl){
                 estEl.innerHTML = `
-                <div style="background:linear-gradient(135deg,#fff8f2,#ffe8cc);border:1.5px solid rgba(255,102,0,0.25);border-radius:16px;padding:16px 18px;margin:14px 0 0;text-align:center;animation:fadeInUp 0.4s ease;">
+                <div style="background:linear-gradient(135deg,#fff8f2,#ffe8cc);border:1.5px solid rgba(255,107,0,0.25);border-radius:16px;padding:16px 18px;margin:14px 0 0;text-align:center;animation:fadeInUp 0.4s ease;">
                     <div style="font-size:24px;margin-bottom:6px;">🛵</div>
-                    <div style="font-size:14px;font-weight:800;color:#333;margin-bottom:8px;line-height:1.4;">Siparişiniz <span style="color:#FF6600;">20 ile 30 dakika</span> içinde size ulaştırılacaktır 🛵</div>
+                    <div style="font-size:14px;font-weight:800;color:#333;margin-bottom:8px;line-height:1.4;">Siparişiniz <span style="color:#FF6B00;">20 ile 30 dakika</span> içinde size ulaştırılacaktır 🛵</div>
                     <div style="font-size:11px;color:#aaa;margin-top:4px;font-style:italic;">* Bu süre tahminidir, trafik ve yoğunluğa göre değişebilir.</div>
                     <div style="font-size:11px;color:#aaa;margin-top:3px;">Siparişin yola çıktığında bildirim alacaksın 🔔</div>
                 </div>`;
@@ -2890,7 +2956,7 @@ function showForegroundNotif(title, body){
     let icon = '🔔';
     if(title.includes('Hazırlanıyor'))   { bg='linear-gradient(135deg,#c0392b,#e74c3c)'; icon='🔥'; }
     else if(title.includes('Yola'))      { bg='linear-gradient(135deg,#e67e22,#f39c12)'; icon='🛵'; }
-    else if(title.includes('Teslim'))    { bg='linear-gradient(135deg,#27ae60,#2ecc71)'; icon='🎉'; }
+    else if(title.includes('Teslim'))    { bg='linear-gradient(135deg,#20A464,#2ecc71)'; icon='🎉'; }
     else if(title.includes('İptal'))     { bg='linear-gradient(135deg,#7f8c8d,#95a5a6)'; icon='❌'; }
 
     t.style.cssText = `background:${bg};border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(0,0,0,0.3);pointer-events:auto;width:100%;box-sizing:border-box;`;
@@ -2923,12 +2989,12 @@ function showDeliveryNotification(){
     overlay.innerHTML=`
         <div id="delivery-card" style="background:white;border-radius:24px;padding:32px 24px;text-align:center;max-width:320px;width:90%;box-shadow:0 30px 80px rgba(0,0,0,0.4);animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);">
             <div style="font-size:64px;margin-bottom:8px;">🎉</div>
-            <h2 style="margin:0 0 6px;color:#27ae60;font-size:21px;">Afiyet Olsun!</h2>
+            <h2 style="margin:0 0 6px;color:#20A464;font-size:21px;">Afiyet Olsun!</h2>
             <p style="color:#666;font-size:14px;margin:0 0 22px;">Siparişiniz teslim edildi. Tekrar bekleriz!</p>
             <p style="font-size:15px;font-weight:700;color:#333;margin:0 0 14px;">Siparişinizden memnun kaldınız mı?</p>
             <div style="display:flex;gap:10px;margin-bottom:12px;">
                 <button onclick="deliveryFeedback(true,'${orderId}')"
-                    style="flex:1;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;padding:14px 8px;border-radius:14px;font-size:20px;font-weight:800;cursor:pointer;">
+                    style="flex:1;background:linear-gradient(135deg,#20A464,#2ecc71);color:white;border:none;padding:14px 8px;border-radius:14px;font-size:20px;font-weight:800;cursor:pointer;">
                     😊<br><span style="font-size:12px;">Memnunum</span>
                 </button>
                 <button onclick="deliveryFeedback(false,'${orderId}')"
@@ -2963,7 +3029,7 @@ window.deliveryFeedback = async (satisfied, orderId) => {
         if(!card) return;
         card.innerHTML = `
             <div style="font-size:42px;margin-bottom:10px;">😞</div>
-            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:6px;">Ne gibi bir sorun yaşadınız?</div>
+            <div style="font-size:17px;font-weight:800;color:#111315;margin-bottom:6px;">Ne gibi bir sorun yaşadınız?</div>
             <div style="font-size:12px;color:#aaa;margin-bottom:14px;">Kısa bir açıklama yazın, sizi arayalım.</div>
             <textarea id="delivery-problem-text" placeholder="Örn: Siparişim eksik geldi, yemek soğuktu..." maxlength="300"
                 style="width:100%;box-sizing:border-box;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:14px;font-family:inherit;resize:none;height:90px;outline:none;margin-bottom:12px;"></textarea>
@@ -3005,7 +3071,7 @@ function launchConfetti(){
     if(!canvas) return;
     canvas.width=window.innerWidth; canvas.height=window.innerHeight;
     const ctx=canvas.getContext('2d');
-    const pieces=[]; const colors=['#FF6600','#27ae60','#f39c12','#3498db','#e74c3c','#9b59b6'];
+    const pieces=[]; const colors=['#FF6B00','#20A464','#f39c12','#3498db','#e74c3c','#9b59b6'];
     for(let i=0;i<120;i++) pieces.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height-canvas.height,r:Math.random()*6+3,d:Math.random()*3+1,color:colors[Math.floor(Math.random()*colors.length)],tilt:Math.random()*10-10,tiltSpeed:Math.random()*0.1+0.05});
     let frame=0;
     function draw(){
@@ -3126,7 +3192,7 @@ function showQueryStatusBanner(mins){
     banner.id = 'query-status-banner';
     banner.style.cssText = `
         position:fixed; bottom:72px; left:0; right:0; z-index:8900;
-        background:linear-gradient(135deg,#1a1a1a,#2c2c2c);
+        background:linear-gradient(135deg,#111315,#2c2c2c);
         padding:22px 18px; display:flex; flex-direction:column; align-items:center;
         gap:10px; text-align:center;
         box-shadow:0 -6px 24px rgba(0,0,0,0.4);
@@ -3134,8 +3200,8 @@ function showQueryStatusBanner(mins){
     `;
     banner.innerHTML = `
         <div style="font-size:36px;">🛵</div>
-        <div style="font-size:40px;font-weight:900;color:#FF6600;line-height:1;letter-spacing:-1px;">~${minsVal} <span style="font-size:20px;color:rgba(255,255,255,0.7);font-weight:700;">dakika</span></div>
-        <div style="font-size:14px;font-weight:800;color:white;line-height:1.4;">Siparişiniz yaklaşık <b style="color:#FF6600;">${minsVal} dakika</b> içinde kapınızda!</div>
+        <div style="font-size:40px;font-weight:900;color:#FF6B00;line-height:1;letter-spacing:-1px;">~${minsVal} <span style="font-size:20px;color:rgba(255,255,255,0.7);font-weight:700;">dakika</span></div>
+        <div style="font-size:14px;font-weight:800;color:white;line-height:1.4;">Siparişiniz yaklaşık <b style="color:#FF6B00;">${minsVal} dakika</b> içinde kapınızda!</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">İşletme tarafından bildirildi</div>
         <button onclick="document.getElementById('query-status-banner')?.remove()"
             style="margin-top:6px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);padding:6px 22px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">Tamam</button>
@@ -3267,7 +3333,7 @@ async function loadMyCoupons(){
         const tTxt=c=>c.type==='fixed'?`${c.discount} TL`:`%${c.discount}`;
         let html='';
         if(elig.length){ 
-            html+=`<div style="font-size:12px;font-weight:700;color:#27ae60;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ Kullanabilirsiniz (${elig.length})</div>`;
+            html+=`<div style="font-size:12px;font-weight:700;color:#20A464;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ Kullanabilirsiniz (${elig.length})</div>`;
             html+=`<div class="my-coupons-scroll">`;
             html+=elig.map(c=>`<div class="my-coupon-card"><button class="coupon-copy-btn" id="cb-${c.id}" onclick="copyCoupon('${c.code}','${c.id}')">Kopyala</button><div class="my-coupon-code">${c.code}</div><div class="my-coupon-discount">${tTxt(c)} İndirim</div><div class="my-coupon-cond">${c.reason}</div><div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><span class="elig-badge">✅ Uygulanabilir</span><button onclick="applyAndGoCart('${c.code}')" style="background:var(--primary);color:white;border:none;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Sepete →</button></div></div>`).join('');
             html+=`</div>`;
@@ -3431,10 +3497,10 @@ function showVipBonusPopup(order) {
     popup.id = 'vip-bonus-popup';
     popup.style.cssText = `
         position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
-        background:#1a1a1a; border-radius:20px; padding:18px 22px;
+        background:#111315; border-radius:20px; padding:18px 22px;
         box-shadow:0 12px 40px rgba(0,0,0,0.4); z-index:9999;
         width:calc(100% - 40px); max-width:340px;
-        border:1px solid rgba(255,102,0,0.3);
+        border:1px solid rgba(255,107,0,0.3);
         opacity:0; transition:opacity 0.3s, transform 0.3s;
     `;
 
@@ -3450,7 +3516,7 @@ function showVipBonusPopup(order) {
                 width:26px;height:26px;border-radius:50%;font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
         </div>
         <div style="text-align:center;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
-            <span style="font-size:26px;font-weight:900;color:#FF6600;">+${order.totalPtsToEarn} puan ⭐</span>
+            <span style="font-size:26px;font-weight:900;color:#FF6B00;">+${order.totalPtsToEarn} puan ⭐</span>
         </div>
     `;
 
@@ -3520,11 +3586,14 @@ function updateVipDisplay(orderCount) {
 
 function updateUserDisplay(){
     const panel=document.getElementById('user-panel-btn'),icon=document.getElementById('user-avatar'),nameEl=document.getElementById('user-panel-name'),subEl=document.getElementById('user-panel-sub');
+    const hgT=document.getElementById('hg-title'), hgS=document.getElementById('hg-sub');
     if(!activePhone||!userData.name){
         panel.classList.remove('logged-in'); icon.innerHTML='👤'; nameEl.innerText='Giriş Yap'; subEl.innerText='Hesabına gir →'; subEl.classList.remove('pts');
         document.getElementById('sb-stats').style.display='none';
+        if(hgT){ hgT.textContent='Hoş geldiniz 👋'; hgS.textContent='En sevdiğiniz lezzetler birkaç dokunuş uzağınızda.'; }
     } else {
         panel.classList.add('logged-in');
+        if(hgT){ hgT.textContent=`Merhaba ${userData.name.split(' ')[0]} 👋`; hgS.textContent='Bugün ne yemek istersin?'; }
         const ini=userData.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
         icon.innerHTML=`<span style="font-size:10px;font-weight:800;color:white;">${ini}</span>`;
         nameEl.innerText=userData.name.split(' ')[0];
@@ -3637,11 +3706,17 @@ function showCartMsg(msg, type='info'){
 }
 
 // ── MODAL ──
-window.closeModal=()=>document.getElementById('modal').style.display='none';
+window.setActiveNav = id => {
+    document.querySelectorAll('.bn-item').forEach(el=>el.classList.remove('active'));
+    const el=document.getElementById(id); if(el) el.classList.add('active');
+};
+const BN_SECTION_MAP = { cart:'bn-cart', checkout:'bn-cart', history:'bn-history', points:'bn-account', mycoupons:'bn-account', profile:'bn-account', login:'bn-account', addresses:'bn-account' };
+window.closeModal=()=>{ document.getElementById('modal').style.display='none'; setActiveNav('bn-home'); };
 window.openModal=sec=>{
     closeSidebar(); document.getElementById('modal').style.display='flex';
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
     document.getElementById('sec-'+sec).classList.add('active');
+    if(BN_SECTION_MAP[sec]) setActiveNav(BN_SECTION_MAP[sec]);
     // Sepette X beyaz (koyu header), diğerlerinde koyu
     const cm = document.querySelector('.close-modal');
     if(cm) cm.style.color = sec==='cart' ? 'white' : '#aaa';
@@ -3669,8 +3744,8 @@ window.handleCheckout=()=>{
     // Ödeme ekranı açılınca konum kartını göster (daha önce reddedilmediyse ve henüz verilmediyse)
     setTimeout(showLocationCard, 300);
 };
-window.toggleSidebar=()=>{ document.getElementById('sidebar').classList.add('active'); document.getElementById('sidebar-overlay').style.display='block'; };
-window.closeSidebar=()=>{ document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').style.display='none'; };
+window.toggleSidebar=()=>{ document.getElementById('sidebar').classList.add('active'); document.getElementById('sidebar-overlay').style.display='block'; setActiveNav('bn-account'); };
+window.closeSidebar=()=>{ document.getElementById('sidebar').classList.remove('active'); document.getElementById('sidebar-overlay').style.display='none'; if(document.getElementById('modal').style.display!=='flex') setActiveNav('bn-home'); };
 window.toggleAddressForm=()=>{ const f=document.getElementById('new-address-form'); f.style.display=f.style.display==='none'?'block':'none'; };
 
 // ── KONUM İZNİ ────────────────────────────────────────────────────────────────
@@ -3712,7 +3787,7 @@ window.requestLocationPermission = () => {
             if(btns)   btns.style.display   = 'none';
             if(status) {
                 status.style.display = 'block';
-                status.style.color   = '#27ae60';
+                status.style.color   = '#20A464';
                 status.innerHTML     = `✅ Konum alındı (±${_cachedLocation.acc}m doğruluk)`;
             }
         },
@@ -3775,9 +3850,9 @@ window.requestNotifInline = async () => {
     try {
         const perm = await Notification.requestPermission();
         if(perm === 'granted') {
-            stat.style.color = '#27ae60';
+            stat.style.color = '#20A464';
             stat.textContent = '✅ İzin verildi, bildirimler aktif!';
-            btn.style.background = '#27ae60';
+            btn.style.background = '#20A464';
             btn.textContent = '✓';
             // Token al ve Firestore'a kaydet
             await initFcmToken(tempPhone || activePhone);
@@ -3843,20 +3918,20 @@ function showTokenBanner(phone) {
         box-shadow:0 -4px 24px rgba(0,0,0,0.15);
         z-index:8999;
         animation:slideUpBanner 0.35s cubic-bezier(.34,1.56,.64,1);
-        border-top:3px solid #FF6600;
+        border-top:3px solid #FF6B00;
     `;
     banner.innerHTML = `
         <div style="max-width:480px;margin:0 auto;">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-            <div style="width:44px;height:44px;background:linear-gradient(135deg,#FF6600,#CC5200);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🔔</div>
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#FF6B00,#E85F00);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🔔</div>
             <div>
-              <div style="font-weight:800;font-size:15px;color:#1a1a1a;">Bildirim izni ver</div>
+              <div style="font-weight:800;font-size:15px;color:#111315;">Bildirim izni ver</div>
               <div style="font-size:12px;color:#666;margin-top:2px;">Siparişin hazır olunca ve yola çıkınca anında haber al.</div>
             </div>
           </div>
           <div style="display:flex;gap:10px;">
             <button onclick="handleTokenBannerAllow('${phone}')"
-              style="flex:1.5;background:linear-gradient(135deg,#FF6600,#CC5200);color:white;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,102,0,0.35);">
+              style="flex:1.5;background:linear-gradient(135deg,#FF6B00,#E85F00);color:white;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,107,0,0.35);">
               🔔 İzin Ver
             </button>
             <button onclick="handleTokenBannerDismiss()"
@@ -4179,7 +4254,7 @@ async function checkAndShowWelcomeCoupon(userName) {
         `Hoş geldin ${userName}!<br><strong>${discountText}</strong> indirim kuponu kazandın! 🎉`;
       
       document.getElementById('coupon-visual').innerHTML = `
-        <div style="background:linear-gradient(135deg,#FF6600,#CC5200);color:white;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(255,102,0,0.3);">
+        <div style="background:linear-gradient(135deg,#FF6B00,#E85F00);color:white;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(255,107,0,0.3);">
           <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">KUPON KODU</div>
           <div style="font-size:28px;font-weight:800;letter-spacing:2px;font-family:monospace;">${couponCode}</div>
           <div style="font-size:16px;margin-top:8px;opacity:0.95;">${discountText} İNDİRİM</div>
@@ -4299,7 +4374,7 @@ async function checkUserCoupons(userName) {
       document.getElementById('coupon-visual').innerHTML = couponsToShow.map(c => {
         const disc = c.type === 'percent' ? `%${c.discount}` : `${c.discount} TL`;
         return `
-          <div style="background:linear-gradient(135deg,#FF6600,#CC5200);color:white;padding:15px;border-radius:10px;margin-bottom:10px;box-shadow:0 2px 10px rgba(255,102,0,0.2);">
+          <div style="background:linear-gradient(135deg,#FF6B00,#E85F00);color:white;padding:15px;border-radius:10px;margin-bottom:10px;box-shadow:0 2px 10px rgba(255,107,0,0.2);">
             <div style="font-size:12px;opacity:0.9;">KUPON KODU</div>
             <div style="font-size:20px;font-weight:800;letter-spacing:1px;font-family:monospace;margin:5px 0;">${c.code}</div>
             <div style="font-size:14px;opacity:0.95;">${disc} İNDİRİM</div>
@@ -4372,12 +4447,12 @@ async function showAvailableCouponsInCart() {
           if (c.unlocked) {
             // ── Kullanılabilir kupon ──
             return `
-              <div style="background:#fff;border:2px solid #FF6600;border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <div style="background:#fff;border:2px solid #FF6B00;border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
                 <div style="flex:1;min-width:0;">
-                  <div style="font-size:14px;font-weight:800;color:#FF6600;font-family:monospace;letter-spacing:1px;">${c.code}</div>
+                  <div style="font-size:14px;font-weight:800;color:#FF6B00;font-family:monospace;letter-spacing:1px;">${c.code}</div>
                   <div style="font-size:12px;color:#555;margin-top:2px;">${disc} indirim</div>
                 </div>
-                <button onclick="quickApplyCoupon('${c.code}')" style="background:#FF6600;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">
+                <button onclick="quickApplyCoupon('${c.code}')" style="background:#FF6B00;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">
                   UYGULA
                 </button>
               </div>`;
@@ -4395,7 +4470,7 @@ async function showAvailableCouponsInCart() {
                   </div>
                 </div>
                 <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden;">
-                  <div style="height:100%;width:${c.pct}%;background:linear-gradient(90deg,#f39c12,#FF6600);border-radius:20px;transition:width 0.4s;"></div>
+                  <div style="height:100%;width:${c.pct}%;background:linear-gradient(90deg,#f39c12,#FF6B00);border-radius:20px;transition:width 0.4s;"></div>
                 </div>
                 <div style="font-size:10px;color:#bbb;margin-top:5px;">Sepetine ${c.rem} TL daha ekle ve bu kuponu kullan!</div>
               </div>`;
@@ -4541,7 +4616,7 @@ async function loadCampaigns() {
             const itemsHtml = (c.items||[]).map(it =>
                 `<div class="camp-item-row">
                     <span><span class="camp-item-qty">${it.qty}x</span> ${it.name}</span>
-                    <span style="color:#FF6600;font-weight:700;">${((it.unitPrice||it.price||0)*it.qty)} TL</span>
+                    <span style="color:#FF6B00;font-weight:700;">${((it.unitPrice||it.price||0)*it.qty)} TL</span>
                 </div>`
             ).join('');
             const imgHtml = c.imageUrl
@@ -4928,11 +5003,11 @@ function showSatisfactionModal(orderId) {
         <div class="review-sheet" style="text-align:center;">
             <div class="review-handle"></div>
             <div style="font-size:52px;margin-bottom:10px;">🍽️</div>
-            <div style="font-size:19px;font-weight:800;color:#1a1a1a;margin-bottom:6px;">Siparişinizden memnun kaldınız mı?</div>
+            <div style="font-size:19px;font-weight:800;color:#111315;margin-bottom:6px;">Siparişinizden memnun kaldınız mı?</div>
             <div style="font-size:13px;color:#aaa;margin-bottom:28px;">Görüşleriniz bizim için değerli</div>
             <div style="display:flex;gap:12px;margin-bottom:16px;">
                 <button onclick="submitSatisfaction(true,'${orderId}')"
-                    style="flex:1;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;padding:16px;border-radius:16px;font-size:22px;font-weight:800;cursor:pointer;">
+                    style="flex:1;background:linear-gradient(135deg,#20A464,#2ecc71);color:white;border:none;padding:16px;border-radius:16px;font-size:22px;font-weight:800;cursor:pointer;">
                     😊<br><span style="font-size:13px;">Memnunum</span>
                 </button>
                 <button onclick="showProblemBox('${orderId}')"
@@ -4952,7 +5027,7 @@ window.showProblemBox = (orderId) => {
     sheet.innerHTML = `
         <div class="review-handle"></div>
         <div style="font-size:42px;margin-bottom:10px;text-align:center;">😞</div>
-        <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:6px;text-align:center;">Ne gibi bir sorun yaşadınız?</div>
+        <div style="font-size:17px;font-weight:800;color:#111315;margin-bottom:6px;text-align:center;">Ne gibi bir sorun yaşadınız?</div>
         <div style="font-size:12px;color:#aaa;margin-bottom:16px;text-align:center;">Kısa bir açıklama yazın, sizi arayalım.</div>
         <textarea id="problem-text" placeholder="Örn: Siparişim eksik geldi, yemek soğuktu..." maxlength="300"
             style="width:100%;box-sizing:border-box;padding:12px;border:1.5px solid #eee;border-radius:12px;font-size:14px;font-family:inherit;resize:none;height:90px;outline:none;margin-bottom:14px;"></textarea>
@@ -5207,84 +5282,91 @@ window.onload=()=>{
     setTimeout(startClosingCountdown, 1500);
 
     // Alt nav event listener'ları
-    document.getElementById('bn-points')?.addEventListener('click', () => requireLogin('points'));
+    document.getElementById('bn-home')?.addEventListener('click', () => {
+        closeModal(); setActiveNav('bn-home');
+        document.getElementById('main-content')?.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    document.getElementById('bn-menu')?.addEventListener('click', () => {
+        closeModal(); setActiveNav('bn-menu');
+        document.getElementById('cat-tabs')?.scrollIntoView({behavior:'smooth', block:'start'});
+    });
     document.getElementById('bn-history')?.addEventListener('click', () => requireLogin('history'));
-    document.getElementById('bn-coupons')?.addEventListener('click', () => requireLogin('mycoupons'));
-    document.getElementById('bn-wa')?.addEventListener('click', () => window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank'));
+    document.getElementById('bn-cart')?.addEventListener('click', () => openModal('cart'));
+    document.getElementById('bn-account')?.addEventListener('click', () => handleUserPanelClick());
 };
 </script>
   <!-- TELEFON & YOL TARİFİ + ÇALIŞMA SAATLERİ + SOSYAL MEDYA -->
-  <div style="background:#f4f4f4; padding:24px 15px 20px; max-width:600px; margin:0 auto;">
+  <div style="background:#F2F3F4; padding:24px 15px 20px; max-width:600px; margin:0 auto;">
 
     <!-- 1. Telefon Et & Yol Tarifi Al -->
     <div style="display:flex; gap:12px; margin-bottom:28px;">
-      <a href="tel:02242466120" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#1a1a1a; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.18);">
+      <a href="tel:02242466120" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#111315; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.18);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012.77 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.74a16 16 0 006.35 6.35l1.1-1.1a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;">Telefon Et</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700;">Telefon Et</span>
       </a>
-      <a href="https://maps.app.goo.gl/dvcw2We1ZjZ3kJV7A?g_st=ac" target="_blank" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#FF6600; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(255,102,0,0.35);">
+      <a href="https://maps.app.goo.gl/dvcw2We1ZjZ3kJV7A?g_st=ac" target="_blank" style="flex:1; display:flex; align-items:center; justify-content:center; gap:10px; background:#FF6B00; color:white; text-decoration:none; padding:16px 12px; border-radius:16px; box-shadow:0 4px 14px rgba(255,107,0,0.35);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;">Yol Tarifi Al</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700;">Yol Tarifi Al</span>
       </a>
     </div>
 
     <!-- 2. Çalışma Saatleri -->
-    <h3 style="text-align:center; font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin:0 0 14px; text-transform:uppercase; letter-spacing:0.5px;">Çalışma Saatleri</h3>
+    <h3 style="text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:700; color:#111315; margin:0 0 14px; text-transform:uppercase; letter-spacing:0.5px;">Çalışma Saatleri</h3>
     <div id="footer-work-hours" style="background:white; border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.06); margin-bottom:28px;">
       <div data-day="1" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
-        <span style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Pazartesi</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Pazartesi</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
       <div data-day="2" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
-        <span class="fwh-label" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Salı</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span class="fwh-label" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Salı</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
       <div data-day="3" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
-        <span class="fwh-label" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Çarşamba</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span class="fwh-label" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Çarşamba</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
       <div data-day="4" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
-        <span class="fwh-label" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Perşembe</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span class="fwh-label" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Perşembe</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
       <div data-day="5" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
-        <span class="fwh-label" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Cuma</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span class="fwh-label" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Cuma</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
       <div data-day="6" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid #f0f0f0;">
-        <span class="fwh-label" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Cumartesi</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span class="fwh-label" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Cumartesi</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
       <div data-day="0" style="display:flex; justify-content:space-between; align-items:center; padding:12px 18px;">
-        <span class="fwh-label" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#1a1a1a;">Pazar</span>
-        <span class="fwh-time" style="font-family:'Poppins',sans-serif; font-size:13px; font-weight:700; color:#FF6600;">10:30 - 19:30</span>
+        <span class="fwh-label" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:#111315;">Pazar</span>
+        <span class="fwh-time" style="font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:700; color:#FF6B00;">10:30 - 19:30</span>
       </div>
     </div>
 
 
     <!-- 3. Sosyal Medya -->
-    <h3 style="text-align:center; font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a; margin:0 0 16px; text-transform:uppercase; letter-spacing:0.5px;">Bizi Takip Edin</h3>
+    <h3 style="text-align:center; font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:700; color:#111315; margin:0 0 16px; text-transform:uppercase; letter-spacing:0.5px;">Bizi Takip Edin</h3>
     <div style="display:flex; justify-content:center; gap:14px; padding-bottom:8px;">
       <!-- WhatsApp -->
       <a href="https://wa.me/902242466120?text=Merhaba%2C%20bilgi%20almak%20istiyorum." target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
         <div style="width:54px; height:54px; border-radius:50%; background:#25D366; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(37,211,102,0.35);">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
         </div>
-        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">WhatsApp</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:600; color:#555;">WhatsApp</span>
       </a>
       <!-- Facebook -->
       <a href="https://www.facebook.com/share/1LHRsGQr6P/" target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
         <div style="width:54px; height:54px; border-radius:50%; background:#1877F2; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(24,119,242,0.35);">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
         </div>
-        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">Facebook</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:600; color:#555;">Facebook</span>
       </a>
       <!-- Instagram -->
       <a href="https://www.instagram.com/donercismail?igsh=YWNnczdqNHUzYmJ1" target="_blank" style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none;">
         <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(220,39,67,0.35);">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
         </div>
-        <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:600; color:#555;">Instagram</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:600; color:#555;">Instagram</span>
       </a>
     </div>
 
@@ -5292,49 +5374,58 @@ window.onload=()=>{
 
   <!-- ALT NAVİGASYON BAR -->
   <div id="bottom-nav">
-    <div class="bn-item" id="bn-points">
-      <span class="bn-icon" style="position:relative;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span id="bn-points-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:#FF6600;color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid #0d0d0d;"></span>
+    <div class="bn-item active" id="bn-home">
+      <span class="bn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </span>
-      <span class="bn-label" id="bn-points-label">Puanlarım</span>
+      <span class="bn-label">Ana Sayfa</span>
+    </div>
+    <div class="bn-item" id="bn-menu">
+      <span class="bn-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </span>
+      <span class="bn-label">Menü</span>
     </div>
     <div class="bn-item" id="bn-history">
       <span class="bn-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </span>
       <span class="bn-label">Siparişlerim</span>
     </div>
-    <div class="bn-item" id="bn-coupons">
+    <div class="bn-item" id="bn-cart">
       <span class="bn-icon" style="position:relative;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        <span id="bn-coupons-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:#27ae60;color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid #0d0d0d;"></span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span id="bn-cart-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:var(--primary);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid var(--dark-2);"></span>
       </span>
-      <span class="bn-label">Kuponlarım</span>
+      <span class="bn-label">Sepet</span>
     </div>
-    <div class="bn-item wa-btn" id="bn-wa">
-      <span class="bn-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    <div class="bn-item" id="bn-account">
+      <span class="bn-icon" style="position:relative;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="bn-account-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:var(--success);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid var(--dark-2);"></span>
       </span>
-      <span class="bn-label">WA Destek</span>
+      <span class="bn-label" id="bn-account-label">Hesabım</span>
     </div>
   </div>
+  <button id="wa-fab" onclick="window.open('https://wa.me/902242466120?text=Merhaba%2C%20sipari%C5%9F%20hakk%C4%B1nda%20yard%C4%B1m%20almak%20istiyorum.','_blank')" aria-label="WhatsApp Destek">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+  </button>
 
  <!-- KAMPANYA POPUP -->
  <div id="kp-overlay" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)kpClose()">
    <div style="background:white;border-radius:24px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.5);animation:kpIn .4s cubic-bezier(.34,1.4,.64,1);max-height:90vh;overflow-y:auto;">
 
      <!-- Header -->
-     <div id="kp-header" style="background:#e63946;padding:22px 20px 16px;position:relative;">
+     <div id="kp-header" style="background:#E5484D;padding:22px 20px 16px;position:relative;">
        <button onclick="kpClose()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.25);border:none;color:white;width:32px;height:32px;border-radius:50%;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;z-index:2;">×</button>
        <div id="kp-emoji" style="font-size:34px;line-height:1;margin-bottom:8px;">📢</div>
-       <div id="kp-title" style="color:white;font-size:18px;font-weight:800;line-height:1.3;padding-right:40px;font-family:'Poppins',sans-serif;"></div>
+       <div id="kp-title" style="color:white;font-size:18px;font-weight:800;line-height:1.3;padding-right:40px;font-family:'Plus Jakarta Sans',sans-serif;"></div>
        <!-- Fiyat bandı — sepete ekle modunda -->
        <div id="kp-price-band" style="display:none;margin-top:12px;">
          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-           <span id="kp-old-price" style="color:rgba(255,255,255,.55);font-size:15px;text-decoration:line-through;font-family:'Poppins',sans-serif;"></span>
-           <span id="kp-new-price" style="color:white;font-size:30px;font-weight:900;font-family:'Poppins',sans-serif;line-height:1;"></span>
-           <span id="kp-discount-badge" style="background:rgba(0,0,0,.2);color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;font-family:'Poppins',sans-serif;"></span>
+           <span id="kp-old-price" style="color:rgba(255,255,255,.55);font-size:15px;text-decoration:line-through;font-family:'Plus Jakarta Sans',sans-serif;"></span>
+           <span id="kp-new-price" style="color:white;font-size:30px;font-weight:900;font-family:'Plus Jakarta Sans',sans-serif;line-height:1;"></span>
+           <span id="kp-discount-badge" style="background:rgba(0,0,0,.2);color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;"></span>
          </div>
        </div>
      </div>
@@ -5348,14 +5439,14 @@ window.onload=()=>{
      <div style="padding:18px 20px 22px;">
 
        <!-- Mesaj -->
-       <div id="kp-msg" style="font-size:14px;color:#444;line-height:1.6;margin-bottom:14px;font-family:'Poppins',sans-serif;"></div>
+       <div id="kp-msg" style="font-size:14px;color:#444;line-height:1.6;margin-bottom:14px;font-family:'Plus Jakarta Sans',sans-serif;"></div>
 
        <!-- Ürün Detay Kartı (sepete ekle modunda) -->
        <div id="kp-product-detail" style="display:none;background:#f8f9fa;border-radius:14px;padding:14px;margin-bottom:16px;border:1.5px solid #eee;">
          <div style="display:flex;gap:12px;align-items:flex-start;">
            <img id="kp-prod-thumb" src="" style="width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;border:2px solid #e0e0e0;" onerror="this.style.display='none'">
            <div style="flex:1;min-width:0;">
-             <div id="kp-prod-name" style="font-weight:800;font-size:15px;color:#1a1a1a;margin-bottom:3px;"></div>
+             <div id="kp-prod-name" style="font-weight:800;font-size:15px;color:#111315;margin-bottom:3px;"></div>
              <div id="kp-prod-cat" style="font-size:11px;color:#999;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;"></div>
              <div id="kp-prod-desc" style="font-size:12px;color:#666;line-height:1.5;"></div>
            </div>
@@ -5371,10 +5462,10 @@ window.onload=()=>{
 
        <!-- Butonlar -->
        <div style="display:flex;gap:10px;">
-         <button id="kp-btn" onclick="kpClose()" style="flex:1;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;color:white;background:#e63946;font-family:inherit;transition:all .2s;letter-spacing:.2px;">Harika!</button>
+         <button id="kp-btn" onclick="kpClose()" style="flex:1;padding:15px;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;color:white;background:#E5484D;font-family:inherit;transition:all .2s;letter-spacing:.2px;">Harika!</button>
          <button onclick="kpClose()" style="padding:15px 18px;background:#f0f0f0;border:none;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;color:#888;font-family:inherit;transition:background .2s;" onmouseover="this.style.background='#e5e5e5'" onmouseout="this.style.background='#f0f0f0'">Kapat</button>
        </div>
-       <div id="kp-added-msg" style="display:none;text-align:center;margin-top:12px;font-size:14px;font-weight:700;color:#27ae60;animation:kpFadeIn .3s;">✅ Sepete eklendi! Sepet açılıyor...</div>
+       <div id="kp-added-msg" style="display:none;text-align:center;margin-top:12px;font-size:14px;font-weight:700;color:#20A464;animation:kpFadeIn .3s;">✅ Sepete eklendi! Sepet açılıyor...</div>
 
        <!-- Dış link paylaşım notu -->
        <div id="kp-share-link" style="display:none;margin-top:12px;text-align:center;">
@@ -5409,15 +5500,15 @@ window.onload=()=>{
  <div id="notif-permission-popup" style="display:none;position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;padding:16px;">
    <div style="background:white;border-radius:24px;padding:28px 24px 24px;width:100%;max-width:420px;box-shadow:0 -4px 40px rgba(0,0,0,0.15);animation:slideUpNotif .35s cubic-bezier(.34,1.56,.64,1);">
      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
-       <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#FF6600,#CC5200);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;box-shadow:0 4px 16px rgba(255,102,0,0.35);">🔔</div>
+       <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#FF6B00,#E85F00);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;box-shadow:0 4px 16px rgba(255,107,0,0.35);">🔔</div>
        <div>
-         <div style="font-weight:800;font-size:17px;color:#1a1a1a;margin-bottom:4px;">Siparişini takip et!</div>
+         <div style="font-weight:800;font-size:17px;color:#111315;margin-bottom:4px;">Siparişini takip et!</div>
          <div style="font-size:13px;color:#666;line-height:1.5;">Siparişinin hazırlandığını ve yola çıktığını anında öğren.</div>
        </div>
      </div>
      <div style="display:flex;gap:10px;margin-top:8px;">
        <button onclick="dismissNotifPopup()" style="flex:1;padding:14px;border-radius:14px;border:none;background:#f0f0f0;color:#555;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Daha Sonra</button>
-       <button onclick="allowNotifPopup()" style="flex:1.4;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#FF6600,#CC5200);color:white;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(255,102,0,0.4);">İzin Ver</button>
+       <button onclick="allowNotifPopup()" style="flex:1.4;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#FF6B00,#E85F00);color:white;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(255,107,0,0.4);">İzin Ver</button>
      </div>
    </div>
  </div>
