@@ -37,7 +37,7 @@
         }
         body { font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; margin:0; color:var(--text-dark); background:var(--bg-page); padding-bottom:calc(var(--bottom-nav-height) + 20px); overflow-x:hidden; }
 
-        .header { position:fixed; top:0; left:0; right:0; height:var(--header-height); background:var(--dark); padding:0 15px; display:flex; justify-content:space-between; align-items:center; z-index:9000; box-shadow:0 2px 10px rgba(0,0,0,0.3); transition:background 0.5s; }
+        .header { position:fixed; top:0; left:0; right:0; height:var(--header-height); background:var(--dark); padding:0 15px; display:flex; justify-content:space-between; align-items:center; z-index:9000; box-shadow:0 2px 10px rgba(0,0,0,0.3); transition:background 0.5s; box-sizing:border-box; }
         .header.kapali       { background:#555 !important; border-bottom:3px solid #333; }
         .header.hazirlaniyor { background:#1a6b3a !important; }
         .header.yolacikti    { background:#7d6008 !important; }
@@ -127,7 +127,7 @@
         .sb-menu li:hover { background:#fafafa; }
 
         .container   { padding:15px; max-width:600px; margin:0 auto; }
-        .home-hero { background:linear-gradient(160deg,var(--dark) 0%,var(--dark-2) 60%); border-radius:0 0 22px 22px; padding:16px 16px 20px; margin:-10px -15px 0; }
+        .home-hero { background:linear-gradient(160deg,var(--dark) 0%,var(--dark-2) 60%); border-radius:0 0 22px 22px; padding:16px 16px 20px; margin:-15px -15px 0; }
         .home-hero .hg-title { color:#fff; font-size:19px; font-weight:800; line-height:1.25; }
         .home-hero .hg-sub { color:rgba(255,255,255,0.55); font-size:12.5px; font-weight:500; margin-top:3px; }
         .hero-banner { position:relative; margin-top:14px; border-radius:16px; overflow:hidden; min-height:130px; background:linear-gradient(135deg,#2b1a10,#4a2a12); display:flex; align-items:flex-end; }
@@ -143,7 +143,7 @@
         .cat-grid-icon { width:54px; height:54px; border-radius:16px; background:var(--grey); display:flex; align-items:center; justify-content:center; font-size:23px; transition:all 0.15s; }
         .cat-grid-item.active .cat-grid-icon { background:var(--primary); box-shadow:0 4px 14px rgba(255,107,0,0.35); }
         .cat-grid-label { font-size:10.5px; font-weight:700; color:var(--text-dark); text-align:center; line-height:1.2; }
-        #main-content { margin-top:calc(var(--header-height) + 10px); transition:margin-top 0.25s ease; }
+        #main-content { margin-top:var(--header-height); transition:margin-top 0.25s ease; }
         #main-content.cart-visible      { margin-top:calc(var(--header-height) + var(--cart-bar-height) + 5px); }
         #main-content.cart-warn-visible { margin-top:calc(var(--header-height) + var(--cart-bar-height) + 36px + 5px); }
         /* Sipariş durum barı aktifken içerik aşağı kayar */
@@ -630,17 +630,17 @@
             z-index:8500;
             height:calc(64px + env(safe-area-inset-bottom));
             padding-bottom:env(safe-area-inset-bottom);
-            background:linear-gradient(180deg,var(--dark),var(--dark-2));
-            border-top:1px solid rgba(255,255,255,0.07);
+            background:var(--white);
+            border-top:1px solid rgba(0,0,0,0.06);
             display:flex; justify-content:space-around; align-items:stretch;
-            box-shadow:0 -8px 30px rgba(0,0,0,0.4);
+            box-shadow:0 -8px 24px rgba(0,0,0,0.08);
         }
         .bn-item {
             flex:1; display:flex; flex-direction:column; align-items:center;
             justify-content:center; gap:4px; cursor:pointer;
             transition:all 0.2s; padding:8px 0;
             position:relative; overflow:hidden;
-            color:rgba(255,255,255,0.45);
+            color:#9aa0a6;
         }
         .bn-item .bn-icon { color:inherit; }
         .bn-item.active { color:var(--primary); }
@@ -655,7 +655,7 @@
         .bn-item:active { background:rgba(255,107,0,0.08); }
         .bn-icon { font-size:20px; line-height:1; transition:transform 0.2s; }
         .bn-item:active .bn-icon { transform:scale(0.88); }
-        .bn-label { font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; transition:color 0.2s; }
+        .bn-label { font-size:9px; font-weight:700; color:#9aa0a6; text-transform:uppercase; letter-spacing:0.5px; transition:color 0.2s; }
         .bn-item:active .bn-label { color:var(--primary); }
         #wa-fab {
             position:fixed; right:14px;
@@ -1912,8 +1912,21 @@ function homeHeroHTML(){
     + '<input type="text" id="home-search-input" placeholder="Ne aramıştınız? (Döner, pide, lahmacun...)" oninput="applyMenuSearch(this.value)"></div>'
     + '<div id="cat-grid" class="cat-grid" style="display:none;"></div>';
 }
-const CAT_ICONS = { 'pide':'🫓','cantık':'🥙','lahmacun':'🍕','döner':'🌯','dürüm':'🌯','i̇çecekler':'🥤','icecekler':'🥤','tatlılar':'🍰','yan ürünler':'🍟','yan urunler':'🍟' };
-function catIcon(name){ return CAT_ICONS[(name||'').toLocaleLowerCase('tr')] || '🍽️'; }
+const CAT_ICON_RULES = [
+    ['döner', '🌯'], ['durum', '🌯'], ['dürüm', '🌯'],
+    ['cantık', '🥙'], ['cantik', '🥙'],
+    ['lahmacun', '🍕'],
+    ['pide', '🫓'],
+    ['içecek', '🥤'], ['icecek', '🥤'], ['ayran', '🥤'], ['kola', '🥤'], ['şalgam', '🥤'],
+    ['tatlı', '🍰'], ['tatli', '🍰'],
+    ['yan ürün', '🍟'], ['yan urun', '🍟'], ['patates', '🍟'],
+    ['salata', '🥗'], ['çorba', '🍲'], ['corba', '🍲'],
+];
+function catIcon(name){
+    const n = (name||'').toLocaleLowerCase('tr');
+    for(const [key, icon] of CAT_ICON_RULES){ if(n.includes(key)) return icon; }
+    return '🍽️';
+}
 function renderCatGrid(sorted){
     const el = document.getElementById('cat-grid');
     if(!el) return;
@@ -5413,14 +5426,14 @@ window.onload=()=>{
     <div class="bn-item" id="bn-cart">
       <span class="bn-icon" style="position:relative;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-        <span id="bn-cart-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:var(--primary);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid var(--dark-2);"></span>
+        <span id="bn-cart-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:var(--primary);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid var(--white);"></span>
       </span>
       <span class="bn-label">Sepet</span>
     </div>
     <div class="bn-item" id="bn-account">
       <span class="bn-icon" style="position:relative;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span id="bn-account-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:var(--success);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid var(--dark-2);"></span>
+        <span id="bn-account-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:var(--success);color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:10px;line-height:16px;text-align:center;padding:0 3px;border:1.5px solid var(--white);"></span>
       </span>
       <span class="bn-label" id="bn-account-label">Hesabım</span>
     </div>
