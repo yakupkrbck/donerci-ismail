@@ -127,7 +127,7 @@
         .sb-menu li:hover { background:#fafafa; }
 
         .container   { padding:15px; max-width:600px; margin:0 auto; }
-        .home-hero { background:linear-gradient(160deg,var(--dark) 0%,var(--dark-2) 60%); border-radius:22px; padding:16px 16px 16px; margin:2px 0 0; }
+        .home-hero { background:linear-gradient(160deg,var(--dark) 0%,var(--dark-2) 60%); border-radius:0 0 22px 22px; padding:16px 16px 20px; margin:-10px -15px 0; }
         .home-hero .hg-title { color:#fff; font-size:19px; font-weight:800; line-height:1.25; }
         .home-hero .hg-sub { color:rgba(255,255,255,0.55); font-size:12.5px; font-weight:500; margin-top:3px; }
         .hero-banner { position:relative; margin-top:14px; border-radius:16px; overflow:hidden; min-height:130px; background:linear-gradient(135deg,#2b1a10,#4a2a12); display:flex; align-items:flex-end; }
@@ -136,8 +136,8 @@
         .hero-banner-title { color:#fff; font-size:18px; font-weight:800; line-height:1.15; text-shadow:0 2px 10px rgba(0,0,0,0.45); }
         .hero-banner-title small { display:block; font-size:10.5px; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.5px; }
         .hero-banner-cta { background:var(--primary); color:#fff; font-size:11.5px; font-weight:700; padding:9px 14px; border-radius:999px; white-space:nowrap; border:none; cursor:pointer; }
-        .home-search { display:flex; align-items:center; gap:10px; background:var(--white); border-radius:999px; padding:12px 16px; margin:16px 0 18px; box-shadow:0 2px 10px rgba(0,0,0,0.05); color:var(--text-muted); }
-        .home-search input { border:none; outline:none; flex:1; font-size:13.5px; font-family:inherit; background:transparent; color:var(--text-dark); }
+        .home-search { display:flex; align-items:center; gap:9px; background:var(--white); border-radius:999px; padding:9px 14px; margin:14px 0 16px; box-shadow:0 2px 10px rgba(0,0,0,0.05); color:var(--text-muted); }
+        .home-search input { border:none; outline:none; flex:1; font-size:12.5px; font-family:inherit; background:transparent; color:var(--text-dark); }
         .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px 6px; margin-bottom:20px; }
         .cat-grid-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
         .cat-grid-icon { width:54px; height:54px; border-radius:16px; background:var(--grey); display:flex; align-items:center; justify-content:center; font-size:23px; transition:all 0.15s; }
@@ -1906,9 +1906,9 @@ function renderCatTabs(sorted){
 }
 function homeHeroHTML(){
   return '<div class="home-hero"><div class="hg-title" id="hg-title">Hoş geldiniz 👋</div><div class="hg-sub" id="hg-sub">En sevdiğiniz lezzetler birkaç dokunuş uzağınızda.</div>'
-    + '<div class="hero-banner"><div class="hero-banner-text"><div class="hero-banner-title"><small>Tadına</small>Pide &amp; Cantık</div>'
-    + '<button class="hero-banner-cta" onclick="document.getElementById(\'cat-tabs\')?.scrollIntoView({behavior:\'smooth\',block:\'start\'})">Hemen Keşfet →</button></div></div></div>'
-    + '<div class="home-search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    + '<div class="hero-banner" id="hero-banner"><div class="hero-banner-text"><div class="hero-banner-title" id="hero-banner-title"><small>Tadına</small>Pide &amp; Cantık</div>'
+    + '<button class="hero-banner-cta" id="hero-banner-cta" onclick="document.getElementById(\'cat-tabs\')?.scrollIntoView({behavior:\'smooth\',block:\'start\'})">Hemen Keşfet →</button></div></div></div>'
+    + '<div class="home-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
     + '<input type="text" id="home-search-input" placeholder="Ne aramıştınız? (Döner, pide, lahmacun...)" oninput="applyMenuSearch(this.value)"></div>'
     + '<div id="cat-grid" class="cat-grid" style="display:none;"></div>';
 }
@@ -3710,7 +3710,7 @@ window.setActiveNav = id => {
     document.querySelectorAll('.bn-item').forEach(el=>el.classList.remove('active'));
     const el=document.getElementById(id); if(el) el.classList.add('active');
 };
-const BN_SECTION_MAP = { cart:'bn-cart', checkout:'bn-cart', history:'bn-history', points:'bn-account', mycoupons:'bn-account', profile:'bn-account', login:'bn-account', addresses:'bn-account' };
+const BN_SECTION_MAP = { cart:'bn-cart', checkout:'bn-cart', history:'bn-account', points:'bn-account', mycoupons:'bn-account', profile:'bn-account', login:'bn-account', addresses:'bn-account' };
 window.closeModal=()=>{ document.getElementById('modal').style.display='none'; setActiveNav('bn-home'); };
 window.openModal=sec=>{
     closeSidebar(); document.getElementById('modal').style.display='flex';
@@ -4678,17 +4678,42 @@ async function loadCampaigns() {
 }
 
 // ── ANASAYFA BANNER SLIDER ──────────────────────────────────────────────
+function applyHeroBanner(banner){
+    const el = document.getElementById('hero-banner');
+    const titleEl = document.getElementById('hero-banner-title');
+    const ctaEl = document.getElementById('hero-banner-cta');
+    if(!el) return;
+    if(banner && banner.imageUrl){
+        el.style.backgroundImage = `linear-gradient(180deg, rgba(8,9,9,0.1), rgba(8,9,9,0.78)), url('${banner.imageUrl}')`;
+        el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center';
+        if(titleEl) titleEl.innerHTML = banner.subtitle ? `<small>${banner.subtitle}</small>${banner.title||''}` : (banner.title || 'Kampanyayı İncele');
+        if(ctaEl){
+            const href = banner.link;
+            ctaEl.onclick = href
+                ? () => { window.open(href, href.startsWith('http') ? '_blank' : '_self'); }
+                : () => document.getElementById('cat-tabs')?.scrollIntoView({behavior:'smooth',block:'start'});
+        }
+    } else {
+        el.style.backgroundImage = '';
+        if(titleEl) titleEl.innerHTML = '<small>Tadına</small>Pide &amp; Cantık';
+        if(ctaEl) ctaEl.onclick = () => document.getElementById('cat-tabs')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+}
 async function loadBannerSliders() {
     const section = document.getElementById('banner-slider-section');
-    if(!section) return;
     try {
         const snap = await getDocs(collection(db, 'bannerSliders'));
-        if(snap.empty) return;
-        const slides = snap.docs
+        const all = snap.empty ? [] : snap.docs
             .map(d => ({id:d.id, ...d.data()}))
             .filter(s => s.active !== false && s.imageUrl)
             .sort((a,b) => (a.order||10) - (b.order||10));
-        if(!slides.length) return;
+
+        // İlk aktif banner = Ana Sayfa hero kartının görseli (panelden yönetilir)
+        applyHeroBanner(all[0] || null);
+
+        const slides = all.slice(1);
+        if(!section) return;
+        if(!slides.length){ section.style.display='none'; return; }
 
         const slidesHtml = slides.map((s, i) => `
             <div class="bs-slide" data-href="${s.link||''}">
@@ -5290,7 +5315,6 @@ window.onload=()=>{
         closeModal(); setActiveNav('bn-menu');
         document.getElementById('cat-tabs')?.scrollIntoView({behavior:'smooth', block:'start'});
     });
-    document.getElementById('bn-history')?.addEventListener('click', () => requireLogin('history'));
     document.getElementById('bn-cart')?.addEventListener('click', () => openModal('cart'));
     document.getElementById('bn-account')?.addEventListener('click', () => handleUserPanelClick());
 };
@@ -5385,12 +5409,6 @@ window.onload=()=>{
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </span>
       <span class="bn-label">Menü</span>
-    </div>
-    <div class="bn-item" id="bn-history">
-      <span class="bn-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </span>
-      <span class="bn-label">Siparişlerim</span>
     </div>
     <div class="bn-item" id="bn-cart">
       <span class="bn-icon" style="position:relative;">
