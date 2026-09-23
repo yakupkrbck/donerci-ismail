@@ -13,7 +13,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;family=Playfair+Display:wght@700;800&amp;display=swap" rel="stylesheet">
   <style>
         :root {
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
@@ -139,6 +139,7 @@
         #main-content.status-cart-visible { margin-top:calc(var(--header-height) + var(--status-bar-height) + var(--cart-bar-height) + 5px); }
 
         .cat-title { font-size:13px; font-weight:700; color:var(--dark); margin:25px 0 12px; border-left:4px solid var(--primary); padding-left:12px; text-transform:uppercase; }
+        .cat-title.premium-title { color:#a8791f; border-left-color:#c9a33e; font-family:'Playfair Display',serif; font-size:14px; letter-spacing:0.4px; }
         .menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; }
         .item-card { background:var(--white); border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden; display:flex; flex-direction:column; position:relative; }
         .item-card.out-of-stock { opacity:0.55; }
@@ -151,9 +152,34 @@
         .item-badge-disc { background:#e74c3c; }
         .item-card .item-body { padding:9px 10px 11px; display:flex; flex-direction:column; flex:1; }
         .item-card .item-name { font-size:12.5px; font-weight:700; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:32px; cursor:pointer; }
+        .item-card .item-desc { font-size:10px; color:#999; line-height:1.35; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .item-card.premium .item-desc { color:rgba(243,227,189,0.55); }
         .item-card .item-oos-txt { font-size:10px; color:#e74c3c; font-weight:700; margin-top:2px; }
         .item-card .item-price-row { display:flex; align-items:flex-end; justify-content:space-between; gap:6px; margin-top:auto; padding-top:8px; }
         .item-card .add-btn { width:100%; margin-top:8px; padding:8px 6px; font-size:12px; }
+
+        /* ── Fiyat etiketi — profesyonel görünüm ── */
+        .price-tag { display:flex; flex-direction:column; line-height:1; }
+        .price-old { font-size:9.5px; color:#aaa; text-decoration:line-through; font-weight:600; margin-bottom:2px; }
+        .price-now { display:inline-flex; align-items:baseline; gap:2px; }
+        .price-now .num { font-size:15px; font-weight:900; color:var(--primary); letter-spacing:-0.3px; font-variant-numeric:tabular-nums; }
+        .price-now .cur { font-size:8.5px; font-weight:800; color:#b0693a; text-transform:uppercase; letter-spacing:0.4px; opacity:0.85; }
+        .price-now.disc .num { color:#e74c3c; }
+
+        /* ── Premium kategori kartı (Pideler vb.) ── */
+        .item-card.premium { background:linear-gradient(165deg,#1e1a14 0%,#2b2318 55%,#1c170f 100%); border:1px solid rgba(212,175,55,0.35); box-shadow:0 8px 20px rgba(0,0,0,0.28); }
+        .item-card.premium .item-thumb-wrap { background:#141110; }
+        .item-card.premium .item-thumb-wrap::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(20,16,12,0.85) 100%); pointer-events:none; }
+        .item-card.premium .item-thumb-fallback { font-size:30px; }
+        .item-card.premium .item-name { font-family:'Playfair Display',serif; font-weight:700; color:#f3e3bd; letter-spacing:0.2px; }
+        .item-card.premium .item-rating-count { color:rgba(255,255,255,0.45); }
+        .item-card.premium .item-oos-txt { color:#ff8a80; }
+        .item-card.premium .price-old { color:rgba(255,255,255,0.4); }
+        .item-card.premium .price-now .num { background:linear-gradient(135deg,#f5da96,#c9a33e); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+        .item-card.premium .price-now .cur { color:#c9a33e; opacity:0.8; }
+        .item-card.premium .add-btn { background:linear-gradient(135deg,#e9cd83,#b8912c); color:#1c1710; font-weight:800; box-shadow:0 3px 10px rgba(184,145,44,0.35); }
+        .item-card.premium .add-btn:disabled { background:#4a463c !important; color:#8a8578; }
+        .item-card.premium .item-badge-premium { background:linear-gradient(135deg,#f0d68f,#b8912c); color:#1c1710; }
         .item-card.out-of-stock { opacity:0.5; }
         .item-left { display:flex; align-items:center; gap:12px; }
         .item-img  { width:60px; height:60px; border-radius:10px; object-fit:cover; background:#eee; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
@@ -1916,32 +1942,30 @@ function renderMenu(products) {
     if(!sorted.length){ document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:40px;color:#999;"><p>Menüde ürün bulunamadı.</p></div>`; return; }
     const cdEl = document.getElementById('closing-countdown');
     document.getElementById('main-content').innerHTML=`<div id="fob-placeholder"></div><div id="banner-slider-section" style="display:none;"></div><div id="cat-quick-nav" style="display:none;"></div><div id="popular-section" style="display:none;"></div><div id="campaigns-section" style="display:none;"></div>`+sorted.map(cat=>`
-        <div class="cat-title" data-cat="${cat}">${catEmojis[cat]||'🍽'} ${cat}</div>
+        <div class="cat-title${cat==='Pideler'?' premium-title':''}" data-cat="${cat}">${catEmojis[cat]||'🍽'} ${cat}</div>
         <div class="menu-grid">
         ${cats[cat].map(item=>{
             let disabled=!shopOpen||!item.inStock, btnTxt=!item.inStock?'TÜKENDI':shopOpen?'EKLE':'KAPALI';
             if(shopOpen&&item.inStock&&(cat==='Pideler'||cat==='Cantıklar & Lahmacun'||item.n==='Tavuk Dürüm')&&!bakeryOpen){btnTxt="12:00'DA";disabled=true;}
             const safeN=item.n.replace(/'/g,"\\'").replace(/"/g,'&quot;');
             const attrN=item.n.replace(/"/g,'&quot;');
-            const thumbHtml=`<div class="item-thumb-fallback" onclick="openItemDetail('${safeN}')">${catEmojis[cat]||'🍽'}</div>${(cat!=='İçecekler'&&item.i)?`<img src="${item.i}" onclick="openItemDetail('${safeN}')" onerror="this.style.display='none'" style="position:absolute;top:0;left:0;">`:''}`;
+            const thumbHtml=`<div class="item-thumb-fallback" onclick="openItemDetail('${safeN}')">${catEmojis[cat]||'🍽'}</div>${item.i?`<img src="${item.i}" onclick="openItemDetail('${safeN}')" onerror="this.style.display='none'" style="position:absolute;top:0;left:0;">`:''}`;
             const rev=window._itemRatings?.[item.n]; const revHtml=rev&&rev.count>0?`<div class="item-rating"><span class="item-rating-stars">${'★'.repeat(Math.round(rev.avg))}${'☆'.repeat(5-Math.round(rev.avg))}</span><span class="item-rating-count">${rev.avg.toFixed(1)} (${rev.count})</span></div>`:'';
             const isPop = window._popularNames && window._popularNames.has(item.n);
+            const isPremiumCat = cat==='Pideler';
             const badges = `${isPop?'<span class="item-badge item-badge-pop">🔥 Popüler</span>':''}${item.campPrice?'<span class="item-badge item-badge-disc">İndirimli</span>':''}`;
-            return `<div class="item-card${!item.inStock?' out-of-stock':''}" data-item-name="${attrN}">
+            const fmt=n=>Number(n).toLocaleString('tr-TR');
+            const priceHtml = item.campPrice
+              ? `<div class="price-tag"><span class="price-old">${fmt(item.p)} ₺</span><span class="price-now disc"><span class="num">${fmt(item.campPrice)}</span><span class="cur">₺</span></span></div>`
+              : `<div class="price-tag"><span class="price-now"><span class="num">${fmt(item.p)}</span><span class="cur">₺</span></span></div>`;
+            return `<div class="item-card${!item.inStock?' out-of-stock':''}${isPremiumCat?' premium':''}" data-item-name="${attrN}">
                 <div class="item-thumb-wrap">${badges?`<div class="item-badges">${badges}</div>`:''}${thumbHtml}</div>
                 <div class="item-body">
                     <div class="item-name" onclick="openItemDetail('${safeN}')">${item.n}</div>
+                    ${item.desc?`<div class="item-desc">${item.desc}</div>`:''}
                     ${revHtml}
                     ${!item.inStock?'<div class="item-oos-txt">Şu an mevcut değil</div>':''}
-                    <div class="item-price-row">
-                        ${item.campPrice
-                          ? `<div style="display:flex;flex-direction:column;line-height:1.2;">
-                               <span style="font-size:10px;color:#aaa;text-decoration:line-through;">${item.p} TL</span>
-                               <span style="font-size:14px;color:#FF6600;font-weight:900;">${item.campPrice} TL</span>
-                             </div>`
-                          : `<span style="font-size:13px;color:var(--primary);font-weight:800;">${item.p} TL</span>`
-                        }
-                    </div>
+                    <div class="item-price-row">${priceHtml}</div>
                     <button class="add-btn" ${disabled?'disabled':''} onclick="checkAndAdd('${safeN}',${item.campPrice||item.p},'${cat}')">${btnTxt}</button>
                 </div>
             </div>`;
