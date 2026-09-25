@@ -3,7 +3,20 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dönerci İsmail | Online Sipariş</title>
+  <title>Dönerci İsmail Osmangazi | Online Döner, Pide & Lahmacun Siparişi</title>
+  <meta name="description" content="Osmangazi Mehmet Akif Mahallesi'nde online döner, pide, lahmacun ve tost siparişi verin. Dönerci İsmail güvencesiyle sıcak ve taze lezzetler kapınıza gelsin. Hızlı teslimat, kolay ödeme.">
+  <link rel="canonical" href="https://www.donercismail.com/">
+  <meta name="robots" content="index, follow">
+  <!-- Open Graph -->
+  <meta property="og:type" content="restaurant">
+  <meta property="og:site_name" content="Dönerci İsmail">
+  <meta property="og:title" content="Dönerci İsmail Osmangazi | Online Döner, Pide & Lahmacun Siparişi">
+  <meta property="og:description" content="Osmangazi Mehmet Akif Mahallesi'nde online döner, pide, lahmacun ve tost siparişi verin. Sıcak ve taze lezzetler kapınıza gelsin.">
+  <meta property="og:url" content="https://www.donercismail.com/">
+  <meta property="og:locale" content="tr_TR">
+  <!-- TODO: gerçek bir paylaşım görseli (min. 1200x630px) yükleyip aşağıdaki URL'i güncelleyin -->
+  <meta property="og:image" content="https://www.donercismail.com/icons/icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#FF6600">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,6 +27,72 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <!-- ── Schema.org (JSON-LD) — Restaurant ──
+       Google'ın Sitelinks göstermesini DOĞRUDAN garanti eden bir kod yoktur;
+       bu, Google'ın algoritmasının zamanla verdiği bir karardır. Bu şema,
+       Google'a işletmenizi ve iç sayfalarınızı doğru tanıtarak ihtimali artırır.
+       Aşağıdaki [DOLDURUN] alanlarını gerçek bilgilerinizle güncelleyin. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "@id": "https://www.donercismail.com/#restaurant",
+    "name": "Dönerci İsmail",
+    "image": "https://www.donercismail.com/icons/icon-512.png",
+    "url": "https://www.donercismail.com/",
+    "telephone": "+902242466120",
+    "priceRange": "₺₺",
+    "servesCuisine": ["Turkish", "Döner", "Pide", "Fast Food"],
+    "acceptsReservations": "False",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Mehmet Akif Mahallesi, 2. Mutlular Caddesi No:14/A",
+      "addressLocality": "Osmangazi",
+      "addressRegion": "Bursa",
+      "postalCode": "[DOLDURUN: Posta Kodu]",
+      "addressCountry": "TR"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "[DOLDURUN]",
+      "longitude": "[DOLDURUN]"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "[DOLDURUN: örn. 10:00]",
+        "closes": "[DOLDURUN: örn. 23:00]"
+      }
+    ],
+    "menu": "https://www.donercismail.com/menü",
+    "hasMenu": {
+      "@type": "Menu",
+      "url": "https://www.donercismail.com/menü",
+      "hasMenuSection": [
+        { "@type": "MenuSection", "name": "Pideler" },
+        { "@type": "MenuSection", "name": "Dürümler" },
+        { "@type": "MenuSection", "name": "İçecekler" }
+      ]
+    },
+    "potentialAction": {
+      "@type": "OrderAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://www.donercismail.com/onlinesipariş",
+        "actionPlatform": [
+          "http://schema.org/DesktopWebPlatform",
+          "http://schema.org/MobileWebPlatform"
+        ]
+      },
+      "deliveryMethod": ["http://schema.org/OnSitePickup", "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"]
+    },
+    "sameAs": [
+      "[DOLDURUN: Instagram profil URL'i]",
+      "[DOLDURUN: Facebook sayfa URL'i]"
+    ]
+  }
+  </script>
   <style>
         :root {
             --primary:#FF6600; --primary-dark:#CC5200; --dark:#1a1a1a;
@@ -798,6 +877,7 @@
    </div>
   </div>
   <div id="order-status-bar"></div>
+  <span id="siparis" aria-hidden="true" style="position:relative;top:-90px;display:block;"></span>
   <div class="cart-bar-top normal" id="cart-bar-top">
    <div class="cart-bar-inner">
     <div class="cart-bar-left">
@@ -823,7 +903,8 @@
   </div>
   <div id="toast-container" class="toast-container"></div>
   <!-- upsell kaldırıldı -->
-  <div class="container" id="main-content">
+  <span id="menu" aria-hidden="true" style="position:relative;top:-90px;display:block;"></span>
+  <div class="container" id="main-content" role="main" aria-label="Dönerci İsmail Menü">
     <div id="closing-countdown" style="display:none;">
       <div class="cd-inner">
         <span class="cd-icon">⏰</span>
@@ -6084,5 +6165,20 @@ window.onload=()=>{
         @keyframes slideUpBanner { from { transform:translateY(80px); opacity:0; } to { transform:translateY(0); opacity:1; } }
  </style>
 
+ <footer id="iletisim" style="background:#1a1a1a;color:rgba(255,255,255,0.65);padding:28px 20px 90px;font-size:12.5px;line-height:1.8;">
+  <nav aria-label="Site navigasyonu" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;font-weight:700;">
+   <a href="/menü" style="color:#FF6600;text-decoration:none;">Menü</a>
+   <a href="/onlinesipariş" style="color:#FF6600;text-decoration:none;">Online Sipariş Ver</a>
+   <a href="/hakkında" style="color:#FF6600;text-decoration:none;">Hakkımızda</a>
+   <a href="/iletişim" style="color:#FF6600;text-decoration:none;">İletişim</a>
+  </nav>
+  <address style="font-style:normal;">
+   <strong style="color:#fff;">Dönerci İsmail</strong> — Mehmet Akif Mahallesi, Osmangazi / Bursa<br>
+   Telefon: <a href="tel:02242466120" style="color:rgba(255,255,255,0.65);">0224 246 61 20</a><br>
+   WhatsApp: <a href="https://wa.me/902242466120" style="color:rgba(255,255,255,0.65);" target="_blank" rel="noreferrer">0224 246 61 20</a>
+  </address>
+  <p style="margin-top:16px;color:rgba(255,255,255,0.35);">© <span id="footer-year"></span> Dönerci İsmail. Tüm hakları saklıdır.</p>
+ </footer>
+ <script>document.getElementById('footer-year').textContent=new Date().getFullYear();</script>
  </body>
  </html>
